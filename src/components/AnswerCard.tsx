@@ -1,7 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
-import { apiRenderMermaid } from "@/lib/api";
+import { apiRenderMermaid, type CopilotMode } from "@/lib/api";
+
+/**
+ * Badge text per mode. A keyed record, not a ternary on "mirror": the same
+ * pattern in SearchBar silently labelled a new mode "Answer", so a mode with no
+ * entry here shows no badge rather than the wrong one.
+ */
+const MODE_BADGE: Partial<Record<CopilotMode, string>> = {
+  mirror: "Mirror Mode",
+  questions: "Practice Questions",
+};
 import { Copy, Check, MessageSquare, Edit3, ChevronLeft, ChevronRight, Send, Share, X, Play, Edit, Download, Expand } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { startEvaluationOverlay } from "@/overlayHost";
@@ -81,7 +91,7 @@ const splitMarkdownFences = (text: string): string[] => {
 interface AnswerCardProps {
   answer: string;
   question: string;
-  mode?: "answer" | "mirror";
+  mode?: CopilotMode;
   // When false, render instantly without typewriter/streaming effect (used for history)
   streaming?: boolean;
   // Whether evaluation (the Evaluate button) is allowed for this question.
@@ -1890,9 +1900,9 @@ export const AnswerCard = ({ answer, question, mode, streaming = true, onEdit, o
                 ) : (
                   <>
                     <div className="flex items-start gap-2 ml-6 sm:ml-0">
-                      {mode === "mirror" ? (
+                      {mode && MODE_BADGE[mode] ? (
                         <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                          Mirror Mode
+                          {MODE_BADGE[mode]}
                         </span>
                       ) : null}
                     </div>

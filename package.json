@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "typecheck": "tsc -b --noEmit",
     "preview": "vite preview",
     "icons:generate": "node scripts/generate-icons.mjs --background #171b3c --fallback-background #171b3c --any-style fullbleed --any-alpha false",
     "icons:generate:circle": "node scripts/generate-icons.mjs --background #171b3c --any-style badge --any-alpha true --any-badge-opacity 0.12 --any-logo-scale 0.74",

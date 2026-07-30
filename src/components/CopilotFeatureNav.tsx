@@ -54,11 +54,11 @@ const FEATURES: FeatureDef[] = [
     names: /\bmock interview\b/i,
   },
   {
-    id: "intelligence",
-    label: "Browse Question Bank",
-    hint: "Real questions by company",
+    id: "questions",
+    label: "Generate practice questions",
+    hint: "A set on this topic, with answers",
     icon: Search,
-    names: /\b(interview intelligence|question bank|search intelligence)\b/i,
+    names: /\b(practice questions|interview questions|question bank|interview intelligence|search intelligence)\b/i,
   },
   {
     id: "progress",

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { SearchBar } from "./SearchBar";
 import { AnswerCard } from "./AnswerCard";
 import { QuestionCards } from "./QuestionCards";
@@ -1905,7 +1905,7 @@ export const InterviewAssistant = () => {
           const archiveKey = `ia_history_archive_${sessionId}`;
           const rawArch = window.localStorage.getItem(archiveKey);
           if (rawArch) {
-            const archived = JSON.parse(rawArch) as Array<{ question: string; answer: string; ts: number; mode?: "answer" | "mirror" }>;
+            const archived = JSON.parse(rawArch) as Array<{ question: string; answer: string; ts: number; mode?: CopilotMode }>;
             if (Array.isArray(archived) && archived.length > 0) {
               // Filter out incomplete entries (empty answer) - these are failed optimistic inserts
               const complete = archived.filter(it => {
@@ -1949,7 +1949,7 @@ export const InterviewAssistant = () => {
           const archiveKey = `ia_history_archive_${sessionId}`;
           const raw = window.localStorage.getItem(archiveKey);
           if (raw) {
-            const archived = JSON.parse(raw) as Array<{ question: string; answer: string; ts: number; mode?: "answer" | "mirror" }>;
+            const archived = JSON.parse(raw) as Array<{ question: string; answer: string; ts: number; mode?: CopilotMode }>;
             // Carry the real creation time through. Stamping every server item
             // with Date.now() made them all equal and newer than anything
             // archived, so the sort below could not interleave them - archived
@@ -2197,7 +2197,7 @@ export const InterviewAssistant = () => {
       try {
         const archiveKey = `ia_history_archive_${effectiveSid}`;
         const raw = window.localStorage.getItem(archiveKey);
-        const list = raw ? (JSON.parse(raw) as Array<{ question: string; answer: string; ts: number; mode?: "answer" | "mirror" }>) : [];
+        const list = raw ? (JSON.parse(raw) as Array<{ question: string; answer: string; ts: number; mode?: CopilotMode }>) : [];
         const pendingIndex = list.findIndex((x) => x.question === q && x.answer === "");
         if (pendingIndex >= 0) list[pendingIndex] = { question: q, answer: res.answer, ts: Date.now(), mode: (res as any)?.mode ?? "mirror" } as any;
         else list.unshift({ question: q, answer: res.answer, ts: Date.now(), mode: (res as any)?.mode ?? "mirror" } as any);
@@ -2543,7 +2543,7 @@ export const InterviewAssistant = () => {
         try {
           const archiveKey = `ia_history_archive_${effectiveSid}`;
           const raw = window.localStorage.getItem(archiveKey);
-          const list = raw ? (JSON.parse(raw) as Array<{ question: string; answer: string; ts: number; mode?: "answer" | "mirror" }>) : [];
+          const list = raw ? (JSON.parse(raw) as Array<{ question: string; answer: string; ts: number; mode?: CopilotMode }>) : [];
           const pendingIndex = list.findIndex(x => x.question === currentQuestion && x.answer === '');
           if (pendingIndex >= 0) list[pendingIndex] = { question: currentQuestion, answer: res.answer, ts: Date.now(), mode: effectiveMode };
           else list.unshift({ question: currentQuestion, answer: res.answer, ts: Date.now(), mode: effectiveMode });
@@ -3847,7 +3847,7 @@ export const InterviewAssistant = () => {
                         // The array is reversed to show Oldest -> Newest (top to bottom)
                         // In this layout, the very bottom item is the most recent.
                         const isLatest = idx === arr.length - 1;
-                        const itemMode = (item as any)?.mode as ("answer" | "mirror" | undefined);
+                        const itemMode = (item as any)?.mode as (CopilotMode | undefined);
                         const isMirrorItem = itemMode === "mirror";
                         return (
                           <div
