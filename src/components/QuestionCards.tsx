@@ -16,7 +16,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Check, ChevronDown, Copy } from "lucide-react";
+import { BookOpen, Check, ChevronDown, Copy, MessageSquarePlus } from "lucide-react";
 import type { EnhancedQuestion } from "@/lib/api";
 import { formatAnswerMarkdown } from "@/lib/answerMarkdown";
 import { useToast } from "@/hooks/use-toast";
@@ -26,12 +26,25 @@ interface QuestionCardsProps {
   query?: string;
   questions: EnhancedQuestion[];
   className?: string;
+  /**
+   * Start a follow-up about one card.
+   *
+   * The cards travel in `ui_payload`, not in the conversation text, so the model
+   * cannot see them on the next turn. Typing "explain question 3" gives it
+   * nothing to resolve; this hands over the question itself.
+   */
+  onAskAbout?: (question: string) => void;
 }
 
 const SECTION_LABEL =
   "text-[10px] font-black uppercase tracking-[0.2em] text-primary/70 mb-2";
 
-export const QuestionCards = ({ query, questions, className = "" }: QuestionCardsProps) => {
+export const QuestionCards = ({
+  query,
+  questions,
+  className = "",
+  onAskAbout,
+}: QuestionCardsProps) => {
   // One open at a time: a set of twenty long answers is unreadable otherwise.
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -125,19 +138,32 @@ export const QuestionCards = ({ query, questions, className = "" }: QuestionCard
                   <div className="border-t border-border/30 pt-4">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className={SECTION_LABEL}>Model Answer</h4>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground"
-                        onClick={() => copyAnswer(q, idx)}
-                        aria-label="Copy question and answer"
-                      >
-                        {copiedIndex === idx ? (
-                          <Check className="h-3.5 w-3.5 text-primary" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        {onAskAbout ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 gap-1.5 text-xs text-primary hover:bg-primary/10"
+                            onClick={() => onAskAbout(q.question)}
+                          >
+                            <MessageSquarePlus className="h-3.5 w-3.5" />
+                            Ask about this
+                          </Button>
+                        ) : null}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground"
+                          onClick={() => copyAnswer(q, idx)}
+                          aria-label="Copy question and answer"
+                        >
+                          {copiedIndex === idx ? (
+                            <Check className="h-3.5 w-3.5 text-primary" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     <div
                       className="text-sm text-foreground leading-relaxed prose prose-sm max-w-none dark:prose-invert"

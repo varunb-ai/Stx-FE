@@ -193,6 +193,41 @@ export const InterviewAssistant = () => {
     } catch { }
   }, [activeMainTab]);
 
+  /**
+   * Questions and Mirror are actions, not stances -- so they last one message.
+   *
+   * They were sticky, which meant the turn after a question set was read as a
+   * request for another one: "explain question 3" generated ten new questions
+   * about the phrase "explain question 3". Answer mode is the only setting worth
+   * persisting, because it is the only one that describes how to read *everything*
+   * you say rather than one thing you want done.
+   *
+   * Called at the completion of a turn, not when one is dispatched -- the mirror
+   * flow returns mid-way to collect the user's draft, and resetting there would
+   * abandon it.
+   */
+  const resetOneShotMode = useCallback(() => {
+    setQuestionMode((current) => (current === "answer" ? current : "answer"));
+  }, []);
+
+  /**
+   * Follow up on one generated question.
+   *
+   * Loads it into the composer in Answer mode, ready to send as-is or to edit
+   * into a narrower question. The text has to travel in the message because the
+   * cards live in `ui_payload`, which the model never sees -- "explain question
+   * 3" would leave it guessing which one.
+   */
+  const handleAskAboutQuestion = useCallback((question: string) => {
+    setQuestionMode("answer");
+    setViewingHistory(false);
+    setQuestion(question);
+    toast({
+      title: "Added to the composer",
+      description: "Send it as-is, or edit it to ask something more specific.",
+    });
+  }, [toast]);
+
   // Live Practice screen-share lock: blocks switching to other tabs/screens while sharing.
   useEffect(() => {
     const onLock = (event: Event) => {
@@ -2174,6 +2209,8 @@ export const InterviewAssistant = () => {
 
       // Clear the mirror answer so next question will prompt again
       setMirrorUserAnswer("");
+      // The critique is delivered: the next message is an ordinary question.
+      resetOneShotMode();
     } catch (err: any) {
       console.error("[mirror] submit error", err);
       try {
@@ -2429,6 +2466,10 @@ export const InterviewAssistant = () => {
           setIsGenerating(false);
           return;
         }
+
+        // The turn is done, so a one-shot mode has served its purpose. Below the
+        // early return for `collect_mirror_answer`, which is not a finished turn.
+        resetOneShotMode();
 
         // The backend thinks this user is circling the same thing. It caps
         // itself at one offer per session, so no throttling is needed here.
@@ -3944,7 +3985,11 @@ export const InterviewAssistant = () => {
                                 if (!cards) return null;
                                 return (
                                   <div className="pl-2 pr-3 md:px-6 pt-1 pb-2">
-                                    <QuestionCards query={cards.query} questions={cards.questions} />
+                                    <QuestionCards
+                                      query={cards.query}
+                                      questions={cards.questions}
+                                      onAskAbout={handleAskAboutQuestion}
+                                    />
                                   </div>
                                 );
                               })()}
