@@ -16,7 +16,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Check, ChevronDown, Copy, MessageSquarePlus } from "lucide-react";
+import { BookOpen, Check, ChevronDown, Copy, MessageSquarePlus, Mic } from "lucide-react";
 import type { EnhancedQuestion } from "@/lib/api";
 import { formatAnswerMarkdown } from "@/lib/answerMarkdown";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +34,14 @@ interface QuestionCardsProps {
    * nothing to resolve; this hands over the question itself.
    */
   onAskAbout?: (question: string) => void;
+  /**
+   * Practise one card aloud in Practice Mode.
+   *
+   * Not offered on coding cards: practice scores code by executing it, which
+   * needs a Judge0 key the server does not have, so a coding drill would return
+   * a guaranteed zero.
+   */
+  onPractise?: (question: EnhancedQuestion) => void;
 }
 
 const SECTION_LABEL =
@@ -44,6 +52,7 @@ export const QuestionCards = ({
   questions,
   className = "",
   onAskAbout,
+  onPractise,
 }: QuestionCardsProps) => {
   // One open at a time: a set of twenty long answers is unreadable otherwise.
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -139,6 +148,17 @@ export const QuestionCards = ({
                     <div className="flex items-center justify-between mb-2">
                       <h4 className={SECTION_LABEL}>Model Answer</h4>
                       <div className="flex items-center gap-1">
+                        {onPractise && !(q as any).is_coding_question ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 gap-1.5 text-xs text-primary hover:bg-primary/10"
+                            onClick={() => onPractise(q)}
+                          >
+                            <Mic className="h-3.5 w-3.5" />
+                            Practise this
+                          </Button>
+                        ) : null}
                         {onAskAbout ? (
                           <Button
                             variant="ghost"

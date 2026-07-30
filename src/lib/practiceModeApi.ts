@@ -1900,6 +1900,46 @@ export async function startRoundInterview(
 }
 
 /**
+ * A generated question card, handed to Practice Mode to be practised.
+ *
+ * Mirrors what the copilot returns under `ui_action: "render_question_cards"`,
+ * so a card passes through without reshaping.
+ */
+export interface DrillQuestionPayload {
+  question: string;
+  answer?: string | null;
+  topic?: string | null;
+  difficulty?: 'easy' | 'medium' | 'hard' | null;
+  key_concepts?: string[];
+}
+
+/**
+ * Start a one-question unproctored drill.
+ *
+ * Deliberately not under `/api/practice/interview/`: the backend buckets that
+ * prefix into the demo `practice_rounds` quota, which allows a guest exactly one,
+ * so a drill placed there would burn the graded round they came to do.
+ *
+ * No screen share or camera — a drill captures neither.
+ */
+export async function startDrill(
+  question: DrillQuestionPayload,
+  timeLimit = 180
+): Promise<StartInterviewResponse> {
+  console.log('🎯 [API] Starting drill:', question.question.slice(0, 80));
+
+  const data = await strataxFetchJson<StartInterviewResponse>(
+    `${API_BASE_URL}/api/practice/drill/start`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ question, time_limit: timeLimit }),
+    }
+  );
+  console.log('✅ [API] Drill started:', data.session_id);
+  return data;
+}
+
+/**
  * End a practice interview session early.
  * Returns evaluations for answered questions and skipped questions list.
  */

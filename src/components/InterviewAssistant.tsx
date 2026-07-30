@@ -228,6 +228,47 @@ export const InterviewAssistant = () => {
     });
   }, [toast]);
 
+  /**
+   * Send one generated question to Practice Mode to be answered aloud.
+   *
+   * Handed over through localStorage rather than a prop, matching the existing
+   * `practice_next_session_plan` route from the Progress page. Inactive tabs
+   * unmount, so PracticeMode remounts fresh on every visit — a prop would need
+   * the parent to clear it at exactly the right moment and races either way,
+   * whereas a key the child consumes and deletes has no such window.
+   */
+  const handlePractiseQuestion = useCallback((card: any) => {
+    if (practiceScreenShareLock) {
+      toast({
+        title: "Finish Live Practice first",
+        description: "A practice session is already running.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      window.localStorage.setItem(
+        "practice_drill_request",
+        JSON.stringify({
+          question: card?.question,
+          answer: card?.answer ?? null,
+          topic: card?.topic ?? null,
+          difficulty: card?.difficulty ?? null,
+          key_concepts: Array.isArray(card?.key_concepts) ? card.key_concepts : [],
+          ts: Date.now(),
+        })
+      );
+    } catch {
+      toast({
+        title: "Couldn't open practice",
+        description: "Your browser blocked local storage.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setActiveMainTab("practice");
+  }, [practiceScreenShareLock, toast]);
+
   // Live Practice screen-share lock: blocks switching to other tabs/screens while sharing.
   useEffect(() => {
     const onLock = (event: Event) => {
@@ -3989,6 +4030,7 @@ export const InterviewAssistant = () => {
                                       query={cards.query}
                                       questions={cards.questions}
                                       onAskAbout={handleAskAboutQuestion}
+                                      onPractise={handlePractiseQuestion}
                                     />
                                   </div>
                                 );

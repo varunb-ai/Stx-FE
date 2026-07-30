@@ -24,6 +24,7 @@ import {
   playQuestionAudio,
   checkPracticeModeStatus,
   quickStartInterview,
+  startDrill,
   getSessionEvaluation,
   getPracticeInsights,
   type PracticeInsightsResponse,
@@ -879,9 +880,25 @@ export const PracticeMode = () => {
   const [audioLevel, setAudioLevel] = useState<number>(0);
   const [pendingQuestionAudio, setPendingQuestionAudio] = useState<PendingQuestionAudio | null>(null);
 
+  /**
+   * This session is a single-question drill from a generated card, not a graded
+   * round. Drives the badge and the mic notice, and suppresses the confidence
+   * prompt — a drill is excluded from the Progress numbers, so asking the user to
+   * rate their confidence on it would feed a benchmark it never reaches.
+   */
+  const [isDrillSession, setIsDrillSession] = useState(false);
+  // The start POST is async, so without this a remount mid-flight could fire a
+  // second one and strand the first session.
+  const drillStartInFlightRef = useRef(false);
+
   // If a next-session plan exists (set from Progress screen), jump straight into round selection.
   useEffect(() => {
     try {
+      // A drill request wins: it is a direct action the user just took, whereas a
+      // stored plan is a standing suggestion. Without this check the plan would
+      // flash round-selection on screen before the drill replaced it.
+      if (window.localStorage.getItem('practice_drill_request')) return;
+
       const raw = window.localStorage.getItem('practice_next_session_plan');
       if (raw) {
         // Consume the next-session plan once and remove it so subsequent
@@ -891,6 +908,84 @@ export const PracticeMode = () => {
         setPhase('round-selection');
       }
     } catch { }
+  }, []);
+
+  /**
+   * Practise a single generated question, handed over from the copilot.
+   *
+   * Read at mount and deleted immediately: inactive tabs unmount, so this
+   * component remounts on every visit to Practice, and a request left in place
+   * would restart the same drill each time.
+   *
+   * Deliberately skips `ensureLiveMediaReady` — that throws without screen share
+   * and camera, and a drill captures neither. The mic still arms itself, because
+   * the backend returns the question as VOICE.
+   */
+  useEffect(() => {
+    let raw: string | null = null;
+    try {
+      raw = window.localStorage.getItem('practice_drill_request');
+      if (raw) window.localStorage.removeItem('practice_drill_request');
+    } catch {
+      return;
+    }
+    if (!raw) return;
+    if (drillStartInFlightRef.current) return;
+
+    let card: any;
+    try {
+      card = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    if (!card?.question) return;
+
+    drillStartInFlightRef.current = true;
+    setIsDrillSession(true);
+    setPhase('processing');
+
+    (async () => {
+      try {
+        const res = await startDrill({
+          question: card.question,
+          answer: card.answer ?? null,
+          topic: card.topic ?? null,
+          difficulty: card.difficulty ?? null,
+          key_concepts: Array.isArray(card.key_concepts) ? card.key_concepts : [],
+        });
+
+        // Seeded from the response, never the local card: the backend sets the
+        // 1-based id, the time limit and question_type, and all three feed the
+        // question render key. A missing time_limit renders the countdown NaN.
+        const question = res.first_question as any;
+
+        resetQuestionPresentationState();
+        setQuestionEvaluations([]);
+        setStrategyPreview(null);
+        setTransitionStrategy(null);
+        setPendingAcknowledgmentQuestionId(null);
+        setFeedbackRequiresAcknowledgment(false);
+        setSessionId(res.session_id);
+        setCurrentRoundConfig(null);
+        setCurrentQuestion(question);
+        setCurrentQuestionNumber(1);
+        setCompletionPending(false);
+        setTotalQuestions(1);
+        setTimeRemaining(question?.time_limit ?? 180);
+        setPhase('question');
+      } catch (err: any) {
+        console.error('[Drill] start failed', err);
+        setIsDrillSession(false);
+        setPhase('welcome');
+        toast({
+          title: "Couldn't start the drill",
+          description: String(err?.message || 'Please try again.'),
+          variant: 'destructive',
+        });
+      } finally {
+        drillStartInFlightRef.current = false;
+      }
+    })();
   }, []);
 
   // Auto-hide round-selection header while scrolling down; reveal on scroll up.
@@ -4692,9 +4787,31 @@ export const PracticeMode = () => {
         {renderFaceWarningOverlay()}
         {renderProctoringStatusPanel()}
 
+        {/* A drill skips the Live Practice consent card, because that card is
+            about screen and camera capture which a drill does not perform. It
+            does record the microphone, so say so plainly rather than not at all. */}
+        {isDrillSession && (
+          <div className="flex items-start gap-2 rounded-xl border border-border/30 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+            <Mic className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/70" />
+            <span>
+              Your microphone records this answer so it can be scored. No screen or
+              camera capture.
+            </span>
+          </div>
+        )}
+
         {/* ── Header bar ── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
+            {isDrillSession && (
+              <Badge
+                variant="outline"
+                className="text-[11px] sm:text-sm px-3 py-1.5 rounded-xl bg-primary/10 border-primary/30 text-primary"
+              >
+                <Mic className="w-3 h-3 mr-1.5" />
+                Practice drill
+              </Badge>
+            )}
             {currentRoundConfig && (
               <Badge variant="outline" className="text-[11px] sm:text-sm px-3 py-1.5 rounded-xl bg-muted/20 border-border/30 backdrop-blur-sm">
                 <Target className="w-3 h-3 mr-1.5" />
@@ -6016,6 +6133,14 @@ ${'─'.repeat(60)}
                       <p className="text-muted-foreground text-base md:text-lg">
                         Completed <span className="font-bold text-primary">{currentRoundConfig.name}</span> — {totalQuestions} questions
                       </p>
+                    ) : isDrillSession ? (
+                      <p className="text-muted-foreground text-base md:text-lg">
+                        Drill complete — one question practised.
+                        <span className="block text-sm mt-1 text-muted-foreground/70">
+                          Drills are scored but kept out of your Progress averages,
+                          which track full interview rounds.
+                        </span>
+                      </p>
                     ) : (
                       <p className="text-muted-foreground text-base md:text-lg">
                         Great job completing all <span className="font-bold text-primary">{totalQuestions}</span> questions!
@@ -6381,8 +6506,11 @@ ${'─'.repeat(60)}
                   </CardContent>
                 </Card>
 
-                {/* Post-session confidence prompt */}
-                {sessionId && sessionConfidenceStatus !== 'disabled' ? (
+                {/* Post-session confidence prompt.
+                    Not shown for drills: the rating feeds a cross-user benchmark
+                    keyed on session metrics that a drill deliberately does not
+                    write, so it would be collected and never used. */}
+                {sessionId && !isDrillSession && sessionConfidenceStatus !== 'disabled' ? (
                   <Card className="border border-border/30 rounded-2xl overflow-hidden">
                     <div className="h-0.5 bg-gradient-to-r from-primary via-purple-400 to-primary" />
                     <CardHeader>
