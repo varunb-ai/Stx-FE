@@ -412,7 +412,16 @@ export async function strataxFetch(
     }
 
     // Non-session 401/403 (e.g. missing/invalid LLM API key): prompt BYOK settings.
-    if ((res.status === 401 || res.status === 403) && typeof window !== 'undefined' && !shouldLogoutFor401(url, body)) {
+    // Not every 403 is about a key though. A session that belongs to someone
+    // else is not something an API key fixes, and opening the key dialog there
+    // tells the user to do something that cannot help.
+    const isForbiddenResource = (body?.detail ?? body)?.error === 'SESSION_FORBIDDEN';
+    if (
+      (res.status === 401 || res.status === 403) &&
+      typeof window !== 'undefined' &&
+      !isForbiddenResource &&
+      !shouldLogoutFor401(url, body)
+    ) {
       dispatchByokRequiredEvent({ status: res.status, url, detail: body?.detail ?? body });
     }
 

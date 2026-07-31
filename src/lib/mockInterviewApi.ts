@@ -397,7 +397,12 @@ export async function apiGetMockInterviewHistory(
   console.log("[MockInterviewAPI] URL:", `${BASE_URL}/api/mock-interview/history/${encodeURIComponent(userId)}`);
 
   const res = await strataxFetch(
-    `${BASE_URL}/api/mock-interview/history/${encodeURIComponent(userId)}?include_evaluations=true`,
+    // `include_details`, not `include_evaluations` -- the API has no parameter
+    // by that name, so it was silently ignored and every session came back
+    // without its evaluations. MockInterviewMode treats a session with no
+    // evaluations as unopenable, so this one word made the whole history
+    // sidebar dead: every past interview answered "No Questions Found".
+    `${BASE_URL}/api/mock-interview/history/${encodeURIComponent(userId)}?include_details=true`,
     {
       method: "GET",
       headers: buildHeaders(),
