@@ -1,15 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { InterviewCodeEditor } from './InterviewCodeEditor';
@@ -100,8 +92,44 @@ import {
   Rocket,
   Timer,
   Radio,
+  ShieldAlert,
+  OctagonAlert,
+  TriangleAlert,
+  Cpu,
+  ListChecks,
+  ChevronRight,
+  Bot,
+  Waves,
+  Hourglass,
+  CircleX,
+  SquareCode,
+  Command,
+  Fingerprint,
+  Briefcase,
+  Compass,
 } from 'lucide-react';
 import RoundSelection from './RoundSelection';
+import {
+  Panel,
+  PanelHead,
+  PanelBody,
+  Seam,
+  Eyebrow,
+  Chip,
+  StatusDot,
+  PxButton,
+  Grid,
+  StatTile,
+  Meter,
+  MeterRow,
+  Ticks,
+  Dial,
+  Rows,
+  Row,
+  FindingList,
+  EmptyState,
+} from './practice/PracticeKit';
+import { toneColor, toneVar, cx, type PxTone } from './practice/tones';
 import ResumeUpload from './ResumeUpload';
 import { loadSavedResumeContext } from '@/lib/resumeContextStorage';
 import type { ResumeContext } from '../types/resume';
@@ -557,24 +585,25 @@ const getStrategyDepthLabel = (depth?: string | null): string | null => {
   return formatStrategyTokenLabel(depth);
 };
 
-const getStrategyToneClasses = (style?: string | null) => {
+/** The coach's stance, expressed as one design-system tone rather than a set of
+ *  ad-hoc colour classes. */
+const getStrategyTone = (style?: string | null): PxTone => {
   switch ((style ?? '').toLowerCase()) {
     case 'supportive':
-      return {
-        card: 'border-emerald-500/30 bg-emerald-500/5',
-        badge: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-      };
+      return 'positive';
     case 'challenging':
-      return {
-        card: 'border-amber-500/30 bg-amber-500/5',
-        badge: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-      };
+      return 'caution';
     default:
-      return {
-        card: 'border-primary/20 bg-primary/5',
-        badge: 'border-primary/20 bg-primary/10 text-primary',
-      };
+      return 'accent';
   }
+};
+
+/** Scores map to a tone on the same scale the report cards use. */
+const getScoreTone = (value: number): PxTone => {
+  if (value >= 85) return 'positive';
+  if (value >= 70) return 'accent';
+  if (value >= 50) return 'caution';
+  return 'critical';
 };
 
 const getStrategyGuardrailText = (guardrail: unknown): string | null => {
@@ -744,16 +773,15 @@ export const PracticeMode = () => {
   const [showRoundSelectionHeader, setShowRoundSelectionHeader] = useState(true);
 
   const viewProgressButton = (className?: string) => (
-    <Button
-      type="button"
+    <PxButton
       variant="ghost"
       size="sm"
       onClick={() => navigate('/progress', { state: { refreshToken: Date.now() } })}
       className={className}
     >
-      <BarChart3 className="w-4 h-4 mr-2" />
-      View Progress
-    </Button>
+      <BarChart3 className="w-3.5 h-3.5" />
+      Progress
+    </PxButton>
   );
 
   const [guestGateBanner, setGuestGateBanner] = useState<GuestGateBanner>(null);
@@ -803,60 +831,72 @@ export const PracticeMode = () => {
     const remaining = guestGateBanner.kind === 'limit' ? guestGateBanner.demo_remaining : undefined;
 
     return (
-      <Card className="border-2 border-amber-500/30 bg-amber-500/5">
-        <CardContent className="pt-5">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold">
-                {guestGateBanner.kind === 'limit'
-                  ? 'Guest usage limit reached'
-                  : 'Guest mode temporarily unavailable'}
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {guestGateBanner.message?.trim()
-                  ? guestGateBanner.message
-                  : guestGateBanner.kind === 'limit'
-                    ? 'You’ve used all guest credits for now. Sign in to continue, or connect your own API keys for unlimited usage.'
-                    : 'Guest capacity is currently full right now. Please try again later, or sign in and use your own API keys.'}
-              </p>
+      <Panel tone="caution" className="px-rise overflow-hidden">
+        <Seam tone="caution" />
+        <PanelBody className="flex items-start gap-3.5">
+          <div
+            className="shrink-0 grid place-items-center w-9 h-9 rounded-[var(--px-r-sm)] border"
+            style={{
+              color: `hsl(${toneVar('caution')})`,
+              borderColor: `hsl(${toneVar('caution')} / 0.3)`,
+              background: `hsl(${toneVar('caution')} / 0.1)`,
+            }}
+          >
+            <AlertCircle className="w-4 h-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <Eyebrow tone="caution">Access</Eyebrow>
+            <div className="px-subtitle mt-1.5">
+              {guestGateBanner.kind === 'limit'
+                ? 'Guest usage limit reached'
+                : 'Guest mode temporarily unavailable'}
+            </div>
+            <p className="px-body mt-1.5">
+              {guestGateBanner.message?.trim()
+                ? guestGateBanner.message
+                : guestGateBanner.kind === 'limit'
+                  ? 'You’ve used all guest credits for now. Sign in to continue, or connect your own API keys for unlimited usage.'
+                  : 'Guest capacity is currently full right now. Please try again later, or sign in and use your own API keys.'}
+            </p>
 
-              {guestGateBanner.kind === 'limit' && remaining && typeof remaining === 'object' && (
-                <div className="mt-3 rounded-xl border border-border/50 bg-muted/10 p-3 text-sm">
-                  <div className="font-medium mb-2">Guest credits remaining</div>
-                  <div className="space-y-1">
-                    {Object.entries(remaining)
-                      .filter(([_, v]) => typeof v === 'number')
-                      .map(([k, v]) => (
-                        <div key={k} className="flex items-center justify-between">
-                          <span className="text-muted-foreground">{k}</span>
-                          <span className="font-medium">{String(v)}</span>
-                        </div>
-                      ))}
-                  </div>
+            {guestGateBanner.kind === 'limit' && remaining && typeof remaining === 'object' && (
+              <div className="px-panel px-panel--inset mt-3 px-3 py-2.5">
+                <Eyebrow>Credits remaining</Eyebrow>
+                <div className="mt-2">
+                  {Object.entries(remaining)
+                    .filter(([_, v]) => typeof v === 'number')
+                    .map(([k, v]) => (
+                      <div key={k} className="px-row py-1.5">
+                        <span className="flex-1 px-body px-body--tight">{k}</span>
+                        <span className="px-num text-[0.8125rem] font-semibold px-ink">{String(v)}</span>
+                      </div>
+                    ))}
                 </div>
-              )}
-
-              <div className="mt-3 flex flex-wrap gap-2 justify-end">
-                <Button variant="outline" onClick={() => setGuestGateBanner(null)}>
-                  Dismiss
-                </Button>
-                <Button
-                  onClick={() => {
-                    try {
-                      window.location.assign('/login?mode=signin');
-                    } catch {
-                      window.location.href = '/login?mode=signin';
-                    }
-                  }}
-                >
-                  Sign in
-                </Button>
               </div>
+            )}
+
+            <div className="mt-3.5 flex flex-wrap gap-2 justify-end">
+              <PxButton variant="ghost" size="sm" onClick={() => setGuestGateBanner(null)}>
+                Dismiss
+              </PxButton>
+              <PxButton
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  try {
+                    window.location.assign('/login?mode=signin');
+                  } catch {
+                    window.location.href = '/login?mode=signin';
+                  }
+                }}
+              >
+                Sign in
+                <ArrowRight className="w-3.5 h-3.5" />
+              </PxButton>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </PanelBody>
+      </Panel>
     );
   };
 
@@ -1548,29 +1588,36 @@ export const PracticeMode = () => {
     const isTerminated = proctoringSnapshot?.action === 'terminate' || proctoringSnapshot?.status === 'terminated';
     const isWarning = isWarningProctoringSnapshot(proctoringSnapshot);
 
+    const feedTone: PxTone = isTerminated ? 'critical' : isWarning ? 'caution' : 'accent';
+
     return (
-      <div className="fixed top-4 left-4 z-[90]">
-        <div className={`w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border bg-background/70 backdrop-blur shadow-lg ${
-          isTerminated
-            ? 'border-red-500/80'
-            : isWarning
-              ? 'border-amber-500/60'
-              : 'border-border/60'
-        }`}>
-          <div className="px-3 py-2 text-[11px] text-muted-foreground flex items-center justify-between">
-            <span>Camera</span>
+      <div className="px fixed top-4 left-4 z-[90] px-fade">
+        <Panel
+          brackets
+          tone={feedTone === 'accent' ? undefined : feedTone}
+          className="w-[min(15rem,calc(100vw-2rem))] overflow-hidden backdrop-blur-xl"
+        >
+          <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[hsl(var(--px-line-soft))]">
+            <Eyebrow tone={feedTone} icon={Camera}>
+              Feed
+            </Eyebrow>
             <div className="flex items-center gap-2">
               {(seriousViolationCount > 0 || proctoringSnapshot?.remaining_serious_violations !== undefined) && (
-                <span className={`text-[10px] font-medium ${
-                  isTerminated ? 'text-red-400' : isWarning ? 'text-amber-500' : 'text-muted-foreground'
-                }`}>
-                  Strike {seriousViolationCount}/{seriousViolationLimit}
+                <span
+                  className="px-num text-[0.625rem] font-semibold"
+                  style={toneColor(isTerminated || isWarning ? feedTone : 'neutral')}
+                >
+                  {seriousViolationCount}/{seriousViolationLimit}
                 </span>
               )}
-              <span className="text-[10px]">{trackLive ? 'Live' : 'Starting…'}</span>
+              <span className="inline-flex items-center gap-1.5 px-num text-[0.625rem] px-ink-3">
+                <StatusDot tone={trackLive ? 'positive' : 'caution'} live={trackLive} />
+                {trackLive ? 'LIVE' : 'SYNC'}
+              </span>
             </div>
           </div>
-          <div className="relative w-64 h-64 bg-black">
+
+          <div className="relative aspect-square w-full bg-black">
             <video
               ref={facePreviewVideoRef}
               className="w-full h-full object-cover -scale-x-100"
@@ -1578,16 +1625,15 @@ export const PracticeMode = () => {
               muted
               playsInline
             />
+            {trackLive ? <div className="px-scan" aria-hidden /> : null}
 
             {!trackLive && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="px-3 py-2 rounded-md bg-black/50 text-white text-xs">
-                  Camera not streaming
-                </div>
+              <div className="absolute inset-0 grid place-items-center bg-black/55">
+                <span className="px-chip px-chip--caution px-chip--mono">NO SIGNAL</span>
               </div>
             )}
           </div>
-        </div>
+        </Panel>
       </div>
     );
   };
@@ -1601,111 +1647,103 @@ export const PracticeMode = () => {
     const seriousViolationLimit = getSeriousViolationLimit(proctoringSnapshot);
     const reasonItems = proctoringOverlay.reasonItems ?? [];
 
+    const tone: PxTone = isTerminal || isFinalWarning ? 'critical' : 'caution';
+    const OverlayIcon = isTerminal ? ShieldAlert : isFinalWarning ? OctagonAlert : TriangleAlert;
+
     if (proctoringOverlay.presentation === 'banner') {
       return (
-        <div className="fixed top-20 left-1/2 z-[200] w-[min(92vw,28rem)] -translate-x-1/2 animate-in fade-in slide-in-from-top-4 duration-200">
-          <div className="rounded-2xl border border-amber-500/70 bg-background/95 px-4 py-3 shadow-2xl backdrop-blur">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 text-xl">⚠️</div>
+        <div className="px fixed top-20 left-1/2 z-[200] w-[min(92vw,29rem)] -translate-x-1/2 px-rise">
+          <Panel tone={tone} className="overflow-hidden backdrop-blur-xl">
+            <Seam tone={tone} />
+            <PanelBody tight className="flex items-start gap-3">
+              <OverlayIcon className="w-4 h-4 mt-0.5 shrink-0" style={toneColor(tone)} />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-amber-500">{proctoringOverlay.title}</div>
-                <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{proctoringOverlay.description}</p>
+                <div className="px-subtitle" style={toneColor(tone)}>
+                  {proctoringOverlay.title}
+                </div>
+                <p className="px-body mt-1">{proctoringOverlay.description}</p>
                 {proctoringOverlay.supportingText && (
-                  <p className="mt-2 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                  <p className="px-note mt-1.5 font-medium" style={toneColor(tone)}>
                     {proctoringOverlay.supportingText}
                   </p>
                 )}
-                <p className="mt-2 text-[11px] font-mono text-amber-600 dark:text-amber-400">
-                  Strike {seriousViolationCount}/{seriousViolationLimit}
-                </p>
+                <div className="mt-2.5 flex items-center gap-2">
+                  <Chip tone={tone} mono>
+                    STRIKE {seriousViolationCount}/{seriousViolationLimit}
+                  </Chip>
+                </div>
               </div>
-            </div>
-          </div>
+            </PanelBody>
+          </Panel>
         </div>
       );
     }
 
     return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-        <div className={`mx-4 max-w-md w-full rounded-2xl border-2 p-6 shadow-2xl ${
-          isTerminal
-            ? 'border-red-500 bg-red-950/95'
-            : isFinalWarning
-              ? 'border-red-500/80 bg-background/95'
-            : 'border-amber-500 bg-background/95'
-        }`}>
-          <div className="flex justify-center mb-4">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-              isTerminal ? 'bg-red-500/20' : isFinalWarning ? 'bg-red-500/10' : 'bg-amber-500/20'
-            }`}>
-              <span className="text-4xl">{isTerminal ? '⛔' : isFinalWarning ? '🚨' : '⚠️'}</span>
+      <div className="px fixed inset-0 z-[200] grid place-items-center bg-black/65 backdrop-blur-md px-fade p-4">
+        <Panel variant="raised" tone={tone} brackets className="w-full max-w-md overflow-hidden px-rise">
+          <Seam tone={tone} />
+          <PanelBody className="text-center">
+            <div
+              className="mx-auto grid place-items-center w-14 h-14 rounded-full border"
+              style={{
+                color: `hsl(${toneVar(tone)})`,
+                borderColor: `hsl(${toneVar(tone)} / 0.4)`,
+                background: `hsl(${toneVar(tone)} / 0.12)`,
+              }}
+            >
+              <OverlayIcon className="w-6 h-6" />
             </div>
-          </div>
 
-          <h3 className={`text-xl font-bold text-center mb-2 ${
-            isTerminal ? 'text-red-400' : isFinalWarning ? 'text-red-500' : 'text-amber-500'
-          }`}>
-            {proctoringOverlay.title}
-          </h3>
+            <div className="mt-4">
+              <Eyebrow tone={tone} className="justify-center">
+                {isTerminal ? 'Session terminated' : isFinalWarning ? 'Final warning' : 'Integrity check'}
+              </Eyebrow>
+            </div>
+            <h3 className="px-title mt-2">{proctoringOverlay.title}</h3>
+            <p className="px-body mt-2">{proctoringOverlay.description}</p>
 
-          <p className={`text-sm text-center mb-4 leading-relaxed ${
-            isTerminal ? 'text-red-300/80' : isFinalWarning ? 'text-foreground' : 'text-muted-foreground'
-          }`}>
-            {proctoringOverlay.description}
-          </p>
+            {proctoringOverlay.supportingText && (
+              <p className="px-body mt-3 font-semibold" style={toneColor(tone)}>
+                {proctoringOverlay.supportingText}
+              </p>
+            )}
 
-          {proctoringOverlay.supportingText && (
-            <p className={`mb-4 text-center text-sm font-semibold ${
-              isTerminal ? 'text-red-300' : isFinalWarning ? 'text-red-500' : 'text-amber-600 dark:text-amber-400'
-            }`}>
-              {proctoringOverlay.supportingText}
-            </p>
-          )}
-
-          {reasonItems.length > 0 && (
-            <div className={`mb-4 rounded-xl border px-4 py-3 text-sm ${
-              isTerminal
-                ? 'border-red-500/30 bg-red-500/10 text-red-100'
-                : isFinalWarning
-                  ? 'border-red-500/20 bg-red-500/5 text-foreground'
-                  : 'border-amber-500/20 bg-amber-500/5 text-foreground'
-            }`}>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] opacity-80">Issue summary</p>
-              <div className="space-y-1.5">
-                {reasonItems.map((item) => (
-                  <div key={item} className="flex items-start gap-2">
-                    <span className="mt-0.5">•</span>
-                    <span>{item}</span>
-                  </div>
-                ))}
+            {reasonItems.length > 0 && (
+              <div className="px-panel px-panel--inset mt-4 px-3.5 py-3 text-left">
+                <Eyebrow tone={tone}>Issue summary</Eyebrow>
+                <div className="mt-1.5">
+                  <FindingList items={reasonItems} tone={tone} />
+                </div>
               </div>
+            )}
+
+            {/* Strike ledger — one cell per allowed serious violation. */}
+            <div className="mt-5 flex justify-center gap-1.5">
+              {Array.from({ length: Math.max(1, seriousViolationLimit) }).map((_, idx) => (
+                <span
+                  key={idx}
+                  className="h-1.5 w-7 rounded-full transition-colors"
+                  style={{
+                    background:
+                      idx < seriousViolationCount
+                        ? `hsl(${toneVar(tone)})`
+                        : `hsl(${toneVar('neutral')} / 0.22)`,
+                    boxShadow: idx < seriousViolationCount ? `0 0 10px 0 hsl(${toneVar(tone)} / 0.5)` : undefined,
+                  }}
+                />
+              ))}
             </div>
-          )}
 
-          <div className="flex justify-center gap-2 mb-4">
-            {Array.from({ length: seriousViolationLimit }).map((_, idx) => (
-              <div
-                key={idx}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  idx < seriousViolationCount
-                    ? isTerminal || isFinalWarning ? 'bg-red-500' : 'bg-amber-500'
-                    : 'bg-muted-foreground/20'
-                }`}
-              />
-            ))}
-          </div>
-
-          <p className={`text-xs text-center font-mono ${
-            isTerminal ? 'text-red-400' : isFinalWarning ? 'text-red-500' : 'text-amber-600 dark:text-amber-400'
-          }`}>
-            {isTerminal
-              ? `Strike ${seriousViolationCount}/${seriousViolationLimit} — Session ended`
-              : isFinalWarning
-                ? `Strike ${seriousViolationCount}/${seriousViolationLimit} — One more serious violation will end the session`
-                : `Strike ${seriousViolationCount}/${seriousViolationLimit} — ${Math.max(seriousViolationLimit - seriousViolationCount, 0)} remaining before termination`
-            }
-          </p>
-        </div>
+            <p className="px-num text-[0.6875rem] mt-3" style={toneColor(tone)}>
+              {isTerminal
+                ? `STRIKE ${seriousViolationCount}/${seriousViolationLimit} — SESSION ENDED`
+                : isFinalWarning
+                  ? `STRIKE ${seriousViolationCount}/${seriousViolationLimit} — ONE MORE ENDS THE SESSION`
+                  : `STRIKE ${seriousViolationCount}/${seriousViolationLimit} — ${Math.max(seriousViolationLimit - seriousViolationCount, 0)} REMAINING`}
+            </p>
+          </PanelBody>
+        </Panel>
       </div>
     );
   };
@@ -1719,7 +1757,14 @@ export const PracticeMode = () => {
     compact?: boolean;
     className?: string;
   }) => (
-    <div className={`rounded-xl border border-primary/20 bg-primary/5 ${compact ? 'p-3' : 'p-3.5'} ${className}`.trim()}>
+    <div
+      className={cx('px-panel px-panel--inset relative overflow-hidden', compact ? 'p-3' : 'p-3.5', className)}
+      style={{
+        borderColor: livePracticeConsentChecked
+          ? `hsl(${toneVar('accent')} / 0.34)`
+          : undefined,
+      }}
+    >
       <div className="flex items-start gap-3">
         <Checkbox
           id={id}
@@ -1728,13 +1773,19 @@ export const PracticeMode = () => {
           className="mt-0.5"
         />
         <div className="min-w-0">
-          <Label
+          <Eyebrow tone={livePracticeConsentChecked ? 'accent' : 'neutral'} icon={Shield}>
+            Live Practice consent
+          </Eyebrow>
+          <label
             htmlFor={id}
-            className={`${compact ? 'text-[11px]' : 'text-sm'} cursor-pointer font-semibold leading-snug text-foreground`}
+            className={cx(
+              'block mt-1.5 cursor-pointer font-semibold leading-snug px-ink',
+              compact ? 'text-[0.75rem]' : 'text-[0.8125rem]',
+            )}
           >
             I understand that Live Practice uses camera, screen, and recording to simulate real interview conditions.
-          </Label>
-          <div className={`${compact ? 'mt-1.5 space-y-1 text-[10px]' : 'mt-2 space-y-1.5 text-xs'} text-muted-foreground`}>
+          </label>
+          <div className={cx('px-note', compact ? 'mt-1.5 space-y-0.5' : 'mt-2 space-y-1')}>
             <p>Camera and full-screen monitoring stay active while the session runs.</p>
             <p>Recordings may be uploaded for interview evaluation and review.</p>
             <p>Camera-proctored mode adds automated integrity checks and warning enforcement.</p>
@@ -1766,29 +1817,13 @@ export const PracticeMode = () => {
     const escalationText = getProctoringEscalationText(proctoringSnapshot);
     const reasonItems = getProctoringReasonItems(proctoringSnapshot);
 
-    const toneClass = isTerminated
-      ? 'border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-300'
-      : isFinalWarning
-        ? 'border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300'
-      : heartbeatInterrupted || proctoringStatus === 'error'
-        ? 'border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-        : isWarning
-          ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-          : proctoringStatus === 'starting'
-            ? 'border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300'
-            : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
-
-    const dotClass = isTerminated
-      ? 'bg-red-500'
-      : isFinalWarning
-        ? 'bg-red-500'
-      : heartbeatInterrupted || proctoringStatus === 'error'
-        ? 'bg-amber-500'
-        : isWarning
-          ? 'bg-amber-500'
-          : proctoringStatus === 'starting'
-            ? 'bg-sky-500'
-            : 'bg-emerald-500';
+    const tone: PxTone = isTerminated || isFinalWarning
+      ? 'critical'
+      : heartbeatInterrupted || proctoringStatus === 'error' || isWarning
+        ? 'caution'
+        : proctoringStatus === 'starting'
+          ? 'accent'
+          : 'positive';
 
     const statusLabel = isTerminated
       ? 'Session terminated'
@@ -1819,7 +1854,7 @@ export const PracticeMode = () => {
 
     return (
       <div
-        className="fixed bottom-3 right-3 z-[90] sm:right-4 sm:top-4 sm:bottom-auto"
+        className="px fixed bottom-3 right-3 z-[90] sm:right-4 sm:top-4 sm:bottom-auto"
         onMouseEnter={() => setIsProctoringBadgeHovered(true)}
         onMouseLeave={() => setIsProctoringBadgeHovered(false)}
       >
@@ -1827,74 +1862,86 @@ export const PracticeMode = () => {
           type="button"
           onClick={() => setIsProctoringBadgePinned((current) => !current)}
           aria-expanded={isExpanded}
-          className={`ml-auto flex items-center gap-2 rounded-full border px-2.5 py-2 text-[11px] font-semibold shadow-lg backdrop-blur transition-all sm:px-3 sm:text-xs ${toneClass}`}
+          className="px-focusable ml-auto flex items-center gap-2 rounded-full border px-3 py-2 text-[0.6875rem] font-semibold backdrop-blur-xl transition-all sm:text-xs"
+          style={{
+            color: `hsl(${toneVar(tone)})`,
+            borderColor: `hsl(${toneVar(tone)} / 0.34)`,
+            background: `hsl(${toneVar(tone)} / 0.1)`,
+            boxShadow: `0 14px 34px -24px hsl(${toneVar(tone)} / 0.9)`,
+          }}
         >
-          <span className={`h-2.5 w-2.5 rounded-full ${dotClass} ${!isTerminated ? 'animate-pulse' : ''}`} />
-          <Shield className="h-4 w-4" />
+          <StatusDot tone={tone} live={!isTerminated} />
+          <Shield className="h-3.5 w-3.5" />
           <span>{statusLabel}</span>
-          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          <ChevronDown className={cx('h-3.5 w-3.5 transition-transform', isExpanded && 'rotate-180')} />
         </button>
 
         {isExpanded && (
-          <div className="mt-2 w-[min(88vw,20rem)] rounded-2xl border border-border/60 bg-background/95 p-3 shadow-2xl backdrop-blur sm:w-[min(92vw,20rem)]">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Live integrity</p>
-                <p className="mt-1 text-sm font-semibold text-foreground">{statusLabel}</p>
-              </div>
-              <Badge variant="outline" className={toneClass}>
-                {seriousViolationCount}/{seriousViolationLimit} serious
-              </Badge>
-            </div>
-
-            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{detailText}</p>
-
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-              <div className="rounded-xl bg-muted/50 px-3 py-2">
-                <p className="text-muted-foreground">Serious strikes</p>
-                <p className="mt-1 font-semibold text-foreground">{seriousViolationCount}/{seriousViolationLimit}</p>
-              </div>
-              <div className="rounded-xl bg-muted/50 px-3 py-2">
-                <p className="text-muted-foreground">All violations</p>
-                <p className="mt-1 font-semibold text-foreground">{totalViolationCount}/{totalViolationLimit}</p>
-              </div>
-            </div>
-
-            {(isFinalWarning || typeof remainingSerious === 'number') && !isTerminated && (
-              <p className={`mt-3 text-[11px] font-medium ${
-                isFinalWarning ? 'text-red-500' : 'text-amber-600 dark:text-amber-400'
-              }`}>
-                {isFinalWarning
-                  ? escalationText
-                  : remainingSerious > 0
-                    ? `${remainingSerious} serious warning${remainingSerious === 1 ? '' : 's'} remaining before termination.`
-                    : 'The next serious violation may end the session.'}
-              </p>
-            )}
-
-            {latestLabel && (
-              <div className="mt-3 rounded-xl border border-border/50 bg-muted/30 px-3 py-2">
-                <p className="text-[11px] font-semibold text-foreground">Latest event: {latestLabel}</p>
-                {latestDescription && (
-                  <p className="mt-1 text-[11px] text-muted-foreground">{latestDescription}</p>
-                )}
-              </div>
-            )}
-
-            {(isTerminated || isFinalWarning) && reasonItems.length > 0 && (
-              <div className="mt-3 rounded-xl border border-border/50 bg-muted/20 px-3 py-2 text-[11px]">
-                <p className="font-semibold text-foreground">Why this happened</p>
-                <div className="mt-2 space-y-1 text-muted-foreground">
-                  {reasonItems.map((item) => (
-                    <div key={item} className="flex items-start gap-2">
-                      <span className="mt-0.5">•</span>
-                      <span>{item}</span>
-                    </div>
-                  ))}
+          <Panel
+            variant="raised"
+            tone={tone === 'positive' ? undefined : tone}
+            className="mt-2 w-[min(88vw,21rem)] overflow-hidden backdrop-blur-xl px-rise"
+          >
+            <Seam tone={tone} />
+            <PanelBody tight>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <Eyebrow tone={tone} icon={Fingerprint}>
+                    Live integrity
+                  </Eyebrow>
+                  <p className="px-subtitle mt-1.5">{statusLabel}</p>
                 </div>
+                <Chip tone={tone} mono>
+                  {seriousViolationCount}/{seriousViolationLimit}
+                </Chip>
               </div>
-            )}
-          </div>
+
+              <p className="px-note mt-2">{detailText}</p>
+
+              <Grid cols={2} className="mt-3">
+                <StatTile
+                  label="Serious"
+                  value={`${seriousViolationCount}/${seriousViolationLimit}`}
+                  tone={seriousViolationCount > 0 ? 'critical' : 'positive'}
+                />
+                <StatTile
+                  label="All events"
+                  value={`${totalViolationCount}/${totalViolationLimit}`}
+                  tone={totalViolationCount > 0 ? 'caution' : 'positive'}
+                />
+              </Grid>
+
+              {(isFinalWarning || typeof remainingSerious === 'number') && !isTerminated && (
+                <p
+                  className="px-note mt-3 font-medium"
+                  style={toneColor(isFinalWarning ? 'critical' : 'caution')}
+                >
+                  {isFinalWarning
+                    ? escalationText
+                    : remainingSerious > 0
+                      ? `${remainingSerious} serious warning${remainingSerious === 1 ? '' : 's'} remaining before termination.`
+                      : 'The next serious violation may end the session.'}
+                </p>
+              )}
+
+              {latestLabel && (
+                <div className="px-panel px-panel--inset mt-3 px-3 py-2">
+                  <Eyebrow>Latest event</Eyebrow>
+                  <p className="px-note mt-1 font-semibold px-ink">{latestLabel}</p>
+                  {latestDescription && <p className="px-note mt-0.5">{latestDescription}</p>}
+                </div>
+              )}
+
+              {(isTerminated || isFinalWarning) && reasonItems.length > 0 && (
+                <div className="px-panel px-panel--inset mt-3 px-3 py-2">
+                  <Eyebrow tone={tone}>Why this happened</Eyebrow>
+                  <div className="mt-1">
+                    <FindingList items={reasonItems} tone={tone} />
+                  </div>
+                </div>
+              )}
+            </PanelBody>
+          </Panel>
         )}
       </div>
     );
@@ -2447,38 +2494,47 @@ export const PracticeMode = () => {
       return 'Based on your recent practice sessions.';
     })();
 
+    const readout: Array<{ label: string; state: string }> = [
+      { label: 'Correctness', state: correctnessLabel },
+      { label: 'Confidence', state: confidenceLabel },
+      { label: 'Delivery clarity', state: deliveryLabel },
+    ];
+
     return (
-      <div className="p-3 bg-muted/30 rounded-2xl border border-border/60">
-        <div className="flex items-center justify-between gap-3">
+      <Panel className="overflow-hidden px-rise" style={{ ['--px-delay' as string]: '80ms' }}>
+        <Seam tone="neural" />
+        <PanelHead
+          eyebrow="Coach readout"
+          icon={Brain}
+          tone="neural"
+          title="Your focus for the next session"
+          description={basedOnLine}
+          actions={practiceInsightsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin px-ink-3" /> : undefined}
+        />
+        <PanelBody className="space-y-4">
+          {focus.length > 0 && <FindingList items={focus} tone="neural" />}
+
           <div>
-            <div className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">Your focus for next session</div>
-            <div className="text-[10px] text-muted-foreground mt-1">{basedOnLine}</div>
+            <Eyebrow>Recent performance</Eyebrow>
+            <Grid cols={1} sm={3} className="mt-2">
+              {readout.map((item) => {
+                const needsWork = item.state === 'needs work';
+                return (
+                  <div key={item.label} className="px-panel px-panel--inset flex items-center justify-between gap-2 px-3 py-2">
+                    <span className="px-note">{item.label}</span>
+                    <span
+                      className="px-num text-[0.625rem] font-semibold uppercase tracking-[0.1em]"
+                      style={toneColor(needsWork ? 'caution' : 'positive')}
+                    >
+                      {item.state}
+                    </span>
+                  </div>
+                );
+              })}
+            </Grid>
           </div>
-          {practiceInsightsLoading && (
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-          )}
-        </div>
-
-        {focus.length > 0 && (
-          <div className="mt-2 space-y-1.5">
-            {focus.map((x, idx) => (
-              <div key={`${x}-${idx}`} className="flex items-start gap-2 text-[12px]">
-                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/70" />
-                <div className="text-foreground/90 font-medium leading-snug">{x}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-3 pt-3 border-t border-border/50">
-          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">Recent performance</div>
-          <div className="mt-2 grid grid-cols-1 gap-1 text-[12px] text-muted-foreground">
-            <div className="flex items-center justify-between"><span>Correctness</span><span className="text-foreground/80">{correctnessLabel}</span></div>
-            <div className="flex items-center justify-between"><span>Confidence</span><span className="text-foreground/80">{confidenceLabel}</span></div>
-            <div className="flex items-center justify-between"><span>Delivery clarity</span><span className="text-foreground/80">{deliveryLabel}</span></div>
-          </div>
-        </div>
-      </div>
+        </PanelBody>
+      </Panel>
     );
   };
 
@@ -3677,12 +3733,6 @@ export const PracticeMode = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-500';
-    if (score >= 60) return 'text-yellow-500';
-    return 'text-orange-500';
-  };
-
   const updateFeedbackRatingDraft = (questionId: number, patch: Partial<FeedbackRatingDraft>) => {
     setFeedbackRatingDraftByQuestion((prev) => ({
       ...prev,
@@ -4046,479 +4096,499 @@ export const PracticeMode = () => {
   // ============================================================================
 
   if (phase === 'welcome') {
+    /**
+     * Gateway paths. `useQuickStart` is inverted from its name: false selects the
+     * AI-driven interviewer, true selects the manual configurator. Kept as-is so
+     * the redesign stays a pure presentation change.
+     */
+    const practicePaths = [
+      {
+        key: 'ai',
+        index: '01',
+        icon: Zap,
+        tone: 'accent' as PxTone,
+        title: 'Quick Practice',
+        tag: 'AI-driven',
+        description: 'Name the role. The interviewer picks the questions, sets the difficulty, and adapts as you answer.',
+        meta: ['Adaptive difficulty', '~10 min'],
+        onSelect: () => { setUseQuickStart(false); setWelcomeStep('configure'); },
+        recommended: false,
+      },
+      {
+        key: 'rounds',
+        index: '02',
+        icon: Target,
+        tone: 'neural' as PxTone,
+        title: 'Full Interview Simulation',
+        tag: 'Rounds',
+        description: 'Step through real interview rounds — HR screening, technical, system design — scored end to end.',
+        meta: ['Round-based', 'Scored to Progress'],
+        onSelect: () => setPhase('round-selection'),
+        recommended: true,
+      },
+      {
+        key: 'custom',
+        index: '03',
+        icon: Settings,
+        tone: 'caution' as PxTone,
+        title: 'Custom Setup',
+        tag: 'Advanced',
+        description: 'Set the role, difficulty, and question count yourself, then start on your own terms.',
+        meta: ['Manual control', '1–10 questions'],
+        onSelect: () => { setUseQuickStart(true); setWelcomeStep('configure'); },
+        recommended: false,
+      },
+    ];
+
+    const sessionAnatomy = [
+      { icon: Mic, label: 'Answer aloud', detail: 'Questions are read to you; you reply by voice or code.' },
+      { icon: Waves, label: 'Delivery measured', detail: 'Pace, fillers, and confidence are tracked per answer.' },
+      { icon: Brain, label: 'Scored instantly', detail: 'Correctness and coverage come back before the next question.' },
+      { icon: TrendingUp, label: 'Rolled into Progress', detail: 'Every round moves your long-term trend lines.' },
+    ];
+
     return (
-      <div className="max-w-4xl mx-auto w-full px-4">
+      <div className="px px-shell min-h-full">
+        <div className="px-frame px-frame--mid py-5 sm:py-8">
 
-        {/* ── GATEWAY: Choose your practice mode ── */}
-        {welcomeStep === 'gateway' && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Futuristic Header with animated gradient ring */}
-            <div className="text-center space-y-3 pt-4">
-              <div className="flex justify-center md:hidden mb-2">
-                {viewProgressButton("h-9 px-3")}
-              </div>
-              <div className="relative mx-auto w-20 h-20 md:w-24 md:h-24">
-                {/* Outer rotating ring */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary via-purple-500 to-cyan-400 animate-spin" style={{ animationDuration: '6s' }} />
-                <div className="absolute inset-[3px] rounded-full bg-background" />
-                {/* Inner icon container */}
-                <div className="absolute inset-[6px] rounded-full bg-gradient-to-br from-primary/20 via-purple-500/10 to-cyan-400/10 border border-primary/20 flex items-center justify-center backdrop-blur-sm">
-                  <Mic className="w-8 h-8 md:w-10 md:h-10 text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
+          {/* ── GATEWAY: choose a practice path ── */}
+          {welcomeStep === 'gateway' && (
+            <div className="space-y-6">
+
+              {/* Command bar */}
+              <div className="flex items-center justify-between gap-3 px-fade">
+                <div className="flex items-center gap-2">
+                  <Eyebrow tone="accent" icon={Command}>
+                    Live Practice
+                  </Eyebrow>
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-note">
+                    <StatusDot tone="positive" live />
+                    Interviewer online
+                  </span>
                 </div>
+                {viewProgressButton()}
               </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text">
-                  Choose Your Practice Mode
+
+              {/* Hero */}
+              <header className="px-rise" style={{ ['--px-delay' as string]: '40ms' }}>
+                <h1 className="px-display">
+                  Choose how you
+                  <br className="hidden sm:block" />
+                  {' '}want to practise.
                 </h1>
-                <p className="text-xs md:text-sm text-muted-foreground max-w-md mx-auto mt-1.5 leading-relaxed">
-                  AI-powered interview preparation — pick a path and let&apos;s elevate your skills
+                <p className="px-body mt-3 max-w-xl">
+                  Three ways in. Each one records your answer, scores it against what a real
+                  interviewer looks for, and feeds the result back into your Progress.
                 </p>
+              </header>
+
+              <div className="grid gap-5 lg:grid-cols-[1.45fr_1fr] items-start">
+
+                {/* Paths */}
+                <div className="space-y-3">
+                  {practicePaths.map((path, i) => (
+                    <Panel
+                      key={path.key}
+                      as="button"
+                      variant={path.recommended ? 'raised' : 'default'}
+                      tone={path.recommended ? 'accent' : undefined}
+                      onClick={path.onSelect}
+                      className="px-panel--interactive group overflow-hidden px-rise"
+                      style={{ ['--px-delay' as string]: `${100 + i * 70}ms` }}
+                    >
+                      {path.recommended && <Seam tone="accent" />}
+                      <div className="flex items-start gap-4 p-4 sm:p-5">
+                        <div
+                          className="shrink-0 grid place-items-center w-11 h-11 rounded-[var(--px-r-md)] border transition-colors"
+                          style={{
+                            color: `hsl(${toneVar(path.tone)})`,
+                            borderColor: `hsl(${toneVar(path.tone)} / 0.28)`,
+                            background: `hsl(${toneVar(path.tone)} / 0.1)`,
+                          }}
+                        >
+                          <path.icon className="w-5 h-5" />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="px-num text-[0.625rem] px-ink-3">{path.index}</span>
+                            <span className="px-subtitle">{path.title}</span>
+                            <Chip tone={path.tone}>{path.tag}</Chip>
+                            {path.recommended && (
+                              <Chip tone="accent" icon={Sparkles}>
+                                Recommended
+                              </Chip>
+                            )}
+                          </div>
+                          <p className="px-body mt-1.5">{path.description}</p>
+                          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+                            {path.meta.map((m) => (
+                              <span key={m} className="px-note inline-flex items-center gap-1.5">
+                                <span
+                                  className="w-1 h-1 rounded-full"
+                                  style={{ background: `hsl(${toneVar(path.tone)} / 0.7)` }}
+                                />
+                                {m}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <ChevronRight className="w-4 h-4 mt-1 shrink-0 px-ink-3 transition-transform duration-300 group-hover:translate-x-1" />
+                      </div>
+                    </Panel>
+                  ))}
+                </div>
+
+                {/* Readout column */}
+                <aside className="space-y-3">
+                  {renderPracticeInsights()}
+
+                  <Panel className="overflow-hidden px-rise" style={{ ['--px-delay' as string]: '180ms' }}>
+                    <PanelHead eyebrow="What a session does" icon={Layers} tone="accent" />
+                    <PanelBody className="space-y-3.5">
+                      {sessionAnatomy.map((step, i) => (
+                        <div key={step.label} className="flex items-start gap-3">
+                          <div className="shrink-0 flex flex-col items-center pt-0.5">
+                            <step.icon className="w-3.5 h-3.5 px-accent-ink" />
+                            {i < sessionAnatomy.length - 1 && (
+                              <span className="mt-1.5 w-px flex-1 min-h-[1.25rem] bg-[hsl(var(--px-line))]" />
+                            )}
+                          </div>
+                          <div className="min-w-0 pb-0.5">
+                            <div className="text-[0.8125rem] font-semibold px-ink leading-tight">{step.label}</div>
+                            <p className="px-note mt-0.5">{step.detail}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </PanelBody>
+                  </Panel>
+                </aside>
               </div>
             </div>
+          )}
 
-            {renderPracticeInsights()}
+          {/* ── CONFIGURE: mode-specific setup ── */}
+          {welcomeStep === 'configure' && (
+            <div className="max-w-2xl mx-auto px-rise">
+              <Panel variant="raised" className="overflow-hidden">
+                <Seam tone={useQuickStart ? 'caution' : 'accent'} />
 
-            {/* Three intent cards — futuristic glassmorphism */}
-            <div className="grid grid-cols-1 gap-3">
-              {/* Quick Practice */}
-              <button
-                onClick={() => { setUseQuickStart(false); setWelcomeStep('configure'); }}
-                className="w-full group relative flex items-center gap-4 p-5 md:p-6 rounded-3xl border border-border/30 bg-gradient-to-br from-background/80 via-background/60 to-primary/[0.03] backdrop-blur-2xl shadow-xl shadow-black/10 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/10 hover:scale-[1.01] transition-all duration-500 text-left overflow-hidden"
-              >
-                {/* Glow effect on hover */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl" />
-                <div className="relative shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-blue-500/25 to-primary/25 border border-primary/20 flex items-center justify-center shadow-lg backdrop-blur-sm">
-                  <Zap className="w-7 h-7 md:w-8 md:h-8 text-primary drop-shadow-[0_0_6px_rgba(var(--primary-rgb),0.4)]" />
-                </div>
-                <div className="relative flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base md:text-lg text-foreground">Quick Practice</h3>
-                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20">AI-DRIVEN</Badge>
-                  </div>
-                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed mt-1">
-                    Tell me the role — I&apos;ll pick questions, difficulty, and adapt as you go
-                  </p>
-                </div>
-                <ArrowRight className="relative w-5 h-5 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-300 shrink-0" />
-              </button>
-
-              {/* Full Interview Simulation — Highly Recommended */}
-              <button
-                onClick={() => setPhase('round-selection')}
-                className="w-full group relative flex items-center gap-4 p-5 md:p-6 rounded-3xl border-2 border-purple-500/40 bg-gradient-to-br from-purple-500/[0.08] via-background/60 to-violet-500/[0.06] backdrop-blur-2xl shadow-xl shadow-purple-500/10 hover:border-purple-500/60 hover:shadow-2xl hover:shadow-purple-500/20 hover:scale-[1.01] transition-all duration-500 text-left overflow-hidden ring-1 ring-purple-500/20"
-              >
-                {/* Recommended ribbon */}
-                <div className="absolute top-0 right-0 overflow-hidden w-28 h-28 pointer-events-none">
-                  <div className="absolute top-3 right-[-30px] w-[150px] text-center text-[8px] font-extrabold uppercase tracking-widest text-white bg-gradient-to-r from-purple-600 to-violet-500 py-1 rotate-45 shadow-lg shadow-purple-500/30">
-                    Recommended
-                  </div>
-                </div>
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-purple-500/5 via-transparent to-purple-500/5 rounded-3xl" />
-                <div className="relative shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-purple-500/30 to-violet-500/30 border border-purple-500/30 flex items-center justify-center shadow-lg shadow-purple-500/20 backdrop-blur-sm">
-                  <Target className="w-7 h-7 md:w-8 md:h-8 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
-                </div>
-                <div className="relative flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold text-base md:text-lg text-foreground">Full Interview Simulation</h3>
-                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-purple-500/10 text-purple-500 border-purple-500/20">ROUNDS</Badge>
-                    <Badge className="text-[8px] px-1.5 py-0 h-4 bg-gradient-to-r from-purple-600 to-violet-500 text-white border-0 shadow-sm shadow-purple-500/30 animate-pulse">★ HIGHLY RECOMMENDED</Badge>
-                  </div>
-                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed mt-1">
-                    Step through real interview rounds — HR, Technical, System Design
-                  </p>
-                </div>
-                <ArrowRight className="relative w-5 h-5 text-purple-400/60 group-hover:text-purple-400 group-hover:translate-x-1 transition-all duration-300 shrink-0" />
-              </button>
-
-              {/* Custom Setup */}
-              <button
-                onClick={() => { setUseQuickStart(true); setWelcomeStep('configure'); }}
-                className="w-full group relative flex items-center gap-4 p-5 md:p-6 rounded-3xl border border-border/30 bg-gradient-to-br from-background/80 via-background/60 to-amber-500/[0.03] backdrop-blur-2xl shadow-xl shadow-black/10 hover:border-amber-500/40 hover:shadow-2xl hover:shadow-amber-500/10 hover:scale-[1.01] transition-all duration-500 text-left overflow-hidden"
-              >
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-500/5 rounded-3xl" />
-                <div className="relative shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-amber-500/25 to-orange-500/25 border border-amber-500/20 flex items-center justify-center shadow-lg backdrop-blur-sm">
-                  <Settings className="w-7 h-7 md:w-8 md:h-8 text-amber-500 drop-shadow-[0_0_6px_rgba(245,158,11,0.4)]" />
-                </div>
-                <div className="relative flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base md:text-lg text-foreground">Custom Setup</h3>
-                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-amber-500/10 text-amber-500 border-amber-500/20">ADVANCED</Badge>
-                  </div>
-                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed mt-1">
-                    Pick your role, difficulty, number of questions, and more
-                  </p>
-                </div>
-                <ArrowRight className="relative w-5 h-5 text-muted-foreground/40 group-hover:text-amber-500 group-hover:translate-x-1 transition-all duration-300 shrink-0" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── CONFIGURE: Mode-specific setup ── */}
-        {welcomeStep === 'configure' && (
-          <Card className="w-full border border-border/30 bg-gradient-to-br from-background/90 via-background/70 to-primary/[0.02] backdrop-blur-2xl shadow-2xl shadow-black/20 rounded-3xl animate-in fade-in slide-in-from-right-4 duration-500 overflow-hidden">
-            {/* Decorative top gradient bar */}
-            <div className="h-1 bg-gradient-to-r from-primary via-purple-500 to-cyan-400" />
-            <CardHeader className="pb-3 pt-5 px-5">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 w-9 p-0 rounded-xl hover:bg-muted/50 shrink-0 border border-border/30"
-                  onClick={() => setWelcomeStep('gateway')}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <div className="flex-1">
-                  <CardTitle className="text-lg md:text-xl font-extrabold text-foreground tracking-tight">
-                    {useQuickStart ? 'Custom Setup' : 'AI Interviewer'}
-                  </CardTitle>
-                  <CardDescription className="text-[10px] md:text-xs mt-0.5 text-muted-foreground/80">
-                    {useQuickStart
-                      ? 'Configure your practice session exactly how you want it'
-                      : "Tell me the role — I'll adapt questions and difficulty as you go"}
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4 pb-6 px-5">
-              {!useQuickStart ? (
-                /* ── Instant / AI Interviewer mode ── */
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between px-1">
-                      <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/70 flex items-center gap-1.5">
-                        <Rocket className="w-3 h-3" />
-                        What are you preparing for?
-                      </Label>
+                <div className="flex items-center gap-3 px-4 sm:px-5 pt-4 pb-3.5 border-b border-[hsl(var(--px-line-soft))]">
+                  <PxButton
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    aria-label="Back to practice paths"
+                    onClick={() => setWelcomeStep('gateway')}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </PxButton>
+                  <div className="flex-1 min-w-0">
+                    <Eyebrow tone={useQuickStart ? 'caution' : 'accent'}>
+                      Step 2 — Configure
+                    </Eyebrow>
+                    <div className="px-title mt-1">
+                      {useQuickStart ? 'Custom Setup' : 'AI Interviewer'}
                     </div>
-                    <div className="relative group">
-                      <Input
-                        placeholder='e.g., "Senior React role at Google"'
-                        value={quickStartInput}
-                        onChange={(e) => setQuickStartInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !quickStartLoading) {
-                            handleQuickStart();
-                          }
-                        }}
-                        maxLength={512}
-                        className="text-sm h-12 bg-background/50 border-border/30 rounded-2xl pl-4 pr-10 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all shadow-inner"
-                        autoFocus
+                  </div>
+                  <Chip mono>{useQuickStart ? 'MANUAL' : 'ADAPTIVE'}</Chip>
+                </div>
+
+                <PanelBody className="space-y-4">
+                  {!useQuickStart ? (
+                    /* ── AI Interviewer ── */
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="px-eyebrow" htmlFor="practice-target-role">
+                          <Rocket className="w-3 h-3" />
+                          What are you preparing for?
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="practice-target-role"
+                            className="px-field pr-11"
+                            placeholder='e.g., "Senior React role at Google"'
+                            value={quickStartInput}
+                            onChange={(e) => setQuickStartInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !quickStartLoading) {
+                                handleQuickStart();
+                              }
+                            }}
+                            maxLength={512}
+                            autoFocus
+                          />
+                          <MessageSquare className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 px-ink-3 pointer-events-none" />
+                        </div>
+                        <p className="px-note">
+                          Role, seniority, and company all help — the interviewer uses every part of it.
+                        </p>
+                      </div>
+
+                      {aiMessage && (
+                        <div className="px-panel px-panel--inset px-3.5 py-3 flex items-start gap-2.5 px-fade">
+                          <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" style={toneColor('positive')} />
+                          <p className="px-body px-body--tight">{aiMessage}</p>
+                        </div>
+                      )}
+
+                      <ResumeUpload
+                        mode="practice"
+                        onParsed={(ctx) => setResumeContext(ctx)}
+                        onClear={() => setResumeContext(null)}
+                        existing={resumeContext}
                       />
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within:text-primary/50 transition-colors">
-                        <MessageSquare className="w-4 h-4" />
-                      </div>
-                    </div>
-                  </div>
 
-                  {aiMessage && (
-                    <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-2xl flex items-start gap-2.5 shadow-sm animate-in zoom-in-95 duration-300 backdrop-blur-sm">
-                      <div className="p-1 bg-green-500/20 rounded-lg mt-0.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                      <div className="px-panel px-panel--inset px-3.5 py-3">
+                        <Eyebrow tone="accent">This session sharpens</Eyebrow>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {['Answer clarity', 'Confidence', 'Interview structure'].map((item) => (
+                            <Chip key={item} tone="accent" icon={CheckCircle2}>
+                              {item}
+                            </Chip>
+                          ))}
+                        </div>
                       </div>
-                      <p className="text-xs text-green-700 dark:text-green-400 font-medium leading-relaxed">
-                        {aiMessage}
-                      </p>
+
+                      {renderLivePracticeConsentCard({
+                        id: 'quick-start-live-practice-consent',
+                        compact: true,
+                      })}
+
+                      <PxButton
+                        variant="primary"
+                        size="lg"
+                        block
+                        onClick={handleQuickStart}
+                        disabled={quickStartLoading || !quickStartInput.trim() || !livePracticeConsentChecked}
+                      >
+                        {quickStartLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Setting up interview…
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            Start Interview
+                          </>
+                        )}
+                      </PxButton>
+
+                      <Collapsible open={sessionSettingsOpen} onOpenChange={setSessionSettingsOpen}>
+                        <CollapsibleTrigger asChild>
+                          <button className="px-focusable w-full flex items-center justify-center gap-1.5 py-2 px-note px-link transition-colors">
+                            <Settings className="w-3 h-3" />
+                            <span>Session settings</span>
+                            <ChevronDown className={cx('w-3 h-3 transition-transform duration-200', sessionSettingsOpen && 'rotate-180')} />
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-2 px-fade">
+                          <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3 py-2.5">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <Volume2 className="w-4 h-4 shrink-0 px-ink-3" />
+                              <div className="min-w-0">
+                                <p className="text-[0.8125rem] font-semibold px-ink">Voice assistant</p>
+                                <p className="px-note">Hear each question read aloud.</p>
+                              </div>
+                            </div>
+                            <Switch checked={enableTTS} onCheckedChange={setEnableTTS} />
+                          </div>
+
+                          <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3 py-2.5">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <Camera className="w-4 h-4 shrink-0 px-ink-3" />
+                              <div className="min-w-0">
+                                <p className="text-[0.8125rem] font-semibold px-ink">Camera-proctored mode</p>
+                                <p className="px-note">Adds integrity analysis on top of the required camera and screen recording.</p>
+                              </div>
+                            </div>
+                            <Switch checked={enableCameraProctoring} onCheckedChange={setEnableCameraProctoring} />
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
+                  ) : (
+                    /* ── Manual setup ── */
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="px-eyebrow" htmlFor="practice-role">
+                          <Briefcase className="w-3 h-3" />
+                          Interview role
+                        </label>
+                        <input
+                          id="practice-role"
+                          className="px-field"
+                          placeholder="e.g., Software Engineer, Data Scientist, DevOps…"
+                          value={selectedRole}
+                          onChange={(e) => setSelectedRole(e.target.value)}
+                          maxLength={512}
+                          list="role-suggestions"
+                          autoFocus
+                        />
+                        <datalist id="role-suggestions">
+                          <option value="Software Engineer" />
+                          <option value="Data Scientist" />
+                          <option value="Product Manager" />
+                          <option value="DevOps Engineer" />
+                          <option value="Frontend Developer" />
+                          <option value="Backend Developer" />
+                          <option value="Full Stack Developer" />
+                          <option value="AI/ML Specialist" />
+                          <option value="UX/UI Designer" />
+                          <option value="AI Engineer" />
+                          <option value="ML Engineer" />
+                          <option value="QA Engineer" />
+                          <option value="Security Engineer" />
+                          <option value="Data Engineer" />
+                        </datalist>
+                        <p className="px-note">Any role works — the list is only a shortcut.</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="px-eyebrow">
+                          <Gauge className="w-3 h-3" />
+                          Difficulty
+                        </label>
+                        <div className="px-segment w-full">
+                          {([
+                            { value: 'easy', label: 'Easy', tone: 'positive' as PxTone },
+                            { value: 'medium', label: 'Medium', tone: 'caution' as PxTone },
+                            { value: 'hard', label: 'Hard', tone: 'critical' as PxTone },
+                          ]).map((diff) => (
+                            <button
+                              key={diff.value}
+                              type="button"
+                              className="px-segment__item flex-1"
+                              data-active={selectedDifficulty === diff.value}
+                              onClick={() => setSelectedDifficulty(diff.value as InterviewDifficulty)}
+                            >
+                              <span
+                                className="w-1.5 h-1.5 rounded-full"
+                                style={{
+                                  background:
+                                    selectedDifficulty === diff.value
+                                      ? `hsl(${toneVar(diff.tone)})`
+                                      : `hsl(${toneVar('neutral')} / 0.35)`,
+                                }}
+                              />
+                              {diff.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3 py-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <ListChecks className="w-4 h-4 shrink-0 px-ink-3" />
+                          <div className="min-w-0">
+                            <p className="text-[0.8125rem] font-semibold px-ink">Number of questions</p>
+                            <p className="px-note">Between 1 and 10.</p>
+                          </div>
+                        </div>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={questionCount}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (val >= 1 && val <= 10) {
+                              setQuestionCount(val);
+                            }
+                          }}
+                          className="px-field px-num w-16 h-9 text-center"
+                        />
+                      </div>
+
+                      <ResumeUpload
+                        mode="practice"
+                        onParsed={(ctx) => setResumeContext(ctx)}
+                        onClear={() => setResumeContext(null)}
+                        existing={resumeContext}
+                      />
+
+                      <div className="px-panel px-panel--inset px-3.5 py-3">
+                        <Eyebrow tone="accent">This session sharpens</Eyebrow>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {['Answer clarity', 'Confidence', 'Interview structure'].map((item) => (
+                            <Chip key={item} tone="accent" icon={CheckCircle2}>
+                              {item}
+                            </Chip>
+                          ))}
+                        </div>
+                      </div>
+
+                      {renderLivePracticeConsentCard({
+                        id: 'custom-setup-live-practice-consent',
+                        compact: true,
+                      })}
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <PxButton variant="primary" size="lg" onClick={() => setPhase('setup')}>
+                          <Sparkles className="w-4 h-4" />
+                          Quick Practice
+                        </PxButton>
+                        <PxButton variant="outline" size="lg" onClick={() => setPhase('round-selection')}>
+                          <Target className="w-4 h-4" />
+                          Round-Based
+                        </PxButton>
+                      </div>
+
+                      <Collapsible open={sessionSettingsOpen} onOpenChange={setSessionSettingsOpen}>
+                        <CollapsibleTrigger asChild>
+                          <button className="px-focusable w-full flex items-center justify-center gap-1.5 py-2 px-note px-link transition-colors">
+                            <Settings className="w-3 h-3" />
+                            <span>Session settings</span>
+                            <ChevronDown className={cx('w-3 h-3 transition-transform duration-200', sessionSettingsOpen && 'rotate-180')} />
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-2 px-fade">
+                          <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3 py-2.5">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <Volume2 className="w-4 h-4 shrink-0 px-ink-3" />
+                              <div className="min-w-0">
+                                <p className="text-[0.8125rem] font-semibold px-ink">Text-to-speech</p>
+                                <p className="px-note">Hear each question read aloud.</p>
+                              </div>
+                            </div>
+                            <Switch checked={enableTTS} onCheckedChange={setEnableTTS} />
+                          </div>
+
+                          <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3 py-2.5">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <Camera className="w-4 h-4 shrink-0 px-ink-3" />
+                              <div className="min-w-0">
+                                <p className="text-[0.8125rem] font-semibold px-ink">Camera-proctored mode</p>
+                                <p className="px-note">Adds integrity analysis on top of the required camera and screen recording.</p>
+                              </div>
+                            </div>
+                            <Switch checked={enableCameraProctoring} onCheckedChange={setEnableCameraProctoring} />
+                          </div>
+
+                          <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3 py-2.5">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <Brain className="w-4 h-4 shrink-0" style={toneColor('neural')} />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-[0.8125rem] font-semibold px-ink">Adaptive intelligence</p>
+                                  <Chip tone="neural">New</Chip>
+                                </div>
+                                <p className="px-note">Personalises questions from a profile you fill in next.</p>
+                              </div>
+                            </div>
+                            <Switch checked={enableAdaptive} onCheckedChange={setEnableAdaptive} />
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
                     </div>
                   )}
-
-                  {/* Resume Upload (optional) */}
-                  <ResumeUpload
-                    mode="practice"
-                    onParsed={(ctx) => setResumeContext(ctx)}
-                    onClear={() => setResumeContext(null)}
-                    existing={resumeContext}
-                  />
-
-                  {/* Progress promise */}
-                  <div className="p-3 bg-primary/5 border border-primary/15 rounded-xl">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70 mb-1.5">This session helps you improve</p>
-                    <div className="flex flex-wrap gap-2">
-                      {['Answer clarity', 'Confidence', 'Interview structure'].map((item) => (
-                        <span key={item} className="inline-flex items-center gap-1 text-[11px] text-foreground/80 font-medium">
-                          <CheckCircle2 className="w-3 h-3 text-primary/60" />
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {renderLivePracticeConsentCard({
-                    id: 'quick-start-live-practice-consent',
-                    compact: true,
-                  })}
-
-                  {/* CTA */}
-                  <Button
-                    size="lg"
-                    className="w-full h-12 text-sm font-bold shadow-xl shadow-black/30 transition-all hover:scale-[1.01] active:scale-[0.98] rounded-2xl"
-                    onClick={handleQuickStart}
-                    disabled={quickStartLoading || !quickStartInput.trim() || !livePracticeConsentChecked}
-                  >
-                    {quickStartLoading ? (
-                      <>
-                        <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                        Setting Up Interview...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 w-4 h-4" />
-                        Start Interview
-                      </>
-                    )}
-                  </Button>
-
-                  {/* Deferred session settings */}
-                  <Collapsible open={sessionSettingsOpen} onOpenChange={setSessionSettingsOpen}>
-                    <CollapsibleTrigger asChild>
-                      <button className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
-                        <Settings className="w-3 h-3" />
-                        <span>Session Settings</span>
-                        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${sessionSettingsOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                      <div className="flex items-center justify-between p-2.5 bg-muted/40 rounded-xl border border-border/50">
-                        <div className="flex items-center gap-2.5">
-                          <div className="p-1.5 rounded-lg bg-muted text-muted-foreground">
-                            <Volume2 className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-[11px] text-foreground">Voice Assistant</p>
-                            <p className="text-[9px] text-muted-foreground">Hear questions read aloud</p>
-                          </div>
-                        </div>
-                        <Switch
-                          checked={enableTTS}
-                          onCheckedChange={setEnableTTS}
-                          className="scale-75 md:scale-75 origin-right data-[state=checked]:bg-primary"
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-2.5 bg-muted/40 rounded-xl border border-border/50">
-                        <div className="flex items-center gap-2.5">
-                          <div className="p-1.5 rounded-lg bg-muted text-muted-foreground">
-                            <Camera className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-[11px] text-foreground">Camera-proctored mode</p>
-                            <p className="text-[9px] text-muted-foreground">Optional integrity analysis on top of the required camera and screen recording</p>
-                          </div>
-                        </div>
-                        <Switch
-                          checked={enableCameraProctoring}
-                          onCheckedChange={setEnableCameraProctoring}
-                          className="scale-75 md:scale-75 origin-right data-[state=checked]:bg-primary"
-                        />
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </div>
-              ) : (
-                /* ── Custom / Manual setup mode ── */
-                <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  <div className="space-y-2">
-                    <div>
-                      <label className="text-xs font-semibold mb-1 block text-muted-foreground">Interview Role</label>
-                      <Input
-                        placeholder="e.g., Software Engineer, Data Scientist, Product Manager, DevOps..."
-                        value={selectedRole}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        maxLength={512}
-                        className="text-sm bg-background/50 border-border/40"
-                        list="role-suggestions"
-                        autoFocus
-                      />
-                      <datalist id="role-suggestions">
-                        <option value="Software Engineer" />
-                        <option value="Data Scientist" />
-                        <option value="Product Manager" />
-                        <option value="DevOps Engineer" />
-                        <option value="Frontend Developer" />
-                        <option value="Backend Developer" />
-                        <option value="Full Stack Developer" />
-                        <option value="AI/ML Specialist" />
-                        <option value="UX/UI Designer" />
-                        <option value="AI Engineer" />
-                        <option value="ML Engineer" />
-                        <option value="QA Engineer" />
-                        <option value="Security Engineer" />
-                        <option value="Data Engineer" />
-                      </datalist>
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        Type any role - not limited to the suggestions above
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-medium mb-1 block">Difficulty Level</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { value: 'easy', label: 'Easy', color: 'bg-green-500' },
-                          { value: 'medium', label: 'Medium', color: 'bg-yellow-500' },
-                          { value: 'hard', label: 'Hard', color: 'bg-red-500' },
-                        ].map((diff) => (
-                          <Button
-                            key={diff.value}
-                            variant={selectedDifficulty === diff.value ? 'default' : 'outline'}
-                            className="relative text-xs h-8"
-                            onClick={() => setSelectedDifficulty(diff.value as InterviewDifficulty)}
-                          >
-                            {selectedDifficulty === diff.value && (
-                              <div className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${diff.color}`} />
-                            )}
-                            {diff.label}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-xs">Number of Questions</p>
-                          <p className="text-[10px] text-muted-foreground">Choose 1-10 questions</p>
-                        </div>
-                      </div>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={questionCount}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          if (val >= 1 && val <= 10) {
-                            setQuestionCount(val);
-                          }
-                        }}
-                        maxLength={3}
-                        className="w-16 h-7 text-xs text-center bg-background/50 border-border/40"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Resume Upload (optional) */}
-                  <ResumeUpload
-                    mode="practice"
-                    onParsed={(ctx) => setResumeContext(ctx)}
-                    onClear={() => setResumeContext(null)}
-                    existing={resumeContext}
-                  />
-
-                  {/* Progress promise */}
-                  <div className="p-3 bg-primary/5 border border-primary/15 rounded-xl">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/70 mb-1.5">This session helps you improve</p>
-                    <div className="flex flex-wrap gap-2">
-                      {['Answer clarity', 'Confidence', 'Interview structure'].map((item) => (
-                        <span key={item} className="inline-flex items-center gap-1 text-[11px] text-foreground/80 font-medium">
-                          <CheckCircle2 className="w-3 h-3 text-primary/60" />
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {renderLivePracticeConsentCard({
-                    id: 'custom-setup-live-practice-consent',
-                    compact: true,
-                  })}
-
-                  {/* CTAs */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Button
-                      size="lg"
-                      className="h-12"
-                      onClick={() => setPhase('setup')}
-                    >
-                      <Sparkles className="mr-2 w-5 h-5" />
-                      <div className="text-left">
-                        <div className="font-semibold">Quick Practice</div>
-                        <div className="text-xs opacity-90">AI-generated questions</div>
-                      </div>
-                    </Button>
-
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="h-12 border-2 hover:bg-primary/5"
-                      onClick={() => setPhase('round-selection')}
-                    >
-                      <Target className="mr-2 w-5 h-5" />
-                      <div className="text-left">
-                        <div className="font-semibold">Round-Based</div>
-                        <div className="text-xs opacity-70">Specific interview rounds</div>
-                      </div>
-                    </Button>
-                  </div>
-
-                  {/* Deferred session settings */}
-                  <Collapsible open={sessionSettingsOpen} onOpenChange={setSessionSettingsOpen}>
-                    <CollapsibleTrigger asChild>
-                      <button className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
-                        <Settings className="w-3 h-3" />
-                        <span>Session Settings</span>
-                        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${sessionSettingsOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                      <div className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <Volume2 className="w-4 h-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-xs">Text-to-Speech</p>
-                            <p className="text-[10px] text-muted-foreground">Hear questions read aloud</p>
-                          </div>
-                        </div>
-                        <Button
-                          variant={enableTTS ? 'default' : 'outline'}
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => setEnableTTS(!enableTTS)}
-                        >
-                          {enableTTS ? 'Enabled' : 'Disabled'}
-                        </Button>
-                      </div>
-
-                      <div className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <Camera className="w-4 h-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-xs">Camera-proctored mode</p>
-                            <p className="text-[10px] text-muted-foreground">Optional integrity analysis on top of the required camera and screen recording</p>
-                          </div>
-                        </div>
-                        <Switch
-                          checked={enableCameraProctoring}
-                          onCheckedChange={setEnableCameraProctoring}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-2 bg-muted/30 rounded-lg border border-border/50">
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-primary" />
-                          <div>
-                            <div className="font-medium text-xs flex items-center gap-1">
-                              Adaptive Intelligence
-                              <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">NEW</Badge>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground">AI-personalized questions</p>
-                          </div>
-                        </div>
-                        <Switch
-                          checked={enableAdaptive}
-                          onCheckedChange={setEnableAdaptive}
-                        />
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                </PanelBody>
+              </Panel>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -4534,52 +4604,52 @@ export const PracticeMode = () => {
     } : undefined;
 
     return (
-      <div className="w-full h-full flex flex-col relative overflow-hidden">
-        {/* Scrollable Content Container */}
+      <div className="px px-shell w-full h-full flex flex-col relative overflow-hidden">
         <div ref={roundSelectionScrollRef} className="flex-1 overflow-y-auto scrollbar-hide">
-          {/* Sticky header: back + interview settings */}
+
+          {/* Session chrome — collapses out of the way as the user scrolls. */}
           <div
-            className={`sticky top-0 z-[60] transition-all duration-300 ${
-              showRoundSelectionHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
-            }`}
+            className={cx(
+              'sticky top-0 z-[60] transition-all duration-300',
+              showRoundSelectionHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none',
+            )}
           >
-            <div className="backdrop-blur-xl">
-              <div className="max-w-7xl mx-auto w-full px-4 sm:px-8 py-3 flex items-center justify-between gap-3">
-                {/* Left: Back */}
-                <Button
+            {/* Session chrome rides inside the content frame rather than as a
+                full-bleed band, so it reads as part of the screen instead of a
+                second app header stacked under the real one. */}
+            <div className="px-frame px-frame--mid pt-3 pb-1">
+              <div
+                className="px-panel flex items-center justify-between gap-3 h-12 pl-2 pr-2 backdrop-blur-xl"
+                style={{ background: 'hsl(var(--px-surface) / 0.78)' }}
+              >
+                <PxButton
                   variant="ghost"
+                  size="sm"
                   onClick={() => { setWelcomeStep('gateway'); setPhase('welcome'); }}
-                  className="group h-10 px-4 rounded-xl bg-muted/30 hover:bg-muted/50 text-muted-foreground hover:text-foreground border border-border/20 hover:border-border/40 transition-all"
+                  className="group"
                 >
-                  <ChevronLeft className="w-4 h-4 mr-1.5 group-hover:-translate-x-0.5 transition-transform" />
-                  <span className="text-sm font-semibold">Back</span>
-                </Button>
+                  <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+                  Back
+                </PxButton>
 
-                {/* Right: Camera toggle + Progress */}
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-muted/20 border border-border/15 select-none">
-                    <label className="flex items-center gap-2.5 cursor-pointer">
-                      <div className="w-7 h-7 rounded-lg bg-muted/40 flex items-center justify-center">
-                        <Camera className="w-3.5 h-3.5 text-muted-foreground" />
-                      </div>
-                      <span className="hidden md:inline text-xs font-semibold text-muted-foreground">Proctoring</span>
-                      <Switch
-                        checked={enableCameraProctoring}
-                        onCheckedChange={setEnableCameraProctoring}
-                        aria-label="Toggle camera-proctored mode"
-                      />
-                    </label>
-                  </div>
+                  <label className="flex items-center gap-2.5 h-8 px-2.5 rounded-[var(--px-r-sm)] cursor-pointer select-none hover:bg-[hsl(var(--px-surface-3))] transition-colors">
+                    <Camera className="w-3.5 h-3.5 px-ink-3" />
+                    <span className="hidden md:inline px-note font-semibold">Proctoring</span>
+                    <Switch
+                      checked={enableCameraProctoring}
+                      onCheckedChange={setEnableCameraProctoring}
+                      aria-label="Toggle camera-proctored mode"
+                    />
+                  </label>
 
-                  {viewProgressButton(
-                    "h-10 px-4 md:hidden rounded-xl bg-muted/30 hover:bg-muted/50 text-muted-foreground hover:text-foreground border border-border/20"
-                  )}
+                  {viewProgressButton('md:hidden')}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="max-w-7xl mx-auto w-full px-6 sm:px-8 pt-4">
+          <div className="px-frame px-frame--mid pt-1">
             <RoundSelection
               onRoundStart={handleRoundStart}
               userProfile={userProfile}
@@ -4597,176 +4667,199 @@ export const PracticeMode = () => {
   }
 
   if (phase === 'setup') {
+    const adaptiveProfileReady = !!(profileDomain && profileExperience && profileSkills);
+
     return (
-      <div className="max-w-4xl mx-auto w-full px-4">
-        <div className="flex justify-end pt-2">
-          {viewProgressButton("h-8 px-3 md:hidden")}
-        </div>
-        <Card className="w-full rounded-3xl border border-border/30 overflow-hidden shadow-xl shadow-black/10">
-          <div className="h-1 bg-gradient-to-r from-primary via-purple-500 to-primary" />
-          <CardHeader className="text-center pb-3 pt-8">
-            <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 border border-primary/20 flex items-center justify-center mb-3">
-              {enableAdaptive ? <Brain className="w-7 h-7 text-primary" /> : <Target className="w-7 h-7 text-primary" />}
-            </div>
-            <CardTitle className="text-2xl font-black tracking-tight">
-              {enableAdaptive ? 'Setup Your Profile' : 'Ready to Start'}
-            </CardTitle>
-            <CardDescription className="text-sm">
-              {enableAdaptive
-                ? 'Help AI generate personalized questions'
-                : 'Preparing your interview'
-              }
-            </CardDescription>
-          </CardHeader>
+      <div className="px px-shell min-h-full">
+        <div className="px-frame px-frame--narrow py-5 sm:py-8">
+          <div className="flex items-center justify-between gap-3 mb-5">
+            <Eyebrow tone="accent" icon={Command}>
+              Live Practice
+            </Eyebrow>
+            {viewProgressButton()}
+          </div>
 
-          <CardContent className="space-y-4 px-6 pb-6">
-            <div className="flex items-center justify-between p-3 bg-muted/20 rounded-2xl border border-border/20">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-muted/30 rounded-xl">
-                  <Camera className="w-4 h-4 text-muted-foreground" />
+          <div className="max-w-2xl mx-auto px-rise">
+            <Panel variant="raised" className="overflow-hidden">
+              <Seam tone={enableAdaptive ? 'neural' : 'accent'} />
+
+              <div className="px-5 pt-6 pb-5 text-center border-b border-[hsl(var(--px-line-soft))]">
+                <div
+                  className="mx-auto grid place-items-center w-12 h-12 rounded-[var(--px-r-md)] border"
+                  style={{
+                    color: `hsl(${toneVar(enableAdaptive ? 'neural' : 'accent')})`,
+                    borderColor: `hsl(${toneVar(enableAdaptive ? 'neural' : 'accent')} / 0.28)`,
+                    background: `hsl(${toneVar(enableAdaptive ? 'neural' : 'accent')} / 0.1)`,
+                  }}
+                >
+                  {enableAdaptive ? <Brain className="w-5 h-5" /> : <Target className="w-5 h-5" />}
                 </div>
-                <div>
-                  <p className="font-semibold text-xs">Camera-proctored mode</p>
-                  <p className="text-[10px] text-muted-foreground">Optional integrity analysis on top of the required camera and screen recording</p>
+                <div className="mt-3.5">
+                  <Eyebrow tone={enableAdaptive ? 'neural' : 'accent'}>
+                    {enableAdaptive ? 'Step 3 — Profile' : 'Step 3 — Launch'}
+                  </Eyebrow>
                 </div>
+                <h2 className="px-title mt-2">
+                  {enableAdaptive ? 'Set up your profile' : 'Ready to start'}
+                </h2>
+                <p className="px-body mt-1.5 max-w-sm mx-auto">
+                  {enableAdaptive
+                    ? 'These details drive question selection. The more precise they are, the closer the session gets to your real interview.'
+                    : 'Confirm how the session is recorded, then begin.'}
+                </p>
               </div>
-              <Switch
-                checked={enableCameraProctoring}
-                onCheckedChange={setEnableCameraProctoring}
-              />
-            </div>
 
-            {renderLivePracticeConsentCard({
-              id: 'setup-live-practice-consent',
-            })}
-
-            {enableAdaptive && (
-              <>
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="domain" className="text-xs font-semibold">Domain / Specialization *</Label>
-                    <Input
-                      id="domain"
-                      className="h-10 text-sm rounded-xl border-border/30 bg-muted/10 focus:bg-background transition-colors"
-                      placeholder="e.g., Python Backend Development"
-                      value={profileDomain}
-                      onChange={(e) => setProfileDomain(e.target.value)}
-                      maxLength={512}
-                    />
-                    <p className="text-[10px] text-muted-foreground">Your primary technical domain</p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="experience" className="text-xs font-semibold">Years of Experience *</Label>
-                    <Input
-                      id="experience"
-                      type="number"
-                      className="h-10 text-sm rounded-xl border-border/30 bg-muted/10 focus:bg-background transition-colors"
-                      min="0"
-                      max="50"
-                      placeholder="e.g., 5"
-                      value={profileExperience || ''}
-                      onChange={(e) => setProfileExperience(parseInt(e.target.value) || 0)}
-                      maxLength={3}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="skills" className="text-xs font-semibold">Key Skills *</Label>
-                    <Input
-                      id="skills"
-                      className="h-10 text-sm rounded-xl border-border/30 bg-muted/10 focus:bg-background transition-colors"
-                      placeholder="e.g., Python, Django, AWS"
-                      value={profileSkills}
-                      onChange={(e) => setProfileSkills(e.target.value)}
-                      maxLength={512}
-                    />
-                    <p className="text-[10px] text-muted-foreground">Comma-separated skills</p>
-                  </div>
-
-                  <Separator className="my-1" />
-                  <p className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">Optional</p>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="jobRole" className="text-xs font-semibold">Target Role</Label>
-                      <Input
-                        id="jobRole"
-                        className="h-10 text-sm rounded-xl border-border/30 bg-muted/10 focus:bg-background transition-colors"
-                        placeholder="Senior Engineer"
-                        value={profileJobRole}
-                        onChange={(e) => setProfileJobRole(e.target.value)}
-                        maxLength={512}
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="company" className="text-xs font-semibold">Company Type</Label>
-                      <Input
-                        id="company"
-                        className="h-10 text-sm rounded-xl border-border/30 bg-muted/10 focus:bg-background transition-colors"
-                        placeholder="FAANG, Startup"
-                        value={profileCompany}
-                        onChange={(e) => setProfileCompany(e.target.value)}
-                        maxLength={512}
-                      />
+              <PanelBody className="space-y-4">
+                <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3.5 py-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Camera className="w-4 h-4 shrink-0 px-ink-3" />
+                    <div className="min-w-0">
+                      <p className="text-[0.8125rem] font-semibold px-ink">Camera-proctored mode</p>
+                      <p className="px-note">Adds integrity analysis on top of the required camera and screen recording.</p>
                     </div>
                   </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="focus" className="text-xs font-semibold">Focus Areas</Label>
-                    <Input
-                      id="focus"
-                      className="h-10 text-sm rounded-xl border-border/30 bg-muted/10 focus:bg-background transition-colors"
-                      placeholder="System Design, API Design"
-                      value={profileFocus}
-                      onChange={(e) => setProfileFocus(e.target.value)}
-                      maxLength={512}
-                    />
-                    <p className="text-[10px] text-muted-foreground">Comma-separated topics</p>
-                  </div>
+                  <Switch checked={enableCameraProctoring} onCheckedChange={setEnableCameraProctoring} />
                 </div>
 
-                {(!profileDomain || !profileExperience || !profileSkills) && (
-                  <div className="flex items-center gap-2.5 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-                    <AlertCircle className="w-4 h-4 text-yellow-500 flex-shrink-0" />
-                    <p className="text-xs text-yellow-600 dark:text-yellow-500 font-medium">
-                      Required fields (*) needed to continue
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
+                {renderLivePracticeConsentCard({ id: 'setup-live-practice-consent' })}
 
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                className="flex-1 h-11 text-sm rounded-2xl font-semibold"
-                onClick={() => setPhase('welcome')}
-              >
-                <ArrowRight className="mr-1.5 w-4 h-4 rotate-180" />
-                Back
-              </Button>
-              <Button
-                className="flex-1 h-11 text-sm rounded-2xl font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-                onClick={handleStartInterview}
-                disabled={isProcessing || !livePracticeConsentChecked || (enableAdaptive && (!profileDomain || !profileExperience || !profileSkills))}
-              >
-                {isProcessing ? (
+                {enableAdaptive && (
                   <>
-                    <Loader2 className="mr-1.5 w-4 h-4 animate-spin" />
-                    Starting...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-1.5 w-4 h-4" />
-                    {enableAdaptive ? 'Generate Questions' : 'Begin Interview'}
+                    <div className="space-y-3.5">
+                      <div className="space-y-1.5">
+                        <label htmlFor="domain" className="px-eyebrow">
+                          <Cpu className="w-3 h-3" />
+                          Domain / specialisation <span style={toneColor('critical')}>*</span>
+                        </label>
+                        <input
+                          id="domain"
+                          className="px-field"
+                          placeholder="e.g., Python Backend Development"
+                          value={profileDomain}
+                          onChange={(e) => setProfileDomain(e.target.value)}
+                          maxLength={512}
+                        />
+                        <p className="px-note">Your primary technical domain.</p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label htmlFor="experience" className="px-eyebrow">
+                          <TrendingUp className="w-3 h-3" />
+                          Years of experience <span style={toneColor('critical')}>*</span>
+                        </label>
+                        <input
+                          id="experience"
+                          type="number"
+                          className="px-field px-num"
+                          min="0"
+                          max="50"
+                          placeholder="e.g., 5"
+                          value={profileExperience || ''}
+                          onChange={(e) => setProfileExperience(parseInt(e.target.value) || 0)}
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label htmlFor="skills" className="px-eyebrow">
+                          <ListChecks className="w-3 h-3" />
+                          Key skills <span style={toneColor('critical')}>*</span>
+                        </label>
+                        <input
+                          id="skills"
+                          className="px-field"
+                          placeholder="e.g., Python, Django, AWS"
+                          value={profileSkills}
+                          onChange={(e) => setProfileSkills(e.target.value)}
+                          maxLength={512}
+                        />
+                        <p className="px-note">Comma-separated.</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-1">
+                      <Eyebrow>Optional — sharpens targeting</Eyebrow>
+                      <div className="mt-3 space-y-3.5">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="space-y-1.5">
+                            <label htmlFor="jobRole" className="px-eyebrow">Target role</label>
+                            <input
+                              id="jobRole"
+                              className="px-field"
+                              placeholder="Senior Engineer"
+                              value={profileJobRole}
+                              onChange={(e) => setProfileJobRole(e.target.value)}
+                              maxLength={512}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label htmlFor="company" className="px-eyebrow">Company type</label>
+                            <input
+                              id="company"
+                              className="px-field"
+                              placeholder="FAANG, Startup"
+                              value={profileCompany}
+                              onChange={(e) => setProfileCompany(e.target.value)}
+                              maxLength={512}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label htmlFor="focus" className="px-eyebrow">Focus areas</label>
+                          <input
+                            id="focus"
+                            className="px-field"
+                            placeholder="System Design, API Design"
+                            value={profileFocus}
+                            onChange={(e) => setProfileFocus(e.target.value)}
+                            maxLength={512}
+                          />
+                          <p className="px-note">Comma-separated topics.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {!adaptiveProfileReady && (
+                      <div
+                        className="px-panel px-panel--inset flex items-center gap-2.5 px-3.5 py-3"
+                        style={{ borderColor: `hsl(${toneVar('caution')} / 0.3)` }}
+                      >
+                        <TriangleAlert className="w-4 h-4 shrink-0" style={toneColor('caution')} />
+                        <p className="px-body px-body--tight">Fill the three required fields to continue.</p>
+                      </div>
+                    )}
                   </>
                 )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              </PanelBody>
+
+              <div className="px-panel__foot flex gap-3">
+                <PxButton variant="outline" size="lg" className="flex-1" onClick={() => setPhase('welcome')}>
+                  <ChevronLeft className="w-4 h-4" />
+                  Back
+                </PxButton>
+                <PxButton
+                  variant="primary"
+                  size="lg"
+                  className="flex-[1.4]"
+                  onClick={handleStartInterview}
+                  disabled={isProcessing || !livePracticeConsentChecked || (enableAdaptive && !adaptiveProfileReady)}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Starting…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      {enableAdaptive ? 'Generate Questions' : 'Begin Interview'}
+                    </>
+                  )}
+                </PxButton>
+              </div>
+            </Panel>
+          </div>
+        </div>
       </div>
     );
   }
@@ -4780,105 +4873,93 @@ export const PracticeMode = () => {
       String((currentQuestion as any)?.question_type ?? '').toUpperCase() === 'VOICE'
     );
 
+    const isCodeQuestion = isCodingQuestion(currentQuestion);
+    const questionTone: PxTone = isCodeQuestion ? 'neural' : 'accent';
+    const timeLimit = Number(currentQuestion?.time_limit) || 0;
+    // Countdown pressure drives the timer's tone: informational until the last
+    // stretch, then caution, then critical — so colour tracks urgency instead of
+    // being decorative.
+    const timerTone: PxTone = timeRemaining <= 10 ? 'critical' : timeRemaining <= 30 ? 'caution' : 'accent';
+    const timeElapsedPct = timeLimit > 0 ? Math.max(0, Math.min(100, ((timeLimit - timeRemaining) / timeLimit) * 100)) : 0;
+
     return (
-      <div className="max-w-4xl mx-auto w-full px-3 sm:px-4 flex flex-col space-y-4 pb-[env(safe-area-inset-bottom)]">
-        {renderGuestGateBanner()}
+      <div className="px px-shell min-h-full">
         {renderFacePreview()}
         {renderFaceWarningOverlay()}
         {renderProctoringStatusPanel()}
 
-        {/* A drill skips the Live Practice consent card, because that card is
-            about screen and camera capture which a drill does not perform. It
-            does record the microphone, so say so plainly rather than not at all. */}
-        {isDrillSession && (
-          <div className="flex items-start gap-2 rounded-xl border border-border/30 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-            <Mic className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/70" />
-            <span>
-              Your microphone records this answer so it can be scored. No screen or
-              camera capture.
-            </span>
-          </div>
-        )}
+        <div className="px-frame px-frame--mid py-4 sm:py-6 flex flex-col gap-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          {renderGuestGateBanner()}
 
-        {/* ── Header bar ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {isDrillSession && (
-              <Badge
-                variant="outline"
-                className="text-[11px] sm:text-sm px-3 py-1.5 rounded-xl bg-primary/10 border-primary/30 text-primary"
-              >
-                <Mic className="w-3 h-3 mr-1.5" />
-                Practice drill
-              </Badge>
-            )}
-            {currentRoundConfig && (
-              <Badge variant="outline" className="text-[11px] sm:text-sm px-3 py-1.5 rounded-xl bg-muted/20 border-border/30 backdrop-blur-sm">
-                <Target className="w-3 h-3 mr-1.5" />
-                {currentRoundConfig.name}
-              </Badge>
-            )}
-            <Badge variant="outline" className="text-[11px] sm:text-sm px-3 py-1.5 rounded-xl border-border/30">
-              Q {currentQuestionNumber} / {totalQuestions}
-            </Badge>
+          {/* A drill skips the Live Practice consent card, because that card is
+              about screen and camera capture which a drill does not perform. It
+              does record the microphone, so say so plainly rather than not at all. */}
+          {isDrillSession && (
+            <div className="px-panel px-panel--inset flex items-start gap-2.5 px-3.5 py-2.5">
+              <Mic className="w-3.5 h-3.5 mt-0.5 shrink-0" style={toneColor('accent')} />
+              <span className="px-note">
+                Your microphone records this answer so it can be scored. No screen or camera capture.
+              </span>
+            </div>
+          )}
 
-            <Badge
-              variant="outline"
-              className={`rounded-xl ${
-                isCodingQuestion(currentQuestion)
-                  ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400"
-                  : "bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400"
-              }`}
-            >
-              {isCodingQuestion(currentQuestion) ? 'CODING' : 'VOICE'}
-              {currentQuestion?.programming_language && ` (${currentQuestion.programming_language})`}
-            </Badge>
+          {/* ── Session HUD ── */}
+          <Panel className="overflow-hidden px-fade">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 py-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="px-num text-[0.625rem] px-ink-3 tracking-[0.14em]">
+                  Q{String(currentQuestionNumber).padStart(2, '0')}
+                  <span className="opacity-50"> / {String(totalQuestions).padStart(2, '0')}</span>
+                </span>
+                <span className="w-px h-4 bg-[hsl(var(--px-line))]" aria-hidden />
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {isDrillSession && (
+                    <Chip tone="accent" icon={Mic}>
+                      Drill
+                    </Chip>
+                  )}
+                  {currentRoundConfig && <Chip icon={Target}>{currentRoundConfig.name}</Chip>}
+                  <Chip tone={questionTone} icon={isCodeQuestion ? SquareCode : Mic}>
+                    {isCodeQuestion ? 'Code' : 'Voice'}
+                    {currentQuestion?.programming_language ? ` · ${currentQuestion.programming_language}` : ''}
+                  </Chip>
+                  <Chip mono className="capitalize">{String(displayedQuestionDifficulty ?? '')}</Chip>
+                </div>
+              </div>
 
-            <Badge className="bg-primary/90 text-primary-foreground text-[11px] sm:text-sm rounded-xl px-3 py-1">
-              {displayedQuestionDifficulty}
-            </Badge>
-            {phase === 'recording' ? (
-              <Badge
-                variant={timeRemaining <= 10 ? "destructive" : "secondary"}
-                className={`rounded-xl ${timeRemaining <= 10 ? "animate-pulse" : ""}`}
-              >
-                <Clock className="w-3 h-3 mr-1" />
-                {formatTime(timeRemaining)}
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="opacity-60 rounded-xl">
-                <Clock className="w-3 h-3 mr-1" />
-                {currentQuestion?.time_limit}s limit
-              </Badge>
-            )}
+              <div className="flex items-center gap-3">
+                {(isProcessing || isSubmittingCode) && (
+                  <span className="px-note inline-flex items-center gap-1.5">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Submitting
+                  </span>
+                )}
 
-            {(isProcessing || isSubmittingCode) && (
-              <Badge variant="secondary" className="animate-pulse text-[11px] sm:text-sm rounded-xl">
-                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                Submitting…
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Progress value={(currentQuestionNumber / totalQuestions) * 100} className="w-full sm:w-36 h-2 rounded-full" />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleEndPractice}
-              className="h-8 px-3 text-[10px] sm:text-xs font-bold uppercase tracking-tight text-red-400/70 hover:text-white hover:bg-destructive rounded-xl transition-all duration-200 shrink-0"
-            >
-              End
-            </Button>
-          </div>
-        </div>
+                <span
+                  className="px-num text-[0.8125rem] font-semibold inline-flex items-center gap-1.5"
+                  style={toneColor(phase === 'recording' ? timerTone : 'neutral')}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  {phase === 'recording' ? formatTime(timeRemaining) : `${timeLimit}s`}
+                </span>
 
-        {/* ── Question Card ── */}
-        <Card key={currentQuestionRenderKey} className="flex-1 flex flex-col rounded-2xl border border-border/30 shadow-lg shadow-black/5 overflow-hidden">
-          {/* Gradient top accent */}
-          <div className={`h-0.5 ${isCodingQuestion(currentQuestion) ? 'bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500' : 'bg-gradient-to-r from-green-500 via-emerald-400 to-green-500'}`} />
+                <PxButton variant="danger" size="sm" onClick={handleEndPractice}>
+                  End
+                </PxButton>
+              </div>
+            </div>
 
-          {isCodingQuestion(currentQuestion) ? (
-            <div className="p-3 sm:p-6">
+            <div className="px-4 pb-3">
+              <Ticks total={totalQuestions} current={currentQuestionNumber} />
+            </div>
+          </Panel>
+
+          {/* ── Question ──
+              A coding question hands the whole stage to the editor, which owns
+              its own panels; wrapping it again would nest one surface inside
+              another and duplicate the prompt header. */}
+          {isCodeQuestion ? (
+            <div key={currentQuestionRenderKey} className="px-rise">
               <InterviewCodeEditor
                 question={{
                   ...(currentQuestion as Question),
@@ -4902,183 +4983,175 @@ export const PracticeMode = () => {
               />
             </div>
           ) : (
-            <>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-xl sm:text-2xl font-bold mb-2 leading-snug">
-                      {deliveredQuestionText || (fullQuestionText ? '…' : 'No question text available')}
-                    </CardTitle>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-4 h-4" />
-                        {currentQuestion?.time_limit}s time limit
-                      </div>
-                      <Badge variant="secondary" className="text-xs rounded-lg">
-                        {currentQuestion?.category}
-                      </Badge>
+            <Panel
+              key={currentQuestionRenderKey}
+              variant="raised"
+              brackets={phase === 'recording'}
+              className="overflow-hidden px-rise"
+            >
+              <Seam tone={phase === 'recording' ? 'critical' : questionTone} />
+              {/* Prompt and stage sit side by side once there is room. Stacked,
+                  the stage stretched to fill the column and opened a dead band
+                  between the question and the controls. */}
+              <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <div className="px-5 sm:px-6 py-5 border-b lg:border-b-0 lg:border-r border-[hsl(var(--px-line-soft))]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <Eyebrow tone={questionTone} icon={MessageSquare}>
+                        {currentQuestion?.category ? String(currentQuestion.category).replace(/_/g, ' ') : 'Interview question'}
+                      </Eyebrow>
+                      <h2 className="mt-3 text-[1.0625rem] sm:text-[1.1875rem] font-semibold leading-[1.45] tracking-[-0.012em] px-ink text-pretty">
+                        {deliveredQuestionText || (fullQuestionText ? '…' : 'No question text available')}
+                      </h2>
                     </div>
+
+                    {enableTTS && (
+                      <PxButton
+                        variant="outline"
+                        iconOnly
+                        size="sm"
+                        aria-label="Replay question audio"
+                        onClick={() => {
+                          if (currentQuestion && sessionId) {
+                            // Replay audio logic here
+                          }
+                        }}
+                        disabled={isPlayingAudio}
+                      >
+                        {isPlayingAudio ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                      </PxButton>
+                    )}
                   </div>
-                  {enableTTS && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="rounded-xl"
-                      onClick={() => {
-                        if (currentQuestion && sessionId) {
-                          // Replay audio logic here
-                        }
-                      }}
-                      disabled={isPlayingAudio}
-                    >
-                      {isPlayingAudio ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                    </Button>
+
+                  {/* Time budget reads as a burn-down bar while recording. */}
+                  {timeLimit > 0 && (
+                    <div className="mt-5 flex items-center gap-3">
+                      <span className="px-eyebrow shrink-0">Time budget</span>
+                      <Meter
+                        value={phase === 'recording' ? 100 - timeElapsedPct : 100}
+                        tone={phase === 'recording' ? timerTone : 'neutral'}
+                        className="flex-1"
+                      />
+                      <span className="px-num text-[0.6875rem] px-ink-3 shrink-0">{timeLimit}s</span>
+                    </div>
                   )}
                 </div>
-              </CardHeader>
 
-              <CardContent className="flex-1 flex flex-col items-center justify-center gap-6 pb-8">
-                {phase === 'recording' ? (
-                  <>
-                    <div className="relative flex flex-col items-center">
-                      {/* Futuristic Waveform Visualization */}
-                      <div className="flex items-end gap-1.5 h-32 mb-6">
-                        {[...Array(16)].map((_, i) => {
-                          const baseHeight = 16;
-                          const maxHeight = 120;
-                          const position = Math.abs(i - 7.5) / 7.5;
-                          const heightMultiplier = (1 - position * 0.4) * audioLevel;
-                          const height = baseHeight + (maxHeight - baseHeight) * heightMultiplier;
-
+                <div className="flex flex-col items-center justify-center gap-5 px-5 py-8 sm:py-10">
+                  {phase === 'recording' ? (
+                    <>
+                      {/* Live waveform, driven by the analyser's level. */}
+                      <div className="px-wave" style={{ ['--px-wave-hue' as string]: toneVar('critical') }}>
+                        {[...Array(19)].map((_, i) => {
+                          const centre = 9;
+                          const position = Math.abs(i - centre) / centre;
+                          const heightMultiplier = (1 - position * 0.55) * audioLevel;
+                          const height = 4 + (84 - 4) * Math.max(0, heightMultiplier);
                           return (
-                            <div
+                            <span
                               key={i}
-                              className="w-1.5 rounded-full transition-all duration-75 ease-out"
-                              style={{
-                                height: `${height}px`,
-                                opacity: 0.6 + audioLevel * 0.4,
-                                background: `linear-gradient(to top, rgb(239, 68, 68), rgb(236, 72, 153))`,
-                              }}
+                              className="px-wave__bar"
+                              style={{ height: `${height}px`, opacity: 0.45 + audioLevel * 0.55 }}
                             />
                           );
                         })}
                       </div>
 
-                      {/* Recording Timer Pill */}
-                      <Badge className="bg-red-500/90 text-white px-5 py-2 text-base rounded-2xl shadow-lg shadow-red-500/30">
-                        <div className="w-2 h-2 bg-white rounded-full mr-2.5 animate-pulse" />
-                        {formatTime(recordingTime)}
-                      </Badge>
-                    </div>
-
-                    <div className="text-center space-y-2">
-                      <h3 className="text-2xl font-bold">Recording...</h3>
-                      <p className="text-muted-foreground">
-                        Speak clearly and naturally. Click stop when finished.
-                      </p>
-                    </div>
-
-                    <Button
-                      size="lg"
-                      variant="destructive"
-                      className="px-8 h-12 rounded-2xl shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30 font-bold transition-all duration-200"
-                      onClick={handleStopRecording}
-                      disabled={isProcessing}
-                    >
-                      <MicOff className="mr-2 w-5 h-5" />
-                      Stop & Submit
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    {(isPlayingAudio || isAudioLoading) ? (
-                      <>
-                        <div className="relative">
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 blur-xl opacity-40 animate-pulse" />
-                          <div className="relative w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/30">
-                            <Volume2 className="w-14 h-14 text-white" />
-                          </div>
-                          <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
-                            <Badge className="bg-blue-500 text-white px-4 py-1 rounded-xl shadow-lg">
-                              AI Speaking
-                            </Badge>
-                          </div>
-                        </div>
-
-                        <div className="text-center space-y-2 pt-2">
-                          <h3 className="text-2xl font-bold">Listen to the Question</h3>
-                          <p className="text-muted-foreground max-w-md">
-                            The AI interviewer is asking you the question. Please listen carefully.
-                          </p>
-                        </div>
-
-                        <Button
-                          size="lg"
-                          variant="outline"
-                          className="px-8 h-12 rounded-2xl"
-                          disabled
+                      <div className="flex flex-col items-center gap-2.5">
+                        <span
+                          className="inline-flex items-center gap-2 px-3.5 h-8 rounded-full border px-num text-[0.875rem] font-semibold"
+                          style={{
+                            color: `hsl(${toneVar('critical')})`,
+                            borderColor: `hsl(${toneVar('critical')} / 0.36)`,
+                            background: `hsl(${toneVar('critical')} / 0.1)`,
+                          }}
                         >
-                          <Loader2 className="mr-2 animate-spin" />
-                          Please Wait...
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <div className="relative">
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/30 to-purple-500/30 blur-xl opacity-30" />
-                          <div className="relative w-32 h-32 bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/30 rounded-full flex items-center justify-center shadow-xl">
-                            <Mic className="w-14 h-14 text-primary" />
-                          </div>
-                        </div>
+                          <StatusDot tone="critical" live />
+                          REC {formatTime(recordingTime)}
+                        </span>
+                        <h3 className="px-title">Recording your answer</h3>
+                        <p className="px-body text-center max-w-sm">
+                          Speak clearly and at a natural pace. Stop when you have finished your point.
+                        </p>
+                      </div>
 
-                        <div className="text-center space-y-2">
-                          <h3 className="text-2xl font-bold">Ready to Answer</h3>
-                          <p className="text-muted-foreground max-w-md">
-                            {autoStartVoiceRecording
-                              ? 'Recording starts automatically when the question is ready. Timer begins when recording begins.'
-                              : 'Click the button below to start recording. Timer begins when recording begins.'}
-                          </p>
-                          <div className="flex items-center justify-center gap-2 text-sm">
-                            <Clock className="w-4 h-4 text-primary" />
-                            <span className="font-semibold text-primary">{currentQuestion?.time_limit}s time limit</span>
-                          </div>
-                        </div>
+                      <PxButton variant="danger" size="lg" onClick={handleStopRecording} disabled={isProcessing}>
+                        <MicOff className="w-4 h-4" />
+                        Stop &amp; Submit
+                      </PxButton>
+                    </>
+                  ) : (isPlayingAudio || isAudioLoading) ? (
+                    <>
+                      <div className="px-orb" style={{ ['--px-orb-hue' as string]: toneVar('neural') }}>
+                        <Volume2 className="w-11 h-11" />
+                      </div>
 
-                        <Button
-                          size="lg"
-                          className="px-8 h-12 rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 font-bold"
-                          onClick={handleStartRecording}
-                          disabled={isProcessing}
-                        >
-                          <Mic className="mr-2 w-5 h-5" />
-                          Start Recording
-                        </Button>
-                      </>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </>
+                      <div className="flex flex-col items-center gap-2.5">
+                        <Chip tone="neural" icon={Bot}>
+                          Interviewer speaking
+                        </Chip>
+                        <h3 className="px-title">Listen to the question</h3>
+                        <p className="px-body text-center max-w-sm">
+                          The AI interviewer is reading the question aloud. Recording opens as soon as it finishes.
+                        </p>
+                      </div>
+
+                      <div className="w-40">
+                        <div className="px-sweep" />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="px-orb">
+                        <Mic className="w-11 h-11" />
+                      </div>
+
+                      <div className="flex flex-col items-center gap-2.5">
+                        <Eyebrow tone="accent">Standing by</Eyebrow>
+                        <h3 className="px-title">Ready to answer</h3>
+                        <p className="px-body text-center max-w-sm">
+                          {autoStartVoiceRecording
+                            ? 'Recording starts on its own once the question is ready. The timer begins with the recording.'
+                            : 'Start recording when you are ready. The timer begins with the recording, not before.'}
+                        </p>
+                      </div>
+
+                      <PxButton variant="primary" size="lg" onClick={handleStartRecording} disabled={isProcessing}>
+                        <Mic className="w-4 h-4" />
+                        Start Recording
+                      </PxButton>
+                    </>
+                  )}
+                </div>
+              </div>
+            </Panel>
           )}
-        </Card>
+        </div>
       </div>
     );
   }
 
   if (phase === 'processing') {
     return (
-      <div className="max-w-4xl mx-auto w-full px-4 flex items-center justify-center">
+      <div className="px px-shell min-h-full grid place-items-center">
         {renderFacePreview()}
         {renderFaceWarningOverlay()}
         {renderProctoringStatusPanel()}
-        <div className="flex flex-col items-center gap-4 py-12">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-purple-500 blur-xl opacity-30 animate-pulse" />
-            <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 border border-primary/30 flex items-center justify-center">
-              <Loader2 className="w-7 h-7 text-primary animate-spin" />
-            </div>
+
+        <div className="px-frame px-frame--narrow py-16 flex flex-col items-center gap-6 px-fade">
+          <div className="px-orb" style={{ ['--px-orb-size' as string]: '5.5rem' }}>
+            <Brain className="w-8 h-8" />
           </div>
-          <div className="text-sm text-muted-foreground font-medium">Analyzing your response…</div>
+          <div className="text-center">
+            <Eyebrow tone="accent">Evaluating</Eyebrow>
+            <h3 className="px-title mt-2">Analysing your response</h3>
+            <p className="px-body mt-1.5 max-w-xs mx-auto">
+              Transcribing, scoring correctness, and measuring delivery.
+            </p>
+          </div>
+          <div className="w-48">
+            <div className="px-sweep" />
+          </div>
         </div>
       </div>
     );
@@ -5102,7 +5175,7 @@ export const PracticeMode = () => {
       : undefined;
     const activeCodeEvaluation = codeEvaluation ?? persistedCodeEvaluation?.codeEvaluation ?? null;
     const activeCodeTestResults = codeTestResults ?? persistedCodeEvaluation?.testResults ?? null;
-    const feedbackTone = getStrategyToneClasses(strategyPreview?.coaching_style);
+    const feedbackTone = getStrategyTone(strategyPreview?.coaching_style);
     const feedbackBadgeLabel = getStrategyBadgeLabel(strategyPreview);
     const feedbackHeadline = getStrategyHeadline(
       strategyPreview,
@@ -5124,811 +5197,734 @@ export const PracticeMode = () => {
         : 'Next Question';
     const showFeedbackPreview = Boolean(strategyPreview?.action || feedbackReasonText || feedbackRequiresAcknowledgment);
 
+    const correctnessScore = microFeedback?.correctness_score;
+    const confidencePct = Math.round((speechMetrics?.confidence_score || 0) * 100);
+    const silenceRemoved = speechMetrics?.silence_removed ?? 0;
+    const recordingDuration = speechMetrics?.duration || 0;
+
     return (
-      <div className="max-w-4xl mx-auto w-full px-3 sm:px-4 flex flex-col space-y-3 sm:space-y-4 pb-6">
+      <div className="px px-shell min-h-full">
         {renderProctoringStatusPanel()}
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight">{isCodeQ ? 'Code Feedback' : 'Answer Feedback'}</h2>
-            {completionPending && (
-              <Badge className="bg-primary/10 text-primary border-primary/20 rounded-xl" variant="outline">
-                Final
-              </Badge>
-            )}
+
+        <div className="px-frame px-frame--narrow py-4 sm:py-5 flex flex-col gap-3 pb-8">
+
+          {/* ── Header ── */}
+          <div className="flex items-end justify-between gap-3 px-fade">
+            <div className="min-w-0">
+              <Eyebrow tone={isCodeQ ? 'neural' : 'accent'} icon={isCodeQ ? SquareCode : Waves}>
+                {isCodeQ ? 'Code evaluation' : 'Answer evaluation'}
+              </Eyebrow>
+              <h2 className="px-title mt-2">
+                Question {currentQuestionNumber} feedback
+              </h2>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {completionPending && <Chip tone="accent">Final</Chip>}
+              <Chip mono>
+                {String(currentQuestionNumber).padStart(2, '0')}/{String(totalQuestions).padStart(2, '0')}
+              </Chip>
+            </div>
           </div>
-          <Badge variant="outline" className="text-xs sm:text-sm rounded-xl">
-            Q {currentQuestionNumber} / {totalQuestions}
-          </Badge>
-        </div>
 
-        {showFeedbackPreview && (
-          <Card className={`border rounded-2xl overflow-hidden ${feedbackTone.card}`}>
-            <div className="h-0.5 bg-gradient-to-r from-primary via-purple-500 to-primary" />
-            <CardContent className="pt-4 px-4 pb-4 space-y-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 space-y-2">
-                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
-                    Coming up next
+          {/* ── What the coach does next ── */}
+          {showFeedbackPreview && (
+            <Panel tone={feedbackTone} className="overflow-hidden px-rise">
+              <Seam tone={feedbackTone} />
+              <PanelBody>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <Eyebrow tone={feedbackTone} icon={Compass}>
+                      Coming up next
+                    </Eyebrow>
+                    {feedbackBadgeLabel && (
+                      <div className="mt-2">
+                        <Chip tone={feedbackTone}>{feedbackBadgeLabel}</Chip>
+                      </div>
+                    )}
+                    <p className="px-subtitle mt-2.5">{feedbackHeadline}</p>
+                    {feedbackReasonText && <p className="px-body mt-1.5">{feedbackReasonText}</p>}
                   </div>
-                  {feedbackBadgeLabel && (
-                    <Badge variant="outline" className={`rounded-xl ${feedbackTone.badge}`}>
-                      {feedbackBadgeLabel}
-                    </Badge>
-                  )}
-                  <p className="text-base sm:text-lg font-bold leading-relaxed text-foreground/95">
-                    {feedbackHeadline}
-                  </p>
-                  {feedbackReasonText && (
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {feedbackReasonText}
-                    </p>
+
+                  {feedbackRequiresAcknowledgment && (
+                    <span className="px-note shrink-0">Continue when you’re ready.</span>
                   )}
                 </div>
 
-                {feedbackRequiresAcknowledgment && (
-                  <span className="text-xs text-muted-foreground">Continue when you’re ready.</span>
-                )}
-              </div>
-
-              {strategyDebugMode && strategyPreview?.decision_trace && (
-                <Collapsible>
-                  <CollapsibleTrigger asChild>
-                    <Button type="button" variant="ghost" className="w-full justify-between px-3 py-2 h-auto rounded-lg border border-border/60 bg-background/60">
-                      <div className="text-left">
-                        <div className="text-sm font-semibold">Debug details</div>
-                        <div className="text-xs text-muted-foreground">Internal adaptation metadata for power users.</div>
-                      </div>
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-2 px-1 pt-3">
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">Action: {feedbackActionLabel}</Badge>
-                      {feedbackDepthLabel && <Badge variant="outline">Depth: {feedbackDepthLabel}</Badge>}
-                      {strategyPreview?.target_difficulty && (
-                        <Badge variant="outline" className="capitalize">Difficulty: {strategyPreview.target_difficulty}</Badge>
-                      )}
-                      {strategyPreview?.coaching_style && (
-                        <Badge variant="outline" className="capitalize">Style: {strategyPreview.coaching_style}</Badge>
-                      )}
-                    </div>
-                    {(feedbackGuardrail || feedbackPressureMode) && (
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {feedbackGuardrail && (
-                          <div className="rounded-lg border border-border/60 bg-background/70 p-3">
-                            <div className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">Guardrail</div>
-                            <div className="mt-1 text-sm text-foreground/90">{feedbackGuardrail}</div>
-                          </div>
-                        )}
-                        {feedbackPressureMode && (
-                          <div className="rounded-lg border border-border/60 bg-background/70 p-3">
-                            <div className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">Pressure mode</div>
-                            <div className="mt-1 text-sm text-foreground/90">{feedbackPressureMode}</div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {strategyPreview.decision_trace.follow_up_budget && (
-                      <div className="rounded-lg border border-border/60 bg-background/70 p-3">
-                        <div className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">Follow-up budget</div>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {typeof strategyPreview.decision_trace.follow_up_budget.used === 'number' && (
-                            <Badge variant="outline">Used {strategyPreview.decision_trace.follow_up_budget.used}</Badge>
-                          )}
-                          {typeof strategyPreview.decision_trace.follow_up_budget.max === 'number' && (
-                            <Badge variant="outline">Max {strategyPreview.decision_trace.follow_up_budget.max}</Badge>
-                          )}
-                          {typeof strategyPreview.decision_trace.follow_up_budget.remaining === 'number' && (
-                            <Badge variant="outline">Remaining {strategyPreview.decision_trace.follow_up_budget.remaining}</Badge>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ── CODE question feedback ── */}
-        {isCodeQ && (
-          <>
-            {/* Code Evaluation Scores */}
-            {activeCodeEvaluation && (
-              <Card className="border border-border/30 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500/5 to-blue-500/10">
-                <div className="h-0.5 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500" />
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                    <div className="p-1.5 bg-blue-500/10 rounded-lg">
-                      <Target className="w-5 h-5 text-blue-500" />
-                    </div>
-                    Code Evaluation
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Overall + Pass/Fail */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary" className="text-base px-3 py-1">
-                      Overall: {activeCodeEvaluation.overall_score}%
-                    </Badge>
-                    <Badge variant={activeCodeEvaluation.is_correct ? 'default' : 'destructive'}>
-                      {activeCodeEvaluation.is_correct ? '✅ Accepted' : '❌ Not Accepted'}
-                    </Badge>
-                    {activeCodeEvaluation.test_cases_total !== undefined && (
-                      <Badge variant="outline">
-                        Tests: {activeCodeEvaluation.test_cases_passed ?? 0}/{activeCodeEvaluation.test_cases_total}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Score breakdown bars */}
-                  <div className="space-y-2">
-                    {[
-                      { label: 'Correctness', value: activeCodeEvaluation.correctness_score },
-                      { label: 'Code Quality', value: activeCodeEvaluation.code_quality_score },
-                      { label: 'Efficiency', value: activeCodeEvaluation.efficiency_score },
-                    ].map(({ label, value }) => (
-                      <div key={label} className="space-y-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium">{label}</span>
-                          <span className="font-bold">{value}%</span>
-                        </div>
-                        <Progress value={value} className="h-2" />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Complexity */}
-                  {(activeCodeEvaluation.time_complexity || activeCodeEvaluation.space_complexity) && (
-                    <div className="flex flex-wrap gap-3 text-sm">
-                      {activeCodeEvaluation.time_complexity && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-muted-foreground">Time:</span>
-                          <code className="bg-muted px-2 py-0.5 rounded text-xs font-mono">{activeCodeEvaluation.time_complexity}</code>
-                        </div>
-                      )}
-                      {activeCodeEvaluation.space_complexity && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-muted-foreground">Space:</span>
-                          <code className="bg-muted px-2 py-0.5 rounded text-xs font-mono">{activeCodeEvaluation.space_complexity}</code>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Test Results Detail */}
-            {activeCodeTestResults && activeCodeTestResults.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base sm:text-lg">Test Results</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {activeCodeTestResults.map((test, idx) => (
-                    <div key={idx} className={`rounded-md border p-3 text-sm ${test.passed ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium">Test Case {test.test_case_number}</span>
-                        <Badge variant={test.passed ? 'default' : 'destructive'} className="text-xs">
-                          {test.passed ? 'Passed' : 'Failed'}
-                        </Badge>
-                      </div>
-                      {!test.passed && (
-                        <div className="text-xs text-muted-foreground space-y-1 mt-2">
-                          {test.expected_output && <div><span className="font-medium">Expected:</span> {test.expected_output}</div>}
-                          {test.actual_output && <div><span className="font-medium">Got:</span> {test.actual_output}</div>}
-                          {test.error_message && <div className="text-red-500"><span className="font-medium">Error:</span> {test.error_message}</div>}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Approach Feedback */}
-            {activeCodeEvaluation?.approach_feedback && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base sm:text-lg">Approach Feedback</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{activeCodeEvaluation.approach_feedback}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Edge cases & Suggestions */}
-            {activeCodeEvaluation && (
-              <div className="grid md:grid-cols-2 gap-3">
-                {activeCodeEvaluation.edge_cases_handled && activeCodeEvaluation.edge_cases_handled.length > 0 && (
-                  <Card className="border-green-500/30">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm text-green-600 dark:text-green-400">✅ Edge Cases Handled</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="text-xs space-y-1">
-                        {activeCodeEvaluation.edge_cases_handled.map((ec, i) => (
-                          <li key={i} className="flex items-start gap-1.5"><span className="text-green-500 shrink-0">✓</span> {ec}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
-                {activeCodeEvaluation.edge_cases_missed && activeCodeEvaluation.edge_cases_missed.length > 0 && (
-                  <Card className="border-red-500/30">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm text-red-600 dark:text-red-400">❌ Edge Cases Missed</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="text-xs space-y-1">
-                        {activeCodeEvaluation.edge_cases_missed.map((ec, i) => (
-                          <li key={i} className="flex items-start gap-1.5"><span className="text-red-500 shrink-0">✗</span> {ec}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
-
-            {/* Optimization Suggestions */}
-            {activeCodeEvaluation?.optimization_suggestions && activeCodeEvaluation.optimization_suggestions.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">💡 Optimization Suggestions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="text-xs space-y-1.5">
-                    {activeCodeEvaluation.optimization_suggestions.map((s, i) => (
-                      <li key={i} className="flex items-start gap-2"><span className="text-primary shrink-0">→</span> <span className="leading-relaxed">{s}</span></li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* No evaluation fallback */}
-            {!activeCodeEvaluation && (!activeCodeTestResults || activeCodeTestResults.length === 0) && (
-              <Card className="border-amber-500/30">
-                <CardContent className="py-8 text-center">
-                  <p className="text-muted-foreground">No code evaluation details were returned for this submission.</p>
-                </CardContent>
-              </Card>
-            )}
-          </>
-        )}
-
-        {/* ── VOICE question feedback ── */}
-        {!isCodeQ && (
-          <>
-        {/* Pressure / Mode indicator (debug only) */}
-        {strategyDebugMode && pressure && (pressure.mode || pressure.reason) && (
-          <Card className="border-muted">
-            <CardContent className="pt-4 px-3 sm:px-6 pb-4 sm:pb-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold">Mode</div>
-                  {pressure.reason ? (
-                    <div className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
-                      {pressure.reason}
-                    </div>
-                  ) : null}
-                </div>
-                {pressure.mode ? (
-                  <Badge variant="outline" className="capitalize shrink-0">
-                    {pressure.mode}
-                  </Badge>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Speech Metrics - Futuristic Grid */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {[
-            { label: 'Speed', value: speechMetrics?.wpm || 0, unit: 'wpm', icon: Activity, color: 'text-blue-500' },
-            { label: 'Confidence', value: `${((speechMetrics?.confidence_score || 0) * 100).toFixed(0)}%`, unit: 'score', icon: Gauge, color: 'text-green-500' },
-            { label: 'Fillers', value: speechMetrics?.filler_count || 0, unit: 'um, uh', icon: CircleDot, color: 'text-amber-500' },
-          ].map((metric) => (
-            <Card key={metric.label} className="border-border/20 rounded-2xl overflow-hidden">
-              <CardContent className="p-3 sm:p-4 text-center">
-                <metric.icon className={`w-4 h-4 mx-auto mb-1.5 ${metric.color} opacity-60`} />
-                <div className="text-xl sm:text-3xl font-black">{metric.value}</div>
-                <p className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 uppercase tracking-wider">{metric.unit}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* VAD Silence Removal - Compact Mobile Version */}
-        {speechMetrics?.silence_removed && speechMetrics.silence_removed > 0 && (
-          <Card className="border-yellow-500/30 bg-gradient-to-br from-yellow-50/50 to-orange-50/30 dark:from-yellow-950/20 dark:to-orange-950/10">
-            <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6 pb-4 sm:pb-6">
-              <div className="flex items-start gap-3 sm:gap-4">
-                <div className="p-2 sm:p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-full shrink-0">
-                  <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-baseline gap-2 mb-2">
-                    <span className="text-2xl sm:text-3xl font-bold text-yellow-700 dark:text-yellow-400">
-                      {speechMetrics.silence_removed.toFixed(1)}s
-                    </span>
-                    <span className="text-xs sm:text-sm text-muted-foreground">of silence removed</span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-3 leading-relaxed">
-                    ⏸️ Long pauses were detected and removed by Voice Activity Detection (VAD). Practice speaking more continuously to reduce dead air.
-                  </p>
-
-                  {/* Compact Time Breakdown */}
-                  <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-2 sm:p-3 space-y-1.5 sm:space-y-2 mb-2">
-                    <div className="flex justify-between items-center text-xs sm:text-sm">
-                      <span className="text-muted-foreground">Actual Speaking Time:</span>
-                      <span className="font-semibold text-green-600 dark:text-green-400">
-                        {((speechMetrics.duration || 0) - speechMetrics.silence_removed).toFixed(1)}s
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs sm:text-sm">
-                      <span className="text-muted-foreground">Silence Removed:</span>
-                      <span className="font-semibold text-yellow-600 dark:text-yellow-400">
-                        {speechMetrics.silence_removed.toFixed(1)}s
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs sm:text-sm border-t pt-1.5 sm:pt-2">
-                      <span className="text-muted-foreground font-medium">Total Recording:</span>
-                      <span className="font-semibold">
-                        {(speechMetrics.duration || 0).toFixed(1)}s
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <Progress
-                      value={Math.min(100, (speechMetrics.silence_removed / (speechMetrics.duration || 1)) * 100)}
-                      className="h-1.5 sm:h-2 bg-yellow-200 dark:bg-yellow-900/30"
-                    />
-                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                      {((speechMetrics.silence_removed / (speechMetrics.duration || 1)) * 100).toFixed(1)}% of your recording was silence
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Your Answer & Feedback */}
-        <Card className="flex-1 rounded-2xl border border-border/30 overflow-hidden">
-          <div className="h-0.5 bg-gradient-to-r from-green-500 via-emerald-400 to-green-500" />
-          <CardHeader className="px-3 sm:px-6 pt-4 sm:pt-6 pb-3">
-            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <div className="p-1.5 bg-green-500/10 rounded-lg">
-                <FileText className="w-4 h-4 text-green-500" />
-              </div>
-              Your Answer
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-4 sm:pb-6">
-            <ScrollArea className="h-24 sm:h-32">
-              <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">{transcription}</p>
-            </ScrollArea>
-
-            <Separator />
-
-            {/* Answer Correctness Section - NEW */}
-            {microFeedback?.correctness_score !== undefined && (
-              <>
-                <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-muted/50 rounded-lg border">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
-                      <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      Answer Correctness
-                    </h4>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      {microFeedback.is_correct ? (
-                        <span className="text-green-600 dark:text-green-400 text-lg sm:text-2xl">✅</span>
-                      ) : (
-                        <span className="text-red-600 dark:text-red-400 text-lg sm:text-2xl">❌</span>
-                      )}
-                      <span className="text-xl sm:text-2xl font-bold text-primary">
-                        {microFeedback.correctness_score}%
-                      </span>
-                      {microFeedback.technical_accuracy && (
-                        <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${microFeedback.technical_accuracy === 'Excellent' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                          microFeedback.technical_accuracy === 'Good' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                            microFeedback.technical_accuracy === 'Fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                              'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                          }`}>
-                          {microFeedback.technical_accuracy}
+                {strategyDebugMode && strategyPreview?.decision_trace && (
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <button className="px-focusable mt-3 w-full flex items-center justify-between gap-3 px-3 py-2 rounded-[var(--px-r-sm)] border border-[hsl(var(--px-line))]">
+                        <span className="text-left">
+                          <span className="block text-[0.8125rem] font-semibold px-ink">Debug details</span>
+                          <span className="block px-note">Internal adaptation metadata for power users.</span>
                         </span>
+                        <ChevronDown className="w-4 h-4 px-ink-3" />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-2 pt-3">
+                      <div className="flex flex-wrap gap-2">
+                        <Chip mono>Action: {feedbackActionLabel}</Chip>
+                        {feedbackDepthLabel && <Chip mono>Depth: {feedbackDepthLabel}</Chip>}
+                        {strategyPreview?.target_difficulty && (
+                          <Chip mono className="capitalize">Difficulty: {strategyPreview.target_difficulty}</Chip>
+                        )}
+                        {strategyPreview?.coaching_style && (
+                          <Chip mono className="capitalize">Style: {strategyPreview.coaching_style}</Chip>
+                        )}
+                      </div>
+
+                      {(feedbackGuardrail || feedbackPressureMode) && (
+                        <Grid cols={1} sm={2}>
+                          {feedbackGuardrail && (
+                            <div className="px-panel px-panel--inset px-3 py-2">
+                              <Eyebrow>Guardrail</Eyebrow>
+                              <div className="px-body px-body--tight mt-1">{feedbackGuardrail}</div>
+                            </div>
+                          )}
+                          {feedbackPressureMode && (
+                            <div className="px-panel px-panel--inset px-3 py-2">
+                              <Eyebrow>Pressure mode</Eyebrow>
+                              <div className="px-body px-body--tight mt-1">{feedbackPressureMode}</div>
+                            </div>
+                          )}
+                        </Grid>
                       )}
-                    </div>
-                  </div>
 
-                  {/* Key Points Covered */}
-                  {microFeedback.key_points_covered && microFeedback.key_points_covered.length > 0 && (
-                    <div>
-                      <h5 className="text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2 text-green-600 dark:text-green-400">
-                        ✅ Key Points Covered
-                      </h5>
-                      <ul className="text-xs sm:text-sm space-y-1">
-                        {microFeedback.key_points_covered.map((point, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-green-600 dark:text-green-400 mt-0.5 shrink-0">✓</span>
-                            <span className="leading-relaxed">{point}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {strategyPreview.decision_trace.follow_up_budget && (
+                        <div className="px-panel px-panel--inset px-3 py-2">
+                          <Eyebrow>Follow-up budget</Eyebrow>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {typeof strategyPreview.decision_trace.follow_up_budget.used === 'number' && (
+                              <Chip mono>Used {strategyPreview.decision_trace.follow_up_budget.used}</Chip>
+                            )}
+                            {typeof strategyPreview.decision_trace.follow_up_budget.max === 'number' && (
+                              <Chip mono>Max {strategyPreview.decision_trace.follow_up_budget.max}</Chip>
+                            )}
+                            {typeof strategyPreview.decision_trace.follow_up_budget.remaining === 'number' && (
+                              <Chip mono>Remaining {strategyPreview.decision_trace.follow_up_budget.remaining}</Chip>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </PanelBody>
+            </Panel>
+          )}
+
+          {/* ══ CODE FEEDBACK ══ */}
+          {isCodeQ && (
+            <>
+              {activeCodeEvaluation && (
+                <Panel variant="raised" className="overflow-hidden px-rise">
+                  <Seam tone={activeCodeEvaluation.is_correct ? 'positive' : 'caution'} />
+                  <PanelHead
+                    eyebrow="Verdict"
+                    icon={SquareCode}
+                    tone="neural"
+                    title="Code evaluation"
+                    actions={
+                      <Chip tone={activeCodeEvaluation.is_correct ? 'positive' : 'critical'} size="lg">
+                        {activeCodeEvaluation.is_correct ? 'Accepted' : 'Not accepted'}
+                      </Chip>
+                    }
+                  />
+                  <PanelBody className="space-y-4">
+                    <Grid cols={2} sm={3}>
+                      <StatTile
+                        label="Overall"
+                        value={activeCodeEvaluation.overall_score ?? 0}
+                        unit="%"
+                        tone={getScoreTone(Number(activeCodeEvaluation.overall_score) || 0)}
+                        icon={Gauge}
+                      />
+                      {activeCodeEvaluation.test_cases_total !== undefined && (
+                        <StatTile
+                          label="Tests passed"
+                          value={`${activeCodeEvaluation.test_cases_passed ?? 0}/${activeCodeEvaluation.test_cases_total}`}
+                          tone={
+                            (activeCodeEvaluation.test_cases_passed ?? 0) === activeCodeEvaluation.test_cases_total
+                              ? 'positive'
+                              : 'caution'
+                          }
+                          icon={ListChecks}
+                        />
+                      )}
+                      {(activeCodeEvaluation.time_complexity || activeCodeEvaluation.space_complexity) && (
+                        <StatTile
+                          label="Complexity"
+                          value={activeCodeEvaluation.time_complexity || '—'}
+                          foot={
+                            activeCodeEvaluation.space_complexity
+                              ? `Space ${activeCodeEvaluation.space_complexity}`
+                              : undefined
+                          }
+                          tone="neural"
+                          icon={Cpu}
+                        />
+                      )}
+                    </Grid>
+
+                    <div className="space-y-3">
+                      <Eyebrow>Score breakdown</Eyebrow>
+                      {[
+                        { label: 'Correctness', value: Number(activeCodeEvaluation.correctness_score) || 0 },
+                        { label: 'Code quality', value: Number(activeCodeEvaluation.code_quality_score) || 0 },
+                        { label: 'Efficiency', value: Number(activeCodeEvaluation.efficiency_score) || 0 },
+                      ].map(({ label, value }) => (
+                        <MeterRow key={label} label={label} value={value} tone={getScoreTone(value)} />
+                      ))}
                     </div>
+                  </PanelBody>
+                </Panel>
+              )}
+
+              {activeCodeTestResults && activeCodeTestResults.length > 0 && (
+                <Panel className="overflow-hidden px-rise">
+                  <PanelHead
+                    eyebrow="Test results"
+                    icon={ListChecks}
+                    title={`${activeCodeTestResults.filter((t) => t.passed).length} of ${activeCodeTestResults.length} passed`}
+                  />
+                  <PanelBody className="space-y-2">
+                    {activeCodeTestResults.map((test, idx) => (
+                      <div
+                        key={idx}
+                        className="px-panel px-panel--inset px-3 py-2.5"
+                        style={{ borderColor: `hsl(${toneVar(test.passed ? 'positive' : 'critical')} / 0.28)` }}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="px-num text-[0.75rem] font-semibold px-ink">
+                            Case {test.test_case_number}
+                          </span>
+                          <Chip tone={test.passed ? 'positive' : 'critical'}>
+                            {test.passed ? 'Passed' : 'Failed'}
+                          </Chip>
+                        </div>
+                        {!test.passed && (
+                          <div className="mt-2 space-y-1">
+                            {test.expected_output && (
+                              <div className="px-note">
+                                <span className="font-semibold px-ink-2">Expected </span>
+                                <span className="px-num">{test.expected_output}</span>
+                              </div>
+                            )}
+                            {test.actual_output && (
+                              <div className="px-note">
+                                <span className="font-semibold px-ink-2">Got </span>
+                                <span className="px-num">{test.actual_output}</span>
+                              </div>
+                            )}
+                            {test.error_message && (
+                              <div className="px-note" style={toneColor('critical')}>
+                                {test.error_message}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </PanelBody>
+                </Panel>
+              )}
+
+              {activeCodeEvaluation?.approach_feedback && (
+                <Panel className="overflow-hidden px-rise">
+                  <PanelHead eyebrow="Approach" icon={Lightbulb} tone="accent" />
+                  <PanelBody>
+                    <p className="px-body whitespace-pre-wrap">{activeCodeEvaluation.approach_feedback}</p>
+                  </PanelBody>
+                </Panel>
+              )}
+
+              {activeCodeEvaluation && (
+                (activeCodeEvaluation.edge_cases_handled?.length || activeCodeEvaluation.edge_cases_missed?.length) ? (
+                  <Grid cols={1} md={2} gap="0.75rem">
+                    {activeCodeEvaluation.edge_cases_handled && activeCodeEvaluation.edge_cases_handled.length > 0 && (
+                      <Panel tone="positive" className="overflow-hidden px-rise">
+                        <PanelHead eyebrow="Edge cases handled" icon={CheckCircle2} tone="positive" />
+                        <PanelBody>
+                          <FindingList items={activeCodeEvaluation.edge_cases_handled} tone="positive" />
+                        </PanelBody>
+                      </Panel>
+                    )}
+                    {activeCodeEvaluation.edge_cases_missed && activeCodeEvaluation.edge_cases_missed.length > 0 && (
+                      <Panel tone="critical" className="overflow-hidden px-rise">
+                        <PanelHead eyebrow="Edge cases missed" icon={CircleX} tone="critical" />
+                        <PanelBody>
+                          <FindingList items={activeCodeEvaluation.edge_cases_missed} tone="critical" />
+                        </PanelBody>
+                      </Panel>
+                    )}
+                  </Grid>
+                ) : null
+              )}
+
+              {activeCodeEvaluation?.optimization_suggestions && activeCodeEvaluation.optimization_suggestions.length > 0 && (
+                <Panel className="overflow-hidden px-rise">
+                  <PanelHead eyebrow="Optimisation" icon={Rocket} tone="accent" />
+                  <PanelBody>
+                    <FindingList items={activeCodeEvaluation.optimization_suggestions} tone="accent" numbered />
+                  </PanelBody>
+                </Panel>
+              )}
+
+              {!activeCodeEvaluation && (!activeCodeTestResults || activeCodeTestResults.length === 0) && (
+                <EmptyState
+                  icon={SquareCode}
+                  title="No evaluation returned"
+                  hint="The server did not send evaluation details for this submission."
+                />
+              )}
+            </>
+          )}
+
+          {/* ══ VOICE FEEDBACK ══ */}
+          {!isCodeQ && (
+            <>
+              {strategyDebugMode && pressure && (pressure.mode || pressure.reason) && (
+                <Panel className="overflow-hidden">
+                  <PanelBody tight className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Eyebrow>Mode</Eyebrow>
+                      {pressure.reason && <p className="px-body mt-1">{pressure.reason}</p>}
+                    </div>
+                    {pressure.mode && <Chip mono className="capitalize">{pressure.mode}</Chip>}
+                  </PanelBody>
+                </Panel>
+              )}
+
+              {/* Delivery instrumentation */}
+              <Grid cols={3} gap="0.625rem" className="px-rise">
+                <StatTile
+                  label="Pace"
+                  value={speechMetrics?.wpm || 0}
+                  unit="wpm"
+                  icon={Activity}
+                  tone="accent"
+                  foot={
+                    (speechMetrics?.wpm || 0) > 170
+                      ? 'A little fast'
+                      : (speechMetrics?.wpm || 0) < 110 && (speechMetrics?.wpm || 0) > 0
+                        ? 'A little slow'
+                        : 'In range'
+                  }
+                />
+                <StatTile
+                  label="Confidence"
+                  value={confidencePct}
+                  unit="%"
+                  icon={Gauge}
+                  tone={getScoreTone(confidencePct)}
+                />
+                <StatTile
+                  label="Fillers"
+                  value={speechMetrics?.filler_count || 0}
+                  icon={CircleDot}
+                  tone={(speechMetrics?.filler_count || 0) > 8 ? 'caution' : 'positive'}
+                  foot="um, uh, like"
+                />
+              </Grid>
+
+              {/* Silence removed by VAD */}
+              {silenceRemoved > 0 && (
+                <Panel tone="caution" className="overflow-hidden px-rise">
+                  <PanelHead
+                    eyebrow="Dead air detected"
+                    icon={Hourglass}
+                    tone="caution"
+                    title={`${silenceRemoved.toFixed(1)}s of silence removed`}
+                    description="Voice Activity Detection stripped long pauses before scoring. Speaking more continuously keeps an interviewer with you."
+                  />
+                  <PanelBody className="space-y-3">
+                    <Grid cols={3} gap="0.625rem">
+                      <StatTile
+                        label="Speaking"
+                        value={Math.max(0, recordingDuration - silenceRemoved).toFixed(1)}
+                        unit="s"
+                        tone="positive"
+                      />
+                      <StatTile label="Silence" value={silenceRemoved.toFixed(1)} unit="s" tone="caution" />
+                      <StatTile label="Recorded" value={recordingDuration.toFixed(1)} unit="s" tone="neutral" />
+                    </Grid>
+                    <div className="space-y-1.5">
+                      <Meter
+                        value={Math.min(100, (silenceRemoved / (recordingDuration || 1)) * 100)}
+                        tone="caution"
+                      />
+                      <p className="px-note">
+                        {((silenceRemoved / (recordingDuration || 1)) * 100).toFixed(1)}% of the recording was silence.
+                      </p>
+                    </div>
+                  </PanelBody>
+                </Panel>
+              )}
+
+              {/* Transcript */}
+              <Panel className="overflow-hidden px-rise">
+                <PanelHead eyebrow="Your answer" icon={FileText} tone="accent" />
+                <PanelBody>
+                  <ScrollArea className="max-h-40">
+                    <p className="px-body whitespace-pre-wrap">
+                      {transcription || <span className="px-ink-3">No transcript was returned for this answer.</span>}
+                    </p>
+                  </ScrollArea>
+                </PanelBody>
+              </Panel>
+
+              {/* Correctness */}
+              {correctnessScore !== undefined && (
+                <Panel variant="raised" className="overflow-hidden px-rise">
+                  <Seam tone={getScoreTone(Number(correctnessScore) || 0)} />
+                  <PanelHead
+                    eyebrow="Content"
+                    icon={Target}
+                    tone={getScoreTone(Number(correctnessScore) || 0)}
+                    title="Answer correctness"
+                    actions={
+                      <div className="flex items-center gap-2">
+                        {microFeedback?.technical_accuracy && (
+                          <Chip
+                            tone={
+                              microFeedback.technical_accuracy === 'Excellent'
+                                ? 'positive'
+                                : microFeedback.technical_accuracy === 'Good'
+                                  ? 'accent'
+                                  : microFeedback.technical_accuracy === 'Fair'
+                                    ? 'caution'
+                                    : 'critical'
+                            }
+                          >
+                            {microFeedback.technical_accuracy}
+                          </Chip>
+                        )}
+                        <Chip tone={microFeedback?.is_correct ? 'positive' : 'critical'} size="lg">
+                          {microFeedback?.is_correct ? 'On target' : 'Off target'}
+                        </Chip>
+                      </div>
+                    }
+                  />
+                  <PanelBody className="space-y-4">
+                    <div className="flex items-center gap-5">
+                      <Dial value={Number(correctnessScore) || 0} size={104} stroke={7} tone={getScoreTone(Number(correctnessScore) || 0)}>
+                        <div>
+                          <div className="px-num text-2xl font-semibold px-ink leading-none">{correctnessScore}</div>
+                          <div className="px-eyebrow mt-1 justify-center">score</div>
+                        </div>
+                      </Dial>
+                      <div className="min-w-0 flex-1">
+                        <p className="px-body">
+                          {microFeedback?.overall_note || microFeedback?.content_relevance ||
+                            'Correctness reflects how much of the expected substance your answer covered.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {microFeedback?.key_points_covered && microFeedback.key_points_covered.length > 0 && (
+                      <div>
+                        <Eyebrow tone="positive" icon={CheckCircle2}>Key points covered</Eyebrow>
+                        <div className="mt-1.5">
+                          <FindingList items={microFeedback.key_points_covered} tone="positive" />
+                        </div>
+                      </div>
+                    )}
+
+                    {microFeedback?.key_points_missed && microFeedback.key_points_missed.length > 0 && (
+                      <div>
+                        <Eyebrow tone="critical" icon={CircleX}>Key points missed</Eyebrow>
+                        <div className="mt-1.5">
+                          <FindingList items={microFeedback.key_points_missed} tone="critical" />
+                        </div>
+                      </div>
+                    )}
+
+                    <Grid cols={1} md={2} gap="0.875rem">
+                      {microFeedback?.strengths && microFeedback.strengths.length > 0 && (
+                        <div>
+                          <Eyebrow tone="positive" icon={Award}>Strengths</Eyebrow>
+                          <div className="mt-1.5">
+                            <FindingList items={microFeedback.strengths} tone="positive" />
+                          </div>
+                        </div>
+                      )}
+                      {microFeedback?.improvement_areas && microFeedback.improvement_areas.length > 0 && (
+                        <div>
+                          <Eyebrow tone="caution" icon={TrendingUp}>Areas to improve</Eyebrow>
+                          <div className="mt-1.5">
+                            <FindingList items={microFeedback.improvement_areas} tone="caution" />
+                          </div>
+                        </div>
+                      )}
+                    </Grid>
+
+                    {microFeedback?.actionable_suggestions && microFeedback.actionable_suggestions.length > 0 && (
+                      <div>
+                        <Eyebrow tone="accent" icon={Target}>Next steps</Eyebrow>
+                        <div className="mt-1.5">
+                          <FindingList items={microFeedback.actionable_suggestions} tone="accent" numbered />
+                        </div>
+                      </div>
+                    )}
+
+                    {microFeedback?.model_answer && (
+                      <div className="px-panel px-panel--inset px-3.5 py-3">
+                        <Eyebrow tone="positive" icon={GraduationCap}>Model answer</Eyebrow>
+                        <p className="px-body mt-2 whitespace-pre-wrap">{microFeedback.model_answer}</p>
+                      </div>
+                    )}
+                  </PanelBody>
+                </Panel>
+              )}
+
+              {/* Why this score */}
+              {evaluationTrace && (() => {
+                // Normalize `why` to string[] — handle string, array, or object shapes
+                let whyLines: string[] = [];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const raw: any = (evaluationTrace as any).why;
+                if (Array.isArray(raw)) {
+                  whyLines = raw.map(String).filter(Boolean);
+                } else if (typeof raw === 'string' && raw.trim()) {
+                  whyLines = raw.split(/\n|(?<=\.)\s+/).map((s: string) => s.trim()).filter(Boolean);
+                }
+                // Also check for alternative keys the backend might use
+                if (whyLines.length === 0) {
+                  const alt = (evaluationTrace as any).reasons ?? (evaluationTrace as any).explanation ?? (evaluationTrace as any).reasoning;
+                  if (Array.isArray(alt)) {
+                    whyLines = alt.map(String).filter(Boolean);
+                  } else if (typeof alt === 'string' && alt.trim()) {
+                    whyLines = alt.split(/\n|(?<=\.)\s+/).map((s: string) => s.trim()).filter(Boolean);
+                  }
+                }
+                if (whyLines.length === 0) return null;
+                return (
+                  <Panel className="overflow-hidden px-rise">
+                    <PanelHead eyebrow="Why this score" icon={Brain} tone="neural" />
+                    <PanelBody>
+                      <FindingList items={whyLines} tone="neural" />
+                    </PanelBody>
+                  </Panel>
+                );
+              })()}
+
+              {/* Session trajectory */}
+              {trajectory && (trajectory.points || trajectory.overall || trajectory.dimensions || trajectory.note) && (
+                <Panel className="overflow-hidden px-rise">
+                  <PanelHead
+                    eyebrow="Session trajectory"
+                    icon={TrendingUp}
+                    tone="accent"
+                    actions={
+                      typeof trajectory?.overall?.delta === 'number' ? (
+                        <Chip
+                          mono
+                          tone={
+                            trajectory.overall.delta > 0
+                              ? 'positive'
+                              : trajectory.overall.delta < 0
+                                ? 'critical'
+                                : 'neutral'
+                          }
+                        >
+                          Δ {trajectory.overall.delta > 0 ? '+' : ''}
+                          {Math.round(trajectory.overall.delta * 100) / 100}
+                        </Chip>
+                      ) : undefined
+                    }
+                  />
+                  <PanelBody className="space-y-3">
+                    {typeof trajectory.note === 'string' && trajectory.note.trim() && (
+                      <p className="px-body">{trajectory.note}</p>
+                    )}
+
+                    {trajectory.dimensions && typeof trajectory.dimensions === 'object' && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {Object.entries(trajectory.dimensions as Record<string, any>).map(([dim, info]) => {
+                          const delta = (info as any)?.delta;
+                          if (typeof delta !== 'number') return null;
+                          const rounded = Math.round(delta * 100) / 100;
+                          return (
+                            <Chip
+                              key={dim}
+                              mono
+                              tone={rounded > 0 ? 'positive' : rounded < 0 ? 'critical' : 'neutral'}
+                              className="capitalize"
+                            >
+                              {dim} {rounded > 0 ? '+' : ''}{rounded}
+                            </Chip>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {Array.isArray(trajectory.points) && trajectory.points.length > 0 && (
+                      <Rows>
+                        {trajectory.points.map((p: any, idx: number) => {
+                          const qn = p?.question_number ?? p?.question ?? idx + 1;
+                          const overall = p?.overall ?? p?.overall_score;
+                          const dims = p?.dimensions ?? p?.dimension_scores;
+                          const roundedOverall = typeof overall === 'number' ? Math.round(overall * 100) / 100 : null;
+                          return (
+                            <div key={idx} className="px-row items-center">
+                              <span className="px-row__index">{qn}</span>
+                              <div className="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                {roundedOverall !== null && (
+                                  <span className="px-num text-[0.8125rem] font-semibold px-ink">{roundedOverall}</span>
+                                )}
+                                {dims && typeof dims === 'object' && (
+                                  <span className="px-note px-num">
+                                    {Object.entries(dims as Record<string, any>)
+                                      .filter(([, v]) => typeof v === 'number')
+                                      .slice(0, 4)
+                                      .map(([k, v]) => `${k} ${Math.round((v as number) * 100) / 100}`)
+                                      .join('  ·  ')}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </Rows>
+                    )}
+                  </PanelBody>
+                </Panel>
+              )}
+
+              {/* Delivery tips */}
+              <Panel className="overflow-hidden px-rise">
+                <PanelHead eyebrow="Delivery" icon={Waves} tone="accent" />
+                <PanelBody className="space-y-4">
+                  {microFeedback?.delivery_tips && microFeedback.delivery_tips.length > 0 ? (
+                    <Rows>
+                      {microFeedback.delivery_tips.map((tip, idx) => {
+                        const isVadTip =
+                          tip.toLowerCase().includes('silence') ||
+                          tip.toLowerCase().includes('pause') ||
+                          tip.includes('⏸️');
+                        return (
+                          <Row key={idx} tone={isVadTip ? 'caution' : 'accent'}>
+                            {tip}
+                          </Row>
+                        );
+                      })}
+                    </Rows>
+                  ) : (
+                    <p className="px-body">{microFeedback?.speech_quality || 'No delivery notes for this answer.'}</p>
                   )}
 
-                  {/* Key Points Missed */}
-                  {microFeedback.key_points_missed && microFeedback.key_points_missed.length > 0 && (
-                    <div>
-                      <h5 className="text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2 text-red-600 dark:text-red-400">
-                        ❌ Key Points Missed
-                      </h5>
-                      <ul className="text-xs sm:text-sm space-y-1">
-                        {microFeedback.key_points_missed.map((point, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-red-600 dark:text-red-400 mt-0.5 shrink-0">✗</span>
-                            <span className="leading-relaxed">{point}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Strengths */}
-                  {microFeedback.strengths && microFeedback.strengths.length > 0 && (
-                    <div>
-                      <h5 className="text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2 text-blue-600 dark:text-blue-400">
-                        💪 Strengths
-                      </h5>
-                      <ul className="text-xs sm:text-sm space-y-1">
-                        {microFeedback.strengths.map((strength, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0">•</span>
-                            <span className="leading-relaxed">{strength}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Improvement Areas */}
-                  {microFeedback.improvement_areas && microFeedback.improvement_areas.length > 0 && (
-                    <div>
-                      <h5 className="text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2 text-orange-600 dark:text-orange-400">
-                        📈 Areas to Improve
-                      </h5>
-                      <ul className="text-xs sm:text-sm space-y-1">
-                        {microFeedback.improvement_areas.map((area, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-orange-600 dark:text-orange-400 mt-0.5 shrink-0">↗</span>
-                            <span className="leading-relaxed">{area}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Actionable Suggestions */}
-                  {microFeedback.actionable_suggestions && microFeedback.actionable_suggestions.length > 0 && (
-                    <div>
-                      <h5 className="text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2 text-primary">
-                        🎯 Next Steps
-                      </h5>
-                      <ul className="text-xs sm:text-sm space-y-1">
-                        {microFeedback.actionable_suggestions.map((suggestion, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-primary mt-0.5 shrink-0">→</span>
-                            <span className="leading-relaxed">{suggestion}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Model Answer */}
-                  {microFeedback?.model_answer && (
-                    <div className="mt-4 p-3 bg-green-500/5 rounded-lg">
-                      <h4 className="font-semibold text-sm mb-1 text-green-600 dark:text-green-400">📖 Model Answer</h4>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                        {microFeedback.model_answer}
+                  {(microFeedback?.overall_note || microFeedback?.content_relevance) && (
+                    <div className="px-panel px-panel--inset px-3.5 py-3">
+                      <Eyebrow>Overall note</Eyebrow>
+                      <p className="px-body mt-1.5">
+                        {microFeedback?.overall_note || microFeedback?.content_relevance}
                       </p>
                     </div>
                   )}
-                </div>
-                <Separator />
-              </>
-            )}
+                </PanelBody>
+              </Panel>
+            </>
+          )}
 
-            {/* Why this score */}
-            {evaluationTrace && (() => {
-              // Normalize `why` to string[] — handle string, array, or object shapes
-              let whyLines: string[] = [];
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const raw: any = (evaluationTrace as any).why;
-              if (Array.isArray(raw)) {
-                whyLines = raw.map(String).filter(Boolean);
-              } else if (typeof raw === 'string' && raw.trim()) {
-                whyLines = raw.split(/\n|(?<=\.)\s+/).map((s: string) => s.trim()).filter(Boolean);
-              }
-              // Also check for alternative keys the backend might use
-              if (whyLines.length === 0) {
-                const alt = (evaluationTrace as any).reasons ?? (evaluationTrace as any).explanation ?? (evaluationTrace as any).reasoning;
-                if (Array.isArray(alt)) {
-                  whyLines = alt.map(String).filter(Boolean);
-                } else if (typeof alt === 'string' && alt.trim()) {
-                  whyLines = alt.split(/\n|(?<=\.)\s+/).map((s: string) => s.trim()).filter(Boolean);
-                }
-              }
-              if (whyLines.length === 0) return null;
-              return (
-                <>
-                  <div className="space-y-2 p-3 sm:p-4 bg-muted/50 rounded-lg border">
-                    <div className="text-sm sm:text-base font-semibold flex items-center gap-2">
-                      <span>🧠</span> Why this score
-                    </div>
-                    <ul className="text-xs sm:text-sm space-y-1.5">
-                      {whyLines.map((line, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-primary mt-0.5 shrink-0">•</span>
-                          <span className="text-muted-foreground leading-relaxed">{line}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <Separator />
-                </>
-              );
-            })()}
-
-            {/* Session trajectory */}
-            {trajectory && (trajectory.points || trajectory.overall || trajectory.dimensions || trajectory.note) && (
-              <>
-                <div className="space-y-3 p-3 sm:p-4 bg-muted/50 rounded-lg border">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-sm sm:text-base font-semibold flex items-center gap-2">
-                      <span>📈</span> Session Trajectory
-                    </div>
-                    {typeof trajectory?.overall?.delta === 'number' && (
-                      <Badge
-                        variant="outline"
-                        className={`font-mono text-xs ${
-                          trajectory.overall.delta > 0
-                            ? 'border-green-500/40 text-green-600 dark:text-green-400'
-                            : trajectory.overall.delta < 0
-                              ? 'border-red-500/40 text-red-600 dark:text-red-400'
-                              : ''
-                        }`}
-                      >
-                        Overall Δ {trajectory.overall.delta > 0 ? '+' : ''}{Math.round(trajectory.overall.delta * 100) / 100}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {typeof trajectory.note === 'string' && trajectory.note.trim() && (
-                    <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed italic">
-                      {trajectory.note}
-                    </div>
-                  )}
-
-                  {trajectory.dimensions && typeof trajectory.dimensions === 'object' && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {Object.entries(trajectory.dimensions as Record<string, any>).map(([dim, info]) => {
-                        const delta = (info as any)?.delta;
-                        if (typeof delta !== 'number') return null;
-                        const rounded = Math.round(delta * 100) / 100;
-                        return (
-                          <Badge
-                            key={dim}
-                            variant="secondary"
-                            className={`capitalize font-mono text-xs ${
-                              rounded > 0
-                                ? 'text-green-600 dark:text-green-400'
-                                : rounded < 0
-                                  ? 'text-red-600 dark:text-red-400'
-                                  : 'text-muted-foreground'
-                            }`}
-                          >
-                            {dim} {rounded > 0 ? '+' : ''}{rounded}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {Array.isArray(trajectory.points) && trajectory.points.length > 0 && (
-                    <div className="pt-1 space-y-1">
-                      {trajectory.points.map((p: any, idx: number) => {
-                        const qn = p?.question_number ?? p?.question ?? idx + 1;
-                        const overall = p?.overall ?? p?.overall_score;
-                        const dims = p?.dimensions ?? p?.dimension_scores;
-                        const roundedOverall = typeof overall === 'number' ? Math.round(overall * 100) / 100 : null;
-                        return (
-                          <div key={idx} className="text-xs sm:text-sm text-muted-foreground flex flex-wrap items-center gap-2 py-1 border-b border-border/40 last:border-0">
-                            <Badge variant="outline" className="text-xs font-mono">Q{qn}</Badge>
-                            {roundedOverall !== null && (
-                              <span>
-                                Overall: <span className="font-semibold text-foreground">{roundedOverall}</span>
-                              </span>
-                            )}
-                            {dims && typeof dims === 'object' && (
-                              <span className="text-muted-foreground/80">
-                                {Object.entries(dims as Record<string, any>)
-                                  .filter(([, v]) => typeof v === 'number')
-                                  .slice(0, 4)
-                                  .map(([k, v]) => `${k}: ${Math.round((v as number) * 100) / 100}`)
-                                  .join(' · ')}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-                <Separator />
-              </>
-            )}
-
-            {/* Delivery Feedback - Compact Mobile Layout */}
-            <div className="grid grid-cols-1 gap-3 sm:gap-4">
-              <div>
-                <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm sm:text-base">
-                  <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  Delivery Tips
-                </h4>
-                <ul className="text-xs sm:text-sm space-y-1.5 sm:space-y-2">
-                  {microFeedback?.delivery_tips && microFeedback.delivery_tips.length > 0 ? (
-                    microFeedback.delivery_tips.map((tip, idx) => {
-                      const isVadTip = tip.toLowerCase().includes('silence') ||
-                        tip.toLowerCase().includes('pause') ||
-                        tip.includes('⏸️');
-
+          {/* ── Feedback usefulness rating ── */}
+          {questionId && (
+            <Panel className="overflow-hidden px-rise">
+              <PanelHead
+                eyebrow="Calibration"
+                icon={Star}
+                tone="caution"
+                title="Was this feedback useful?"
+                description="Optional — it tunes how the coach talks to you."
+              />
+              <PanelBody className="space-y-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((v) => {
+                      const active = (usefulnessRating ?? 0) >= v;
                       return (
-                        <li key={idx} className={`flex items-start gap-2 p-2 rounded leading-relaxed ${isVadTip ? 'bg-yellow-50 dark:bg-yellow-950/20 border-l-2 border-yellow-500' : ''
-                          }`}>
-                          <span className={`mt-0.5 shrink-0 ${isVadTip ? 'text-yellow-600 dark:text-yellow-500' : 'text-primary'}`}>
-                            {isVadTip ? '⏸️' : '•'}
-                          </span>
-                          <span className={isVadTip ? 'text-yellow-700 dark:text-yellow-400 font-medium' : 'text-muted-foreground'}>
-                            {tip}
-                          </span>
-                        </li>
+                        <button
+                          key={v}
+                          type="button"
+                          disabled={ratingSubmitted || ratingSubmitting}
+                          onClick={() => updateFeedbackRatingDraft(questionId, { usefulnessRating: v })}
+                          aria-label={`Rate usefulness ${v} out of 5`}
+                          className="px-focusable grid place-items-center w-9 h-9 rounded-[var(--px-r-sm)] transition-colors disabled:opacity-60"
+                        >
+                          <Star
+                            className="w-4 h-4 transition-transform"
+                            style={active ? { color: `hsl(${toneVar('caution')})`, fill: `hsl(${toneVar('caution')})` } : undefined}
+                          />
+                        </button>
                       );
-                    })
-                  ) : (
-                    <li className="text-muted-foreground">{microFeedback?.speech_quality || 'N/A'}</li>
-                  )}
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm sm:text-base">
-                  <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  Overall Note
-                </h4>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  {microFeedback?.overall_note || microFeedback?.content_relevance || 'N/A'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-          </>
-        )}
-
-        {/* Phase 3: Feedback usefulness rating (optional) */}
-        {questionId && (
-          <Card className="border-border/20 rounded-2xl overflow-hidden">
-            <div className="h-0.5 bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500" />
-            <CardHeader className="px-3 sm:px-6 pt-4 sm:pt-6 pb-3">
-              <CardTitle className="text-base sm:text-lg">Was this feedback useful?</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">Optional — helps us improve the coach.</CardDescription>
-            </CardHeader>
-            <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6 space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((v) => {
-                    const active = (usefulnessRating ?? 0) >= v;
-                    return (
-                      <Button
-                        key={v}
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        disabled={ratingSubmitted || ratingSubmitting}
-                        className="h-9 w-9"
-                        onClick={() => updateFeedbackRatingDraft(questionId, { usefulnessRating: v })}
-                        aria-label={`Rate usefulness ${v} out of 5`}
-                      >
-                        <Star className={active ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'} />
-                      </Button>
-                    );
-                  })}
+                    })}
+                  </div>
+                  <span className="px-note">
+                    {ratingSubmitted
+                      ? 'Saved — thank you.'
+                      : ratingSubmitting
+                        ? 'Saving…'
+                        : usefulnessRating
+                          ? `${usefulnessRating}/5`
+                          : 'Tap to rate'}
+                  </span>
                 </div>
-                {ratingSubmitted ? (
-                  <span className="text-xs text-muted-foreground">Thanks — saved.</span>
-                ) : ratingSubmitting ? (
-                  <span className="text-xs text-muted-foreground">Saving…</span>
-                ) : usefulnessRating ? (
-                  <span className="text-xs text-muted-foreground">{usefulnessRating}/5</span>
-                ) : (
-                  <span className="text-xs text-muted-foreground">(tap to rate)</span>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label className="text-xs sm:text-sm">Felt difficulty (optional)</Label>
-                <div className="flex gap-2">
-                  {(['easy', 'medium', 'hard'] as const).map((d) => {
-                    const selected = perceivedDifficulty === d;
-                    return (
-                      <Button
+                <div className="space-y-2">
+                  <label className="px-eyebrow">Felt difficulty (optional)</label>
+                  <div className="px-segment">
+                    {(['easy', 'medium', 'hard'] as const).map((d) => (
+                      <button
                         key={d}
                         type="button"
-                        variant={selected ? 'secondary' : 'outline'}
-                        size="sm"
+                        className="px-segment__item capitalize"
+                        data-active={perceivedDifficulty === d}
                         disabled={ratingSubmitted || ratingSubmitting}
                         onClick={() => updateFeedbackRatingDraft(questionId, { perceivedDifficulty: d })}
-                        className="capitalize"
                       >
                         {d}
-                      </Button>
-                    );
-                  })}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label className="text-xs sm:text-sm">Comment (optional)</Label>
-                <Textarea
-                  value={comment}
-                  disabled={ratingSubmitted || ratingSubmitting}
-                  onChange={(e) => updateFeedbackRatingDraft(questionId, { comment: e.target.value })}
-                  placeholder="What helped? What was missing?"
-                  className="min-h-[56px]"
-                  maxLength={500}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                <div className="space-y-2">
+                  <label className="px-eyebrow">Comment (optional)</label>
+                  <textarea
+                    className="px-field px-field--area"
+                    value={comment}
+                    disabled={ratingSubmitted || ratingSubmitting}
+                    onChange={(e) => updateFeedbackRatingDraft(questionId, { comment: e.target.value })}
+                    placeholder="What helped? What was missing?"
+                    maxLength={500}
+                  />
+                </div>
+              </PanelBody>
+            </Panel>
+          )}
 
-        {renderGuestGateBanner()}
+          {renderGuestGateBanner()}
 
-        <div className="flex justify-center gap-4">
-          <Button
-            onClick={handleNextQuestion}
-            disabled={isProcessing || !!guestGateBanner}
-            size="lg"
-            className="px-8 h-12 rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 font-bold"
-          >
-            {isProcessing ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Loading...
-              </>
-            ) : (
-              <>
-                {feedbackButtonLabel}
-                {completionPending ? (
-                  <CheckCircle2 className="ml-2 w-4 h-4" />
-                ) : (
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                )}
-              </>
-            )}
-          </Button>
+          <div className="flex justify-center pt-1">
+            <PxButton
+              variant="primary"
+              size="lg"
+              onClick={handleNextQuestion}
+              disabled={isProcessing || !!guestGateBanner}
+              className="min-w-56"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading…
+                </>
+              ) : (
+                <>
+                  {feedbackButtonLabel}
+                  {completionPending ? <CheckCircle2 className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                </>
+              )}
+            </PxButton>
+          </div>
         </div>
       </div>
     );
@@ -5943,23 +5939,39 @@ export const PracticeMode = () => {
       : Math.round((avgConfidence / 10) * 100); // 0-10 scale → convert to percentage
     const grade = getScoreGrade(score);
 
-    // ── Report download handler ──
+    /**
+     * Build a print-ready HTML report and hand it to the browser's print
+     * pipeline, where "Save as PDF" produces a real document. The previous
+     * version emitted a box-drawing plain-text file — readable in a terminal,
+     * not something to attach to anything.
+     */
     const handleDownloadReport = () => {
       const now = new Date();
-      const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const dateStr = now.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-      const strengthsList = evaluation?.strengths?.items && Array.isArray(evaluation.strengths.items) && evaluation.strengths.items.length > 0
-        ? evaluation.strengths.items.map((s: string, i: number) => `  ${i + 1}. ${s}`).join('\n')
-        : '  No strengths data available';
+      /** Everything interpolated below is user or model text, so it is escaped. */
+      const esc = (value: unknown): string =>
+        String(value ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
 
-      const improvementsList = evaluation?.improvements?.items && Array.isArray(evaluation.improvements.items) && evaluation.improvements.items.length > 0
-        ? evaluation.improvements.items.map((a: string, i: number) => `  ${i + 1}. ${a}`).join('\n')
-        : '  No improvement areas data available';
+      const list = (items?: unknown, empty = 'Not available for this session.') => {
+        const arr = Array.isArray(items) ? items.filter((i) => typeof i === 'string' && i.trim()) : [];
+        if (arr.length === 0) return `<p class="muted">${esc(empty)}</p>`;
+        return `<ul>${arr.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`;
+      };
 
-      const actionSteps = evaluation?.action_plan?.steps && Array.isArray(evaluation.action_plan.steps) && evaluation.action_plan.steps.length > 0
-        ? evaluation.action_plan.steps.map((s: string, i: number) => `  Step ${i + 1}: ${s}`).join('\n')
-        : '  No action plan available';
+      const scoreBand = score >= 80 ? 'strong' : score >= 60 ? 'solid' : score >= 40 ? 'developing' : 'early';
+      const verdict = score >= 80
+        ? 'Interview-ready on this material.'
+        : score >= 60
+          ? 'Competent, with specific gaps worth closing.'
+          : score >= 40
+            ? 'Developing — the structure is there, the substance needs work.'
+            : 'Early stage. Focus on fundamentals before the next attempt.';
 
       const avgWpm = evaluation?.metrics_summary?.avg_wpm || evaluation?.speech_summary?.average_wpm || 0;
       const totalFillers = evaluation?.metrics_summary?.total_fillers || evaluation?.speech_summary?.total_filler_count || 0;
@@ -5968,255 +5980,407 @@ export const PracticeMode = () => {
       const totalDuration = formatTime(Math.floor(evaluation?.metrics_summary?.total_duration || 0));
       const overtalkCount = evaluation?.metrics_summary?.overtalked_count || 0;
 
-      let questionDetails = '';
-      if (questionEvaluations.length > 0) {
-        const sorted = [...questionEvaluations].sort((a, b) => a.questionNumber - b.questionNumber);
-        questionDetails = sorted.map((item) => {
-          let detail = `\n  Question ${item.questionNumber} (${item.kind.toUpperCase()})`;
-          if (item.questionText) detail += `\n    Q: ${item.questionText}`;
+      const metaRows: Array<[string, string]> = [
+        ['Generated', `${dateStr} at ${timeStr}`],
+        ['Session', sessionId || '—'],
+        ...(currentRoundConfig ? [['Round', currentRoundConfig.name] as [string, string]] : []),
+        ['Questions', `${endedEarlyData?.ended_early
+          ? `${endedEarlyData.questions_answered ?? currentQuestionNumber} of ${endedEarlyData.total_questions ?? totalQuestions} answered`
+          : `${totalQuestions} answered`}`],
+        ['Mode', currentRoundConfig ? 'Interview round' : isDrillSession ? 'Single-question drill' : 'Practice session'],
+      ];
+
+      const metricCards = [
+        { label: 'Average pace', value: `${avgWpm}`, unit: 'wpm' },
+        { label: 'Avg confidence', value: `${avgConf}`, unit: '%' },
+        { label: 'Filler words', value: `${totalFillers}`, unit: '' },
+        { label: 'Longest pause', value: `${longestPause}`, unit: 's' },
+        { label: 'Speaking time', value: totalDuration, unit: '' },
+        { label: 'Overtalk', value: `${overtalkCount}`, unit: '' },
+      ];
+
+      const questionSections = [...questionEvaluations]
+        .sort((a, b) => a.questionNumber - b.questionNumber)
+        .map((item) => {
+          const rows: string[] = [];
+
           if (item.kind === 'voice') {
-            if (item.transcript) detail += `\n    Your Answer: ${item.transcript}`;
-            if (item.metrics?.wpm) detail += `\n    WPM: ${item.metrics.wpm}`;
-            const voiceConf = item.metrics?.confidence_score !== undefined
-              ? Math.round((item.metrics.confidence_score || 0) * 100) : undefined;
-            if (voiceConf !== undefined) detail += ` | Confidence: ${voiceConf}%`;
-            if (item.metrics?.filler_count !== undefined) detail += ` | Fillers: ${item.metrics.filler_count}`;
-            if (item.microFeedback?.correctness_score !== undefined) {
-              detail += `\n    Correctness: ${item.microFeedback.correctness_score}%`;
-              if (item.microFeedback.technical_accuracy) detail += ` (${item.microFeedback.technical_accuracy})`;
+            const conf = item.metrics?.confidence_score !== undefined
+              ? `${Math.round((item.metrics.confidence_score || 0) * 100)}%`
+              : '—';
+            rows.push(`<table class="kv"><tbody>
+              <tr><th>Pace</th><td>${esc(item.metrics?.wpm ?? '—')} wpm</td>
+                  <th>Confidence</th><td>${esc(conf)}</td>
+                  <th>Fillers</th><td>${esc(item.metrics?.filler_count ?? '—')}</td></tr>
+              ${item.microFeedback?.correctness_score !== undefined
+                ? `<tr><th>Correctness</th><td>${esc(item.microFeedback.correctness_score)}%</td>
+                     <th>Accuracy</th><td colspan="3">${esc(item.microFeedback.technical_accuracy ?? '—')}</td></tr>`
+                : ''}
+            </tbody></table>`);
+
+            if (item.transcript) {
+              rows.push(`<h4>Your answer</h4><blockquote>${esc(item.transcript)}</blockquote>`);
             }
-            if (item.microFeedback?.key_points_covered?.length) detail += `\n    Key Points Covered: ${item.microFeedback.key_points_covered.join('; ')}`;
-            if (item.microFeedback?.key_points_missed?.length) detail += `\n    Key Points Missed: ${item.microFeedback.key_points_missed.join('; ')}`;
-            if (item.microFeedback?.strengths?.length) detail += `\n    Strengths: ${item.microFeedback.strengths.join('; ')}`;
-            if (item.microFeedback?.improvement_areas?.length) detail += `\n    Areas to Improve: ${item.microFeedback.improvement_areas.join('; ')}`;
-            if (item.microFeedback?.model_answer) detail += `\n    Model Answer: ${item.microFeedback.model_answer}`;
+            if (item.microFeedback?.key_points_covered?.length) {
+              rows.push(`<h4>Points covered</h4>${list(item.microFeedback.key_points_covered)}`);
+            }
+            if (item.microFeedback?.key_points_missed?.length) {
+              rows.push(`<h4>Points missed</h4>${list(item.microFeedback.key_points_missed)}`);
+            }
+            if (item.microFeedback?.strengths?.length) {
+              rows.push(`<h4>Strengths</h4>${list(item.microFeedback.strengths)}`);
+            }
+            if (item.microFeedback?.improvement_areas?.length) {
+              rows.push(`<h4>Areas to improve</h4>${list(item.microFeedback.improvement_areas)}`);
+            }
+            if (item.microFeedback?.model_answer) {
+              rows.push(`<h4>Model answer</h4><blockquote>${esc(item.microFeedback.model_answer)}</blockquote>`);
+            }
           } else if (item.kind === 'code') {
-            if (item.codeEvaluation) {
-              detail += `\n    Overall: ${item.codeEvaluation.overall_score}% | ${item.codeEvaluation.is_correct ? 'Accepted' : 'Not Accepted'}`;
-              if (item.codeEvaluation.correctness_score !== undefined) detail += `\n    Correctness: ${item.codeEvaluation.correctness_score}%`;
-              if (item.codeEvaluation.code_quality_score !== undefined) detail += ` | Quality: ${item.codeEvaluation.code_quality_score}%`;
-              if (item.codeEvaluation.efficiency_score !== undefined) detail += ` | Efficiency: ${item.codeEvaluation.efficiency_score}%`;
-              if (item.codeEvaluation.time_complexity) detail += `\n    Time: ${item.codeEvaluation.time_complexity}`;
-              if (item.codeEvaluation.space_complexity) detail += ` | Space: ${item.codeEvaluation.space_complexity}`;
-              if (item.codeEvaluation.approach_feedback) detail += `\n    Approach: ${item.codeEvaluation.approach_feedback}`;
-              if (item.codeEvaluation.edge_cases_handled?.length) detail += `\n    Edge Cases Handled: ${item.codeEvaluation.edge_cases_handled.join('; ')}`;
-              if (item.codeEvaluation.edge_cases_missed?.length) detail += `\n    Edge Cases Missed: ${item.codeEvaluation.edge_cases_missed.join('; ')}`;
-              if (item.codeEvaluation.optimization_suggestions?.length) detail += `\n    Suggestions: ${item.codeEvaluation.optimization_suggestions.join('; ')}`;
+            const ev = item.codeEvaluation;
+            if (ev) {
+              rows.push(`<table class="kv"><tbody>
+                <tr><th>Overall</th><td>${esc(ev.overall_score)}%</td>
+                    <th>Verdict</th><td>${ev.is_correct ? 'Accepted' : 'Not accepted'}</td>
+                    <th>Tests</th><td>${esc(ev.test_cases_passed ?? '—')}/${esc(ev.test_cases_total ?? '—')}</td></tr>
+                <tr><th>Correctness</th><td>${esc(ev.correctness_score ?? '—')}%</td>
+                    <th>Quality</th><td>${esc(ev.code_quality_score ?? '—')}%</td>
+                    <th>Efficiency</th><td>${esc(ev.efficiency_score ?? '—')}%</td></tr>
+                <tr><th>Time</th><td>${esc(ev.time_complexity ?? '—')}</td>
+                    <th>Space</th><td colspan="3">${esc(ev.space_complexity ?? '—')}</td></tr>
+              </tbody></table>`);
+              if (ev.approach_feedback) rows.push(`<h4>Approach</h4><p>${esc(ev.approach_feedback)}</p>`);
+              if (ev.edge_cases_handled?.length) rows.push(`<h4>Edge cases handled</h4>${list(ev.edge_cases_handled)}`);
+              if (ev.edge_cases_missed?.length) rows.push(`<h4>Edge cases missed</h4>${list(ev.edge_cases_missed)}`);
+              if (ev.optimization_suggestions?.length) rows.push(`<h4>Optimisation</h4>${list(ev.optimization_suggestions)}`);
             }
             if (item.testResults?.length) {
               const passed = item.testResults.filter((t) => t.passed).length;
-              detail += `\n    Tests: ${passed}/${item.testResults.length} passed`;
+              rows.push(`<p class="muted">${passed} of ${item.testResults.length} test cases passed.</p>`);
             }
           }
-          return detail;
-        }).join('\n');
-      }
+
+          return `<section class="qblock">
+            <div class="qhead">
+              <span class="qnum">Q${String(item.questionNumber).padStart(2, '0')}</span>
+              <span class="qtype">${item.kind === 'code' ? 'Coding' : 'Voice'}</span>
+            </div>
+            ${item.questionText ? `<p class="qtext">${esc(item.questionText)}</p>` : ''}
+            ${rows.join('')}
+          </section>`;
+        }).join('');
 
       const skippedSection = endedEarlyData?.skipped_questions?.length
-        ? `\n\n${'═'.repeat(60)}\n  SKIPPED QUESTIONS\n${'═'.repeat(60)}\n${endedEarlyData.skipped_questions.map((q) => `  Q${q.question_number}: ${q.question}${q.category ? ` [${q.category}]` : ''}`).join('\n')}`
+        ? `<h2>Not attempted</h2><ul>${endedEarlyData.skipped_questions
+          .map((q) => `<li><strong>Q${esc(q.question_number)}</strong> — ${esc(q.question)}${q.category ? ` <em>(${esc(q.category.replace(/_/g, ' '))})</em>` : ''}</li>`)
+          .join('')}</ul>`
         : '';
 
       const proctoringSection = proctoringSessionEndSummary
-        ? `\n\n${'═'.repeat(60)}\n  PROCTORING SUMMARY\n${'═'.repeat(60)}\n  ${proctoringSessionEndSummary.title}\n  ${proctoringSessionEndSummary.description}${proctoringSessionEndSummary.items.length ? '\n' + proctoringSessionEndSummary.items.map((item) => `  • ${item}`).join('\n') : ''}`
+        ? `<h2>Proctoring</h2>
+           <p><strong>${esc(proctoringSessionEndSummary.title)}</strong></p>
+           <p>${esc(proctoringSessionEndSummary.description)}</p>
+           ${list(proctoringSessionEndSummary.items, 'No further detail recorded.')}`
         : '';
 
-      const reportContent = `
-${'╔' + '═'.repeat(58) + '╗'}
-${'║'}  STRATAX AI — INTERVIEW EVALUATION REPORT${' '.repeat(15)}${'║'}
-${'╚' + '═'.repeat(58) + '╝'}
+      const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stratax AI — Interview Report — ${esc(dateStr)}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: #14161c; background: #fff;
+    font: 400 10.5pt/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .sheet { max-width: 190mm; margin: 0 auto; padding: 12mm 10mm; }
+  header.doc { display: flex; justify-content: space-between; align-items: flex-start;
+    border-bottom: 2px solid #14161c; padding-bottom: 10px; margin-bottom: 18px; }
+  .brand { font-size: 13pt; font-weight: 700; letter-spacing: -0.01em; }
+  .brand span { display: block; font-size: 7.5pt; font-weight: 600; letter-spacing: 0.16em;
+    text-transform: uppercase; color: #6b7280; margin-top: 3px; }
+  .docmeta { text-align: right; font-size: 8pt; color: #6b7280; }
+  h1 { font-size: 17pt; letter-spacing: -0.02em; margin: 0 0 4px; }
+  h2 { font-size: 11pt; letter-spacing: 0.02em; text-transform: uppercase; color: #14161c;
+    border-bottom: 1px solid #d8dbe2; padding-bottom: 5px; margin: 22px 0 10px; page-break-after: avoid; }
+  h3 { font-size: 10.5pt; margin: 14px 0 4px; }
+  h4 { font-size: 9pt; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7280;
+    margin: 10px 0 3px; page-break-after: avoid; }
+  p { margin: 0 0 7px; }
+  ul { margin: 0 0 8px; padding-left: 16px; }
+  li { margin-bottom: 3px; }
+  .muted { color: #6b7280; }
+  blockquote { margin: 0 0 8px; padding: 8px 11px; background: #f4f6f9;
+    border-left: 3px solid #c8cdd6; white-space: pre-wrap; }
+  .scorebar { display: flex; align-items: center; gap: 22px; padding: 14px 16px;
+    border: 1px solid #d8dbe2; border-radius: 6px; margin-bottom: 6px; }
+  .scoreval { font-size: 34pt; font-weight: 700; line-height: 1; letter-spacing: -0.03em; }
+  .scoreval small { font-size: 12pt; font-weight: 500; color: #6b7280; }
+  .grade { font-size: 8pt; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    border: 1px solid #14161c; border-radius: 3px; padding: 3px 7px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  table.metrics td { border: 1px solid #d8dbe2; padding: 8px 10px; width: 16.66%; vertical-align: top; }
+  table.metrics .mlabel { display: block; font-size: 7.5pt; text-transform: uppercase;
+    letter-spacing: 0.1em; color: #6b7280; margin-bottom: 3px; }
+  table.metrics .mval { font-size: 14pt; font-weight: 600; letter-spacing: -0.02em; }
+  table.metrics .munit { font-size: 8pt; font-weight: 500; color: #6b7280; margin-left: 2px; }
+  table.kv th { text-align: left; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.08em;
+    color: #6b7280; font-weight: 600; padding: 4px 8px 4px 0; white-space: nowrap; }
+  table.kv td { padding: 4px 16px 4px 0; font-size: 9.5pt; }
+  .meta { width: 100%; margin-bottom: 4px; }
+  .meta th { text-align: left; width: 24%; font-weight: 600; color: #6b7280; font-size: 8.5pt;
+    padding: 3px 0; }
+  .meta td { font-size: 9.5pt; padding: 3px 0; }
+  .cols { display: flex; gap: 18px; }
+  .cols > div { flex: 1 1 0; min-width: 0; }
+  .qblock { page-break-inside: avoid; border-top: 1px solid #e6e9ee; padding-top: 12px; margin-top: 14px; }
+  .qhead { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .qnum { font-weight: 700; font-size: 9pt; letter-spacing: 0.06em; }
+  .qtype { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.1em; color: #6b7280;
+    border: 1px solid #d8dbe2; border-radius: 3px; padding: 1px 6px; }
+  .qtext { font-weight: 600; font-size: 10.5pt; margin-bottom: 8px; }
+  footer.doc { border-top: 1px solid #d8dbe2; margin-top: 26px; padding-top: 8px;
+    font-size: 8pt; color: #6b7280; display: flex; justify-content: space-between; }
+  @media screen {
+    body { background: #eef1f5; padding: 24px 12px; }
+    .sheet { background: #fff; box-shadow: 0 12px 40px rgba(10,20,40,.14); border-radius: 4px; }
+    .noprint { max-width: 190mm; margin: 0 auto 14px; display: flex; gap: 8px; justify-content: flex-end; }
+    .noprint button { font: 600 10pt/1 inherit; padding: 9px 16px; border-radius: 6px;
+      border: 1px solid #c8cdd6; background: #fff; cursor: pointer; }
+    .noprint button.primary { background: #14161c; border-color: #14161c; color: #fff; }
+  }
+  @media print { .noprint { display: none !important; } .sheet { box-shadow: none; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="noprint">
+  <button onclick="window.close()">Close</button>
+  <button class="primary" onclick="window.print()">Save as PDF</button>
+</div>
+<div class="sheet">
+  <header class="doc">
+    <div class="brand">Stratax AI<span>Interview Evaluation Report</span></div>
+    <div class="docmeta">${esc(dateStr)}<br>${esc(timeStr)}</div>
+  </header>
 
-  Generated: ${dateStr} at ${timeStr}
-  Session ID: ${sessionId || 'N/A'}
-  ${currentRoundConfig ? `Round: ${currentRoundConfig.name}` : ''}
-  Questions: ${totalQuestions}${endedEarlyData?.ended_early ? ` (${endedEarlyData.questions_answered ?? currentQuestionNumber} answered)` : ''}
+  <h1>${esc(currentRoundConfig ? currentRoundConfig.name : isDrillSession ? 'Practice drill' : 'Practice session')}</h1>
+  <p class="muted">${esc(verdict)}</p>
 
-${'═'.repeat(60)}
-  OVERALL SCORE
-${'═'.repeat(60)}
-  Score: ${score}/100 (Grade: ${grade})
-  ${score >= 80 ? '★ Excellent Performance!' : score >= 60 ? '★ Good Performance!' : score >= 40 ? '△ Fair — Keep Practicing' : '▽ Needs Improvement — Don\'t Give Up!'}
+  <table class="meta"><tbody>
+    ${metaRows.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}
+  </tbody></table>
 
-${'═'.repeat(60)}
-  SPEECH ANALYTICS
-${'═'.repeat(60)}
-  Average Speed:    ${avgWpm} WPM
-  Total Fillers:    ${totalFillers}
-  Avg Confidence:   ${avgConf}%
-  Longest Pause:    ${longestPause}s
-  Duration:         ${totalDuration}
-  Overtalk Count:   ${overtalkCount}
+  <h2>Overall result</h2>
+  <div class="scorebar">
+    <div class="scoreval">${esc(score)}<small>/100</small></div>
+    <div>
+      <span class="grade">Grade ${esc(grade)}</span>
+      <p class="muted" style="margin:6px 0 0">Performance band: ${esc(scoreBand)}. Derived from the session's
+      averaged evaluation across correctness, delivery, and structure.</p>
+    </div>
+  </div>
 
-${evaluation?.learning_insight ? `  Peer Benchmark: ${evaluation.learning_insight}\n` : ''}
-${'═'.repeat(60)}
-  STRENGTHS
-${'═'.repeat(60)}
-${strengthsList}
+  <h2>Delivery metrics</h2>
+  <table class="metrics"><tbody><tr>
+    ${metricCards.map((m) => `<td><span class="mlabel">${esc(m.label)}</span><span class="mval">${esc(m.value)}${m.unit ? `<span class="munit">${esc(m.unit)}</span>` : ''}</span></td>`).join('')}
+  </tr></tbody></table>
+  ${evaluation?.learning_insight ? `<p class="muted"><strong>Peer benchmark.</strong> ${esc(evaluation.learning_insight)}</p>` : ''}
 
-${'═'.repeat(60)}
-  AREAS FOR IMPROVEMENT
-${'═'.repeat(60)}
-${improvementsList}
+  <h2>Assessment</h2>
+  <div class="cols">
+    <div><h3>Strengths</h3>${list(evaluation?.strengths?.items, 'No strengths recorded.')}</div>
+    <div><h3>Areas for improvement</h3>${list(evaluation?.improvements?.items, 'No improvement areas recorded.')}</div>
+  </div>
 
-${'═'.repeat(60)}
-  ACTION PLAN
-${'═'.repeat(60)}
-${actionSteps}
-${evaluation?.practice_recommendation ? `\n  Recommendation: ${evaluation.practice_recommendation}` : ''}
+  <h2>Action plan</h2>
+  ${list(evaluation?.action_plan?.steps, 'No action plan generated for this session.')}
+  ${evaluation?.practice_recommendation ? `<p><strong>Recommended next step.</strong> ${esc(evaluation.practice_recommendation)}</p>` : ''}
 
-${'═'.repeat(60)}
-  DETAILED QUESTION ANALYSIS
-${'═'.repeat(60)}
-${questionDetails || '  No detailed question data available'}
-${skippedSection}${proctoringSection}
+  <h2>Question-by-question</h2>
+  ${questionSections || '<p class="muted">No per-question evaluation data was recorded.</p>'}
 
-${'─'.repeat(60)}
-  Report generated by StrataxAI Interview Practice Platform
-  © ${now.getFullYear()} StrataxAI — All rights reserved
-${'─'.repeat(60)}
-`.trim();
+  ${skippedSection}
+  ${proctoringSection}
 
-      const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+  <footer class="doc">
+    <span>Stratax AI — Interview Practice Platform</span>
+    <span>© ${now.getFullYear()} Stratax AI</span>
+  </footer>
+</div>
+</body>
+</html>`;
+
+      const reportWindow = window.open('', '_blank', 'noopener,noreferrer,width=920,height=1000');
+
+      if (reportWindow) {
+        // document.write is the only synchronous way to seed an about:blank
+        // popup; a Blob URL would be blocked as a cross-document navigation.
+        reportWindow.document.write(html);
+        reportWindow.document.close();
+        reportWindow.focus();
+        toast({
+          title: 'Report ready',
+          description: 'Use “Save as PDF” in the report window to keep a copy.',
+        });
+        return;
+      }
+
+      // Popup blocked — fall back to a self-contained HTML file, which still
+      // opens and prints to PDF, rather than silently doing nothing.
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `StrataxAI_Interview_Report_${now.toISOString().slice(0, 10)}.txt`;
+      a.download = `Stratax_Interview_Report_${now.toISOString().slice(0, 10)}.html`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
       toast({
-        title: 'Report Downloaded',
-        description: 'Your evaluation report has been saved.',
+        title: 'Report downloaded',
+        description: 'Open the file and print to PDF to keep a formatted copy.',
       });
     };
 
+    const answeredCount = endedEarlyData?.ended_early
+      ? (endedEarlyData.questions_answered ?? currentQuestionNumber)
+      : totalQuestions;
+    const sessionDuration = formatTime(Math.floor(evaluation?.metrics_summary?.total_duration || 0));
+    const endedByProctoring = !!proctoringSessionEndSummary;
+    const heroTone: PxTone = endedByProctoring ? 'critical' : endedEarlyData?.ended_early ? 'caution' : 'positive';
+
     return (
-      <div className="max-w-4xl mx-auto w-full px-4 overflow-auto">
+      <div className="px px-shell h-full overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="space-y-6 pb-8">
+          <div className="px-frame px-frame--mid py-5 sm:py-8 space-y-5 pb-12">
 
-            {/* ── HERO: Futuristic completion header ── */}
-            <div className="relative overflow-hidden rounded-3xl border border-border/30 bg-gradient-to-br from-background via-background/95 to-primary/5 shadow-2xl shadow-black/20">
-              {/* Animated background elements */}
-              <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-3xl" />
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-gradient-to-tr from-purple-500/10 to-transparent blur-3xl" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-gradient-to-r from-cyan-400/5 to-primary/5 blur-3xl" />
-              </div>
-
-              <div className="relative pt-10 pb-8 px-6">
-                <div className="text-center space-y-5">
-                  {/* Animated trophy with glow ring */}
-                  <div className="relative mx-auto w-28 h-28 md:w-32 md:h-32">
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-400 via-orange-500 to-amber-400 animate-spin opacity-60" style={{ animationDuration: '4s' }} />
-                    <div className="absolute inset-[3px] rounded-full bg-background" />
-                    <div className="absolute inset-[6px] rounded-full bg-gradient-to-br from-yellow-400/30 via-orange-500/20 to-amber-400/30 flex items-center justify-center backdrop-blur-sm">
-                      <Trophy className="w-14 h-14 md:w-16 md:h-16 text-yellow-500 drop-shadow-[0_0_12px_rgba(234,179,8,0.5)]" />
-                    </div>
+            {/* ── HERO ── */}
+            <Panel variant="raised" brackets className="overflow-hidden px-rise">
+              <Seam tone={heroTone} />
+              <div className="px-5 sm:px-8 py-8 sm:py-10">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+                  <div
+                    className="shrink-0 mx-auto sm:mx-0 grid place-items-center w-16 h-16 rounded-full border"
+                    style={{
+                      color: `hsl(${toneVar(heroTone)})`,
+                      borderColor: `hsl(${toneVar(heroTone)} / 0.34)`,
+                      background: `hsl(${toneVar(heroTone)} / 0.1)`,
+                      boxShadow: `0 24px 60px -40px hsl(${toneVar(heroTone)})`,
+                    }}
+                  >
+                    {endedByProctoring ? <ShieldAlert className="w-7 h-7" /> : <Trophy className="w-7 h-7" />}
                   </div>
 
-                  <div className="space-y-2">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
-                      Interview Complete!
+                  <div className="min-w-0 flex-1 text-center sm:text-left">
+                    <Eyebrow tone={heroTone}>
+                      {endedByProctoring
+                        ? 'Ended by proctoring'
+                        : endedEarlyData?.ended_early
+                          ? 'Ended early'
+                          : 'Session complete'}
+                    </Eyebrow>
+                    <h1 className="px-display mt-2.5">
+                      {endedEarlyData?.ended_early ? 'Session closed.' : 'Interview complete.'}
                     </h1>
-                    {endedEarlyData?.ended_early && (
-                      <div className={`inline-flex items-center px-4 py-1.5 rounded-2xl text-sm font-semibold backdrop-blur-sm ${
-                        proctoringSessionEndSummary
-                          ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
-                          : 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20'
-                      }`}>
-                        {proctoringSessionEndSummary ? '🚨 Interview ended by proctoring' : '⚠️ Ended early'} — {endedEarlyData.questions_answered ?? currentQuestionNumber}/{endedEarlyData.total_questions ?? totalQuestions} answered
-                      </div>
-                    )}
-                    {currentRoundConfig ? (
-                      <p className="text-muted-foreground text-base md:text-lg">
-                        Completed <span className="font-bold text-primary">{currentRoundConfig.name}</span> — {totalQuestions} questions
-                      </p>
-                    ) : isDrillSession ? (
-                      <p className="text-muted-foreground text-base md:text-lg">
-                        Drill complete — one question practised.
-                        <span className="block text-sm mt-1 text-muted-foreground/70">
-                          Drills are scored but kept out of your Progress averages,
-                          which track full interview rounds.
-                        </span>
-                      </p>
-                    ) : (
-                      <p className="text-muted-foreground text-base md:text-lg">
-                        Great job completing all <span className="font-bold text-primary">{totalQuestions}</span> questions!
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Completion badge */}
-                  <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-primary/20 backdrop-blur-sm">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold text-primary">See your detailed score breakdown below</span>
-                    <ChevronDown className="w-4 h-4 text-primary animate-bounce" />
+                    <p className="px-body mt-2.5 max-w-lg mx-auto sm:mx-0">
+                      {currentRoundConfig ? (
+                        <>
+                          You finished <span className="font-semibold px-ink">{currentRoundConfig.name}</span>. The full
+                          breakdown is below, and the result is already in your Progress.
+                        </>
+                      ) : isDrillSession ? (
+                        <>
+                          Drill complete — one question practised. Drills are scored but kept out of your Progress
+                          averages, which track full interview rounds.
+                        </>
+                      ) : (
+                        <>
+                          You answered {answeredCount} of {totalQuestions} questions. The full breakdown is below.
+                        </>
+                      )}
+                    </p>
                   </div>
                 </div>
+
+                <Grid cols={2} sm={4} gap="0.625rem" className="mt-7">
+                  <StatTile
+                    label="Answered"
+                    value={`${answeredCount}/${endedEarlyData?.total_questions ?? totalQuestions}`}
+                    icon={ListChecks}
+                    tone={heroTone}
+                  />
+                  <StatTile label="Duration" value={sessionDuration} icon={Clock} tone="accent" />
+                  <StatTile
+                    label="Avg pace"
+                    value={evaluation?.metrics_summary?.avg_wpm || evaluation?.speech_summary?.average_wpm || 0}
+                    unit="wpm"
+                    icon={Activity}
+                    tone="accent"
+                  />
+                  <StatTile
+                    label="Mode"
+                    value={currentRoundConfig ? 'Round' : isDrillSession ? 'Drill' : 'Practice'}
+                    icon={Target}
+                    tone="neural"
+                  />
+                </Grid>
               </div>
-            </div>
+            </Panel>
 
             {/* Proctoring termination summary */}
             {proctoringSessionEndSummary && (
-              <Card className="border-red-500/30 bg-gradient-to-br from-red-500/5 to-transparent rounded-2xl overflow-hidden">
-                <div className="h-0.5 bg-gradient-to-r from-red-500 via-red-400 to-red-500" />
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2 text-red-600 dark:text-red-400">
-                    <div className="p-1.5 bg-red-500/10 rounded-lg">
-                      <AlertCircle className="h-5 w-5" />
-                    </div>
-                    {proctoringSessionEndSummary.title}
-                  </CardTitle>
-                  <CardDescription className="text-sm text-red-700/80 dark:text-red-300/80">
-                    {proctoringSessionEndSummary.description}
-                  </CardDescription>
-                </CardHeader>
+              <Panel tone="critical" className="overflow-hidden px-rise">
+                <Seam tone="critical" />
+                <PanelHead
+                  eyebrow="Integrity"
+                  icon={ShieldAlert}
+                  tone="critical"
+                  title={proctoringSessionEndSummary.title}
+                  description={proctoringSessionEndSummary.description}
+                />
                 {proctoringSessionEndSummary.items.length > 0 && (
-                  <CardContent className="space-y-2 text-sm text-foreground">
-                    {proctoringSessionEndSummary.items.map((item) => (
-                      <div key={item} className="flex items-start gap-2">
-                        <span className="mt-0.5 text-red-500">•</span>
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </CardContent>
+                  <PanelBody>
+                    <FindingList items={proctoringSessionEndSummary.items} tone="critical" />
+                  </PanelBody>
                 )}
-              </Card>
+              </Panel>
             )}
 
-            {/* Instant Score Breakdown */}
+            {/* Authoritative score breakdown */}
             {sessionId && (
-              <InstantScoreBreakdown 
-                sessionId={sessionId} 
+              <InstantScoreBreakdown
+                sessionId={sessionId}
                 onViewProgress={() => navigate('/progress', { state: { refreshToken: Date.now() } })}
               />
             )}
 
-            {/* ── TABBED REPORT VIEW ── */}
+            {/* ── REPORT ── */}
             <Tabs defaultValue="questions" className="w-full">
-              <TabsList className="w-full grid grid-cols-4 h-12 rounded-2xl bg-muted/40 border border-border/30 p-1">
-                <TabsTrigger value="questions" className="rounded-xl text-xs sm:text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
-                  <Layers className="w-3.5 h-3.5 mr-1.5 hidden sm:block" />
+              <TabsList className="px-segment px-segment--block">
+                <TabsTrigger value="questions" className="px-segment__item">
+                  <Layers className="w-3.5 h-3.5 hidden sm:block" />
                   Questions
                 </TabsTrigger>
-                <TabsTrigger value="strengths" className="rounded-xl text-xs sm:text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
-                  <TrendingUp className="w-3.5 h-3.5 mr-1.5 hidden sm:block" />
+                <TabsTrigger value="strengths" className="px-segment__item">
+                  <TrendingUp className="w-3.5 h-3.5 hidden sm:block" />
                   Insights
                 </TabsTrigger>
-                <TabsTrigger value="analytics" className="rounded-xl text-xs sm:text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
-                  <Activity className="w-3.5 h-3.5 mr-1.5 hidden sm:block" />
+                <TabsTrigger value="analytics" className="px-segment__item">
+                  <Activity className="w-3.5 h-3.5 hidden sm:block" />
                   Analytics
                 </TabsTrigger>
-                <TabsTrigger value="plan" className="rounded-xl text-xs sm:text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-md transition-all">
-                  <Target className="w-3.5 h-3.5 mr-1.5 hidden sm:block" />
-                  Action Plan
+                <TabsTrigger value="plan" className="px-segment__item">
+                  <Target className="w-3.5 h-3.5 hidden sm:block" />
+                  Plan
                 </TabsTrigger>
               </TabsList>
 
-              {/* TAB: All Questions Evaluation */}
-              <TabsContent value="questions" className="mt-4 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {/* TAB: per-question evaluation */}
+              <TabsContent value="questions" className="mt-4 space-y-3 px-fade">
                 {questionEvaluations.length > 0 ? (
                   questionEvaluations
                     .slice()
@@ -6229,76 +6393,76 @@ ${'─'.repeat(60)}
                       const testsPassed = item.testResults
                         ? item.testResults.filter((t) => t.passed).length
                         : item.codeEvaluation?.test_cases_passed;
+                      const itemTone: PxTone = item.kind === 'code' ? 'neural' : 'accent';
 
                       return (
-                        <Card key={`${item.kind}-${item.questionNumber}-${item.createdAt}`} className="border border-border/30 rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group">
-                          <div className={`h-0.5 ${item.kind === 'code' ? 'bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500' : 'bg-gradient-to-r from-green-500 via-emerald-400 to-green-500'}`} />
-                          <CardHeader className="pb-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black ${item.kind === 'code' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
-                                    Q{item.questionNumber}
-                                  </div>
-                                  <CardTitle className="text-base sm:text-lg truncate">
-                                    Question {item.questionNumber}
-                                  </CardTitle>
-                                </div>
-                                {item.questionText && (
-                                  <p className="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-2 pl-10">
-                                    {item.questionText}
-                                  </p>
-                                )}
-                              </div>
-                              <Badge variant="outline" className={`shrink-0 rounded-xl ${item.kind === 'code' ? 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400' : 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400'}`}>
-                                {item.kind === 'code' ? 'CODE' : 'VOICE'}
-                              </Badge>
+                        <Panel
+                          key={`${item.kind}-${item.questionNumber}-${item.createdAt}`}
+                          className="overflow-hidden px-rise"
+                        >
+                          <div className="flex items-start gap-3 px-4 pt-4 pb-3.5 border-b border-[hsl(var(--px-line-soft))]">
+                            <span
+                              className="shrink-0 grid place-items-center w-8 h-8 rounded-[var(--px-r-sm)] border px-num text-[0.6875rem] font-semibold"
+                              style={{
+                                color: `hsl(${toneVar(itemTone)})`,
+                                borderColor: `hsl(${toneVar(itemTone)} / 0.28)`,
+                                background: `hsl(${toneVar(itemTone)} / 0.1)`,
+                              }}
+                            >
+                              {String(item.questionNumber).padStart(2, '0')}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <Eyebrow tone={itemTone} icon={item.kind === 'code' ? SquareCode : Mic}>
+                                {item.kind === 'code' ? 'Code' : 'Voice'}
+                              </Eyebrow>
+                              {item.questionText && (
+                                <p className="px-body px-body--tight mt-1.5 line-clamp-2 px-ink">{item.questionText}</p>
+                              )}
                             </div>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
+                          </div>
+
+                          <PanelBody className="space-y-3.5">
                             {item.kind === 'voice' && (
                               <>
-                                {item.transcript && (
-                                  <div className="space-y-2">
-                                    <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 flex items-center gap-1.5">
-                                      <FileText className="w-3 h-3" />
-                                      Transcript
-                                    </div>
-                                    <div className="rounded-xl border border-border/30 bg-muted/20 p-3 backdrop-blur-sm">
-                                      <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{item.transcript}</p>
-                                    </div>
-                                  </div>
-                                )}
-
                                 {(item.metrics || item.microFeedback) && (
-                                  <div className="grid grid-cols-3 gap-2">
-                                    {[
-                                      { label: 'WPM', value: item.metrics?.wpm ?? 0, icon: Activity },
-                                      { label: 'Confidence', value: `${voiceConfidencePct ?? 0}%`, icon: Gauge },
-                                      { label: 'Fillers', value: item.metrics?.filler_count ?? 0, icon: CircleDot },
-                                    ].map((metric) => (
-                                      <div key={metric.label} className="p-3 rounded-xl bg-muted/20 border border-border/20 text-center">
-                                        <metric.icon className="w-3.5 h-3.5 mx-auto text-muted-foreground/50 mb-1" />
-                                        <div className="text-lg font-bold">{metric.value}</div>
-                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{metric.label}</div>
-                                      </div>
-                                    ))}
-                                  </div>
+                                  <Grid cols={3} gap="0.625rem">
+                                    <StatTile label="Pace" value={item.metrics?.wpm ?? 0} unit="wpm" icon={Activity} tone="accent" />
+                                    <StatTile
+                                      label="Confidence"
+                                      value={voiceConfidencePct ?? 0}
+                                      unit="%"
+                                      icon={Gauge}
+                                      tone={getScoreTone(voiceConfidencePct ?? 0)}
+                                    />
+                                    <StatTile
+                                      label="Fillers"
+                                      value={item.metrics?.filler_count ?? 0}
+                                      icon={CircleDot}
+                                      tone={(item.metrics?.filler_count ?? 0) > 8 ? 'caution' : 'positive'}
+                                    />
+                                  </Grid>
                                 )}
 
                                 {item.microFeedback?.correctness_score !== undefined && (
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant="secondary" className="rounded-xl">
-                                      Correctness: {item.microFeedback.correctness_score}%
-                                    </Badge>
+                                    <Chip mono tone={getScoreTone(Number(item.microFeedback.correctness_score) || 0)}>
+                                      Correctness {item.microFeedback.correctness_score}%
+                                    </Chip>
                                     {typeof item.microFeedback.is_correct === 'boolean' && (
-                                      <Badge variant={item.microFeedback.is_correct ? 'default' : 'destructive'} className="rounded-xl">
-                                        {item.microFeedback.is_correct ? 'Correct' : 'Needs Improvement'}
-                                      </Badge>
+                                      <Chip tone={item.microFeedback.is_correct ? 'positive' : 'critical'}>
+                                        {item.microFeedback.is_correct ? 'On target' : 'Needs work'}
+                                      </Chip>
                                     )}
                                     {item.microFeedback.technical_accuracy && (
-                                      <Badge variant="outline" className="rounded-xl">{item.microFeedback.technical_accuracy}</Badge>
+                                      <Chip>{item.microFeedback.technical_accuracy}</Chip>
                                     )}
+                                  </div>
+                                )}
+
+                                {item.transcript && (
+                                  <div className="px-panel px-panel--inset px-3.5 py-3">
+                                    <Eyebrow icon={FileText}>Transcript</Eyebrow>
+                                    <p className="px-body mt-2 whitespace-pre-wrap">{item.transcript}</p>
                                   </div>
                                 )}
                               </>
@@ -6308,375 +6472,314 @@ ${'─'.repeat(60)}
                               <>
                                 {item.codeEvaluation && (
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant="secondary" className="rounded-xl text-sm px-3 py-1">Overall: {item.codeEvaluation.overall_score}%</Badge>
-                                    <Badge variant={item.codeEvaluation.is_correct ? 'default' : 'destructive'} className="rounded-xl">
-                                      {item.codeEvaluation.is_correct ? '✅ Accepted' : '❌ Not Accepted'}
-                                    </Badge>
+                                    <Chip mono tone={getScoreTone(Number(item.codeEvaluation.overall_score) || 0)} size="lg">
+                                      Overall {item.codeEvaluation.overall_score}%
+                                    </Chip>
+                                    <Chip tone={item.codeEvaluation.is_correct ? 'positive' : 'critical'}>
+                                      {item.codeEvaluation.is_correct ? 'Accepted' : 'Not accepted'}
+                                    </Chip>
                                     {testsTotal !== undefined && testsPassed !== undefined && (
-                                      <Badge variant="outline" className="rounded-xl">Tests: {testsPassed}/{testsTotal}</Badge>
+                                      <Chip mono>Tests {testsPassed}/{testsTotal}</Chip>
                                     )}
                                   </div>
                                 )}
 
                                 {item.codeEvaluation?.approach_feedback && (
-                                  <div className="space-y-2">
-                                    <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 flex items-center gap-1.5">
-                                      <Lightbulb className="w-3 h-3" />
-                                      Approach Feedback
-                                    </div>
-                                    <div className="rounded-xl border border-border/30 bg-muted/20 p-3 backdrop-blur-sm">
-                                      <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{item.codeEvaluation.approach_feedback}</p>
-                                    </div>
+                                  <div className="px-panel px-panel--inset px-3.5 py-3">
+                                    <Eyebrow icon={Lightbulb}>Approach</Eyebrow>
+                                    <p className="px-body mt-2 whitespace-pre-wrap">{item.codeEvaluation.approach_feedback}</p>
                                   </div>
                                 )}
 
                                 {item.testResults && item.testResults.length > 0 && (
-                                  <div className="space-y-2">
-                                    <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Test Results</div>
-                                    <div className="rounded-xl border border-border/30 bg-muted/20 p-3 space-y-1.5">
-                                      <div className="text-sm font-medium text-muted-foreground">
-                                        {item.testResults.filter((t) => t.passed).length}/{item.testResults.length} passed
-                                      </div>
+                                  <div className="px-panel px-panel--inset px-3.5 py-3">
+                                    <Eyebrow icon={ListChecks}>
+                                      Tests — {item.testResults.filter((t) => t.passed).length}/{item.testResults.length} passed
+                                    </Eyebrow>
+                                    <div className="mt-2 flex flex-wrap gap-1.5">
                                       {item.testResults.map((tr, trIdx) => (
-                                        <div key={trIdx} className={`text-xs flex items-center gap-2 ${tr.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                          <span>{tr.passed ? '✅' : '❌'}</span>
-                                          <span>Test {tr.test_case_number}</span>
-                                          {!tr.passed && tr.error_message && (
-                                            <span className="text-muted-foreground">— {tr.error_message}</span>
-                                          )}
-                                        </div>
+                                        <Chip key={trIdx} mono tone={tr.passed ? 'positive' : 'critical'}>
+                                          {tr.passed ? '✓' : '✕'} {tr.test_case_number}
+                                        </Chip>
                                       ))}
                                     </div>
                                   </div>
                                 )}
 
                                 {!item.codeEvaluation && (!item.testResults || item.testResults.length === 0) && (
-                                  <p className="text-sm text-muted-foreground italic">Code evaluation data not available from server. Check the Score Breakdown above for overall results.</p>
+                                  <p className="px-note">
+                                    No evaluation data came back for this submission — see the score breakdown above.
+                                  </p>
                                 )}
                               </>
                             )}
-                          </CardContent>
-                        </Card>
+                          </PanelBody>
+                        </Panel>
                       );
                     })
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Layers className="w-8 h-8 mx-auto mb-3 opacity-40" />
-                    <p className="text-sm">No detailed question evaluations available.</p>
-                    <p className="text-xs mt-1">Check the Score Breakdown above for overall results.</p>
-                  </div>
+                  <EmptyState
+                    icon={Layers}
+                    title="No per-question detail"
+                    hint="The score breakdown above still carries the overall result."
+                  />
                 )}
               </TabsContent>
 
-              {/* TAB: Strengths & Improvements */}
-              <TabsContent value="strengths" className="mt-4 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="grid md:grid-cols-2 gap-4">
-                  {/* Strengths */}
-                  <Card className="border-green-500/20 rounded-2xl overflow-hidden">
-                    <div className="h-0.5 bg-gradient-to-r from-green-500 via-emerald-400 to-green-500" />
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                        <div className="p-1.5 bg-green-500/10 rounded-lg">
-                          <CheckCircle2 className="w-5 h-5" />
-                        </div>
-                        Your Strengths
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2.5">
-                        {evaluation?.strengths?.items && Array.isArray(evaluation.strengths.items) && evaluation.strengths.items.length > 0 ? (
-                          evaluation.strengths.items.map((strength, idx) => (
-                            <li key={idx} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-green-500/5 border border-green-500/10">
-                              <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                              <span className="text-sm leading-relaxed">{strength}</span>
-                            </li>
-                          ))
-                        ) : (
-                          <li className="text-sm text-muted-foreground p-2.5">No strengths data available</li>
-                        )}
-                      </ul>
-                    </CardContent>
-                  </Card>
+              {/* TAB: strengths + improvements */}
+              <TabsContent value="strengths" className="mt-4 space-y-3 px-fade">
+                <Grid cols={1} md={2} gap="0.75rem">
+                  <Panel tone="positive" className="overflow-hidden px-rise">
+                    <Seam tone="positive" />
+                    <PanelHead eyebrow="What worked" icon={CheckCircle2} tone="positive" title="Your strengths" />
+                    <PanelBody>
+                      <FindingList
+                        items={Array.isArray(evaluation?.strengths?.items) ? evaluation?.strengths?.items : []}
+                        tone="positive"
+                        empty="No strengths data available."
+                      />
+                    </PanelBody>
+                  </Panel>
 
-                  {/* Improvements */}
-                  <Card className="border-orange-500/20 rounded-2xl overflow-hidden">
-                    <div className="h-0.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500" />
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
-                        <div className="p-1.5 bg-orange-500/10 rounded-lg">
-                          <TrendingUp className="w-5 h-5" />
-                        </div>
-                        Areas for Improvement
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2.5">
-                        {evaluation?.improvements?.items && Array.isArray(evaluation.improvements.items) && evaluation.improvements.items.length > 0 ? (
-                          evaluation.improvements.items.map((area, idx) => (
-                            <li key={idx} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-orange-500/5 border border-orange-500/10">
-                              <Flame className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                              <span className="text-sm leading-relaxed">{area}</span>
-                            </li>
-                          ))
-                        ) : (
-                          <li className="text-sm text-muted-foreground p-2.5">No improvement areas data available</li>
-                        )}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </div>
+                  <Panel tone="caution" className="overflow-hidden px-rise">
+                    <Seam tone="caution" />
+                    <PanelHead eyebrow="What to fix" icon={Flame} tone="caution" title="Areas for improvement" />
+                    <PanelBody>
+                      <FindingList
+                        items={Array.isArray(evaluation?.improvements?.items) ? evaluation?.improvements?.items : []}
+                        tone="caution"
+                        empty="No improvement areas available."
+                      />
+                    </PanelBody>
+                  </Panel>
+                </Grid>
 
-                {/* Fallback: Legacy Score Card (only if instant score fails) */}
+                {/* Fallback score card — only when the session score endpoint is unavailable. */}
                 {!sessionId && (
-                  <Card className="border border-border/30 rounded-2xl overflow-hidden">
-                    <div className="h-0.5 bg-gradient-to-r from-primary via-purple-500 to-primary" />
-                    <CardHeader>
-                      <CardTitle className="text-2xl">Overall Performance</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4">
-                        <div className="flex-1 w-full">
-                          <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 mb-2 justify-center sm:justify-start">
-                            <span className={`text-4xl sm:text-6xl font-black ${getScoreColor(score)}`}>
-                              {score}
-                            </span>
-                            <span className="text-xl sm:text-3xl text-muted-foreground">/100</span>
-                            <Badge className="text-base sm:text-xl px-3 sm:px-4 py-1 sm:py-2 rounded-xl font-bold">{grade}</Badge>
+                  <Panel variant="raised" className="overflow-hidden px-rise">
+                    <Seam tone={getScoreTone(score)} />
+                    <PanelHead eyebrow="Overall" icon={Gauge} tone={getScoreTone(score)} title="Session performance" />
+                    <PanelBody>
+                      <div className="flex items-center gap-6">
+                        <Dial value={score} size={124} tone={getScoreTone(score)}>
+                          <div>
+                            <div className="px-num text-3xl font-semibold px-ink leading-none">{score}</div>
+                            <div className="px-eyebrow mt-1.5 justify-center">/ 100</div>
                           </div>
-                          <Progress value={score} className="h-3 mt-4 rounded-full" />
-                          <p className="text-xs text-muted-foreground mt-2 text-center sm:text-left">
-                            Based on average confidence score: {avgConfidence.toFixed(2)}{avgConfidence <= 1 ? ' (0-1 scale)' : '/10'}
+                        </Dial>
+                        <div className="min-w-0">
+                          <Chip size="lg" tone={getScoreTone(score)} mono>Grade {grade}</Chip>
+                          <p className="px-note mt-3">
+                            Derived from average confidence ({avgConfidence.toFixed(2)}
+                            {avgConfidence <= 1 ? ' on a 0–1 scale' : ' / 10'}).
                           </p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </PanelBody>
+                  </Panel>
                 )}
               </TabsContent>
 
-              {/* TAB: Speech Analytics */}
-              <TabsContent value="analytics" className="mt-4 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <Card className="border border-border/30 rounded-2xl overflow-hidden">
-                  <div className="h-0.5 bg-gradient-to-r from-cyan-500 via-blue-400 to-cyan-500" />
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <div className="p-1.5 bg-cyan-500/10 rounded-lg">
-                        <BarChart3 className="w-5 h-5 text-cyan-500" />
-                      </div>
-                      Speech Analytics Summary
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {/* TAB: speech analytics */}
+              <TabsContent value="analytics" className="mt-4 space-y-3 px-fade">
+                <Panel className="overflow-hidden px-rise">
+                  <PanelHead eyebrow="Delivery telemetry" icon={Activity} tone="accent" title="Speech analytics" />
+                  <PanelBody className="space-y-4">
+                    <Grid cols={2} sm={3} gap="0.625rem">
                       {[
-                        { label: 'Average Speed', value: `${evaluation?.metrics_summary?.avg_wpm || evaluation?.speech_summary?.average_wpm || 0}`, unit: 'WPM', icon: Activity, color: 'text-blue-500' },
-                        { label: 'Total Fillers', value: `${evaluation?.metrics_summary?.total_fillers || evaluation?.speech_summary?.total_filler_count || 0}`, unit: '', icon: CircleDot, color: 'text-amber-500' },
-                        { label: 'Avg Confidence', value: `${((evaluation?.metrics_summary?.avg_confidence || evaluation?.speech_summary?.average_confidence || 0) * 100).toFixed(0)}`, unit: '%', icon: Gauge, color: 'text-green-500' },
-                        { label: 'Longest Pause', value: `${(evaluation?.metrics_summary?.longest_pause || 0).toFixed(1)}`, unit: 'sec', icon: Timer, color: 'text-purple-500' },
-                        { label: 'Duration', value: formatTime(Math.floor(evaluation?.metrics_summary?.total_duration || 0)), unit: '', icon: Clock, color: 'text-cyan-500' },
-                        { label: 'Overtalk Count', value: `${evaluation?.metrics_summary?.overtalked_count || 0}`, unit: '', icon: Radio, color: 'text-rose-500' },
+                        {
+                          label: 'Average pace',
+                          value: `${evaluation?.metrics_summary?.avg_wpm || evaluation?.speech_summary?.average_wpm || 0}`,
+                          unit: 'wpm',
+                          icon: Activity,
+                          tone: 'accent' as PxTone,
+                        },
+                        {
+                          label: 'Total fillers',
+                          value: `${evaluation?.metrics_summary?.total_fillers || evaluation?.speech_summary?.total_filler_count || 0}`,
+                          icon: CircleDot,
+                          tone: 'caution' as PxTone,
+                        },
+                        {
+                          label: 'Avg confidence',
+                          value: `${((evaluation?.metrics_summary?.avg_confidence || evaluation?.speech_summary?.average_confidence || 0) * 100).toFixed(0)}`,
+                          unit: '%',
+                          icon: Gauge,
+                          tone: 'positive' as PxTone,
+                        },
+                        {
+                          label: 'Longest pause',
+                          value: `${(evaluation?.metrics_summary?.longest_pause || 0).toFixed(1)}`,
+                          unit: 's',
+                          icon: Timer,
+                          tone: 'neural' as PxTone,
+                        },
+                        {
+                          label: 'Duration',
+                          value: formatTime(Math.floor(evaluation?.metrics_summary?.total_duration || 0)),
+                          icon: Clock,
+                          tone: 'accent' as PxTone,
+                        },
+                        {
+                          label: 'Overtalk',
+                          value: `${evaluation?.metrics_summary?.overtalked_count || 0}`,
+                          icon: Radio,
+                          tone: 'critical' as PxTone,
+                        },
                       ].map((metric) => (
-                        <div key={metric.label} className="p-4 rounded-2xl bg-muted/20 border border-border/20 hover:bg-muted/30 transition-colors group">
-                          <div className="flex items-center gap-2 mb-2">
-                            <metric.icon className={`w-4 h-4 ${metric.color} opacity-60 group-hover:opacity-100 transition-opacity`} />
-                            <p className="text-xs text-muted-foreground font-medium">{metric.label}</p>
-                          </div>
-                          <p className="text-2xl md:text-3xl font-black">
-                            {metric.value}
-                            {metric.unit && <span className="text-sm text-muted-foreground ml-1 font-medium">{metric.unit}</span>}
-                          </p>
-                        </div>
+                        <StatTile
+                          key={metric.label}
+                          label={metric.label}
+                          value={metric.value}
+                          unit={metric.unit}
+                          icon={metric.icon}
+                          tone={metric.tone}
+                        />
                       ))}
-                    </div>
+                    </Grid>
 
                     {evaluation?.learning_insight ? (
-                      <>
-                        <Separator className="my-4" />
-                        <div className="flex items-start gap-3 p-4 rounded-2xl bg-primary/5 border border-primary/15">
-                          <GraduationCap className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-                          <div>
-                            <div className="text-xs font-semibold uppercase tracking-wider text-primary/70 mb-1">Peer Benchmark</div>
-                            <div className="text-sm font-medium text-foreground leading-relaxed">
-                              {evaluation.learning_insight}
-                            </div>
-                          </div>
+                      <div className="px-panel px-panel--inset flex items-start gap-3 px-3.5 py-3">
+                        <GraduationCap className="w-4 h-4 mt-0.5 shrink-0" style={toneColor('accent')} />
+                        <div className="min-w-0">
+                          <Eyebrow tone="accent">Peer benchmark</Eyebrow>
+                          <p className="px-body mt-1.5">{evaluation.learning_insight}</p>
                         </div>
-                      </>
+                      </div>
                     ) : null}
-                  </CardContent>
-                </Card>
+                  </PanelBody>
+                </Panel>
 
                 {/* Post-session confidence prompt.
                     Not shown for drills: the rating feeds a cross-user benchmark
                     keyed on session metrics that a drill deliberately does not
                     write, so it would be collected and never used. */}
                 {sessionId && !isDrillSession && sessionConfidenceStatus !== 'disabled' ? (
-                  <Card className="border border-border/30 rounded-2xl overflow-hidden">
-                    <div className="h-0.5 bg-gradient-to-r from-primary via-purple-400 to-primary" />
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <div className="p-1.5 bg-primary/10 rounded-lg">
-                          <Brain className="w-5 h-5 text-primary" />
-                        </div>
-                        How confident do you feel?
-                      </CardTitle>
-                      <CardDescription>Rate your overall confidence for this session (1–5).</CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                  <Panel className="overflow-hidden px-rise">
+                    <PanelHead
+                      eyebrow="Self-report"
+                      icon={Brain}
+                      tone="neural"
+                      title="How confident do you feel?"
+                      description="Rate your overall confidence for this session (1–5)."
+                    />
+                    <PanelBody>
                       <div className="flex flex-wrap items-center gap-2">
-                        {[1, 2, 3, 4, 5].map((v) => {
-                          const active = (sessionConfidenceDraft ?? 0) === v;
-                          return (
-                            <Button
+                        <div className="px-segment">
+                          {[1, 2, 3, 4, 5].map((v) => (
+                            <button
                               key={v}
                               type="button"
-                              size="sm"
-                              variant={active ? 'default' : 'outline'}
+                              className="px-segment__item px-num min-w-11"
+                              data-active={(sessionConfidenceDraft ?? 0) === v}
                               disabled={sessionConfidenceStatus === 'submitting'}
                               onClick={() => submitSessionConfidenceBestEffort(sessionId, v)}
-                              className="min-w-12 h-10 rounded-xl font-bold"
                             >
                               {v}
-                            </Button>
-                          );
-                        })}
+                            </button>
+                          ))}
+                        </div>
                         <div className="flex-1" />
-                        <Button
-                          type="button"
-                          size="sm"
+                        <PxButton
                           variant="ghost"
+                          size="sm"
                           disabled={sessionConfidenceStatus === 'submitting'}
                           onClick={() => skipSessionConfidencePrompt(sessionId)}
-                          className="rounded-xl"
                         >
                           Skip
-                        </Button>
+                        </PxButton>
                       </div>
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        {sessionConfidenceStatus === 'saved'
-                          ? 'Thanks—saved.'
-                          : sessionConfidenceStatus === 'skipped'
-                            ? 'Skipped. You can still add a rating anytime.'
-                            : sessionConfidenceStatus === 'submitting'
-                              ? 'Saving…'
-                              : sessionConfidenceStatus === 'error'
-                                ? 'Not saved yet. Try again.'
-                                : ''}
-                      </div>
-                    </CardContent>
-                  </Card>
+                      {sessionConfidenceStatus !== 'idle' && (
+                        <p className="px-note mt-2.5">
+                          {sessionConfidenceStatus === 'saved'
+                            ? 'Saved — thank you.'
+                            : sessionConfidenceStatus === 'skipped'
+                              ? 'Skipped. You can still add a rating anytime.'
+                              : sessionConfidenceStatus === 'submitting'
+                                ? 'Saving…'
+                                : sessionConfidenceStatus === 'error'
+                                  ? 'Not saved yet. Try again.'
+                                  : ''}
+                        </p>
+                      )}
+                    </PanelBody>
+                  </Panel>
                 ) : null}
               </TabsContent>
 
-              {/* TAB: Action Plan */}
-              <TabsContent value="plan" className="mt-4 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {/* TAB: action plan */}
+              <TabsContent value="plan" className="mt-4 space-y-3 px-fade">
                 {evaluation?.action_plan?.steps && Array.isArray(evaluation.action_plan.steps) && evaluation.action_plan.steps.length > 0 && (
-                  <Card className="border border-border/30 rounded-2xl overflow-hidden">
-                    <div className="h-0.5 bg-gradient-to-r from-blue-500 via-indigo-400 to-blue-500" />
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                        <div className="p-1.5 bg-blue-500/10 rounded-lg">
-                          <Target className="w-5 h-5" />
-                        </div>
-                        Your Action Plan
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {evaluation.action_plan.steps.map((step, idx) => (
-                          <div key={idx} className="flex items-start gap-3 p-3 rounded-xl bg-blue-500/5 border border-blue-500/10 hover:bg-blue-500/8 transition-colors">
-                            <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 text-white rounded-xl flex items-center justify-center text-sm font-black shadow-md">
-                              {idx + 1}
-                            </div>
-                            <span className="text-sm flex-1 leading-relaxed pt-1">{step}</span>
-                          </div>
-                        ))}
-                      </div>
+                  <Panel variant="raised" className="overflow-hidden px-rise">
+                    <Seam tone="accent" />
+                    <PanelHead eyebrow="Do this next" icon={Target} tone="accent" title="Your action plan" />
+                    <PanelBody className="space-y-4">
+                      <FindingList items={evaluation.action_plan.steps} tone="accent" numbered />
+
                       {evaluation.practice_recommendation && (
-                        <div className="mt-4 p-4 bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/20 rounded-2xl">
-                          <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                            <Lightbulb className="w-4 h-4" />
-                            {evaluation.practice_recommendation}
-                          </p>
+                        <div className="px-panel px-panel--inset flex items-start gap-2.5 px-3.5 py-3">
+                          <Lightbulb className="w-4 h-4 mt-0.5 shrink-0" style={toneColor('accent')} />
+                          <p className="px-body px-body--tight">{evaluation.practice_recommendation}</p>
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </PanelBody>
+                  </Panel>
                 )}
 
-                {/* Skipped Questions */}
                 {endedEarlyData?.skipped_questions && endedEarlyData.skipped_questions.length > 0 && (
-                  <Card className="border border-border/30 rounded-2xl overflow-hidden">
-                    <div className="h-0.5 bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500" />
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <div className="p-1.5 bg-yellow-500/10 rounded-lg">
-                          <AlertCircle className="h-5 w-5 text-yellow-500" />
-                        </div>
-                        Skipped Questions
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
+                  <Panel tone="caution" className="overflow-hidden px-rise">
+                    <PanelHead
+                      eyebrow="Not attempted"
+                      icon={Hourglass}
+                      tone="caution"
+                      title="Skipped questions"
+                      description="Worth returning to — these are the gaps this session left open."
+                    />
+                    <PanelBody className="space-y-2">
                       {endedEarlyData.skipped_questions.map((q) => (
-                        <div key={q.question_number} className="p-3 bg-muted/20 rounded-xl border border-dashed border-border/40">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs text-muted-foreground font-bold">Q{q.question_number}</span>
+                        <div key={q.question_number} className="px-panel px-panel--inset px-3.5 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="px-num text-[0.625rem] px-ink-3">
+                              Q{String(q.question_number).padStart(2, '0')}
+                            </span>
                             {q.category && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize rounded-lg">
-                                {q.category.replace('_', ' ')}
-                              </Badge>
+                              <Chip className="capitalize">{q.category.replace('_', ' ')}</Chip>
                             )}
                           </div>
-                          <p className="text-sm">{q.question}</p>
+                          <p className="px-body px-body--tight mt-1.5 px-ink">{q.question}</p>
                         </div>
                       ))}
-                    </CardContent>
-                  </Card>
+                    </PanelBody>
+                  </Panel>
                 )}
 
                 {!evaluation?.action_plan?.steps?.length && !endedEarlyData?.skipped_questions?.length && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Target className="w-8 h-8 mx-auto mb-3 opacity-40" />
-                    <p className="text-sm">No action plan available yet.</p>
-                    <p className="text-xs mt-1">Complete more sessions to receive personalized recommendations.</p>
-                  </div>
+                  <EmptyState
+                    icon={Target}
+                    title="No action plan yet"
+                    hint="Complete more sessions to receive personalised recommendations."
+                  />
                 )}
               </TabsContent>
             </Tabs>
 
-            {/* ── ACTION BUTTONS ── */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-              {/* Download Report Button */}
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={handleDownloadReport}
-                className="px-6 h-12 rounded-2xl border-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5 shadow-lg hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 font-semibold group"
-              >
-                <Download className="mr-2 w-5 h-5 text-primary group-hover:animate-bounce" />
-                Download Report
-              </Button>
-
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={handleRestart}
-                className="px-6 h-12 rounded-2xl border-2 hover:bg-muted/50 shadow-lg transition-all duration-300 font-semibold"
-              >
-                <RotateCcw className="mr-2 w-5 h-5" />
-                Practice Again
-              </Button>
-
-              <Button
-                size="lg"
-                className="px-6 h-12 rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-bold"
-                onClick={handleRestart}
-              >
-                <Sparkles className="mr-2 w-5 h-5" />
-                New Interview
-              </Button>
-            </div>
-
+            {/* ── ACTIONS ── */}
+            <Panel className="overflow-hidden px-rise">
+              <PanelBody className="flex flex-col sm:flex-row gap-3">
+                <PxButton variant="ghost" size="lg" onClick={handleDownloadReport} className="sm:flex-1">
+                  <Download className="w-4 h-4" />
+                  Export PDF report
+                </PxButton>
+                <PxButton variant="outline" size="lg" onClick={handleRestart} className="sm:flex-1">
+                  <RotateCcw className="w-4 h-4" />
+                  Practice again
+                </PxButton>
+                <PxButton variant="primary" size="lg" onClick={handleRestart} className="sm:flex-1">
+                  <Sparkles className="w-4 h-4" />
+                  New interview
+                </PxButton>
+              </PanelBody>
+            </Panel>
           </div>
         </ScrollArea>
       </div>

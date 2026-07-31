@@ -1,3 +1,5 @@
+@import "./styles/practice-system.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -73,7 +73,7 @@ import { apiCreateSession, apiSubmitQuestion, apiSubmitQuestionStream, apiGetHis
 import { apiRenderMermaid, questionCardsPayload, type CopilotMode } from "@/lib/api";
 import { downloadAnswerPdf } from "@/lib/utils";
 import { generateArchitecture, type ArchitecturePackage } from "@/lib/architectureApi";
-import { Plus, Check, FileText, XCircle } from "lucide-react";
+import { Plus, Check, FileText, XCircle, Mic, BarChart3 } from "lucide-react";
 import { apiGetMockInterviewHistory, apiDeleteMockInterviewSession, apiDeleteAllMockInterviewSessions, type MockInterviewHistorySession } from "@/lib/mockInterviewApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -81,7 +81,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { startEvaluationOverlay } from "@/overlayHost";
@@ -171,6 +171,49 @@ export const InterviewAssistant = () => {
   });
 
   const [practiceScreenShareLock, setPracticeScreenShareLock] = useState(false);
+
+  /**
+   * The sidebar — brand, navigation, and AI Copilot chat history — stays put on
+   * every tab. It only gets out of the way once an interview is genuinely under
+   * way, where the session owns the screen. Screen-share lock is that signal:
+   * it is set for the whole of a running Live Practice session.
+   */
+  const isInterviewSessionLive = practiceScreenShareLock;
+
+  /** Single place the three destinations change from, wherever they're rendered. */
+  const handleMainTabChange = useCallback((next: string) => {
+    if (practiceScreenShareLock && next !== 'practice') {
+      toast({
+        title: 'Screen sharing is active',
+        description: 'Finish Live Practice before switching tabs.',
+      });
+      return;
+    }
+    setActiveMainTab(next as "answer" | "mock-interview" | "practice");
+    // Clear any lingering openTab navigation state so refresh doesn't hijack the tab.
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [practiceScreenShareLock, toast, navigate, location.pathname]);
+
+  /** Sidebar navigation destinations. */
+  const MAIN_NAV_ITEMS = [
+    { id: "answer", label: "AI Copilot", icon: MessageSquare },
+    { id: "mock-interview", label: "Mock Interview", icon: HistoryIcon },
+    { id: "practice", label: "Live Practice", icon: Mic },
+  ] as const;
+
+  /** One row shape for every sidebar entry, so nav and utilities line up. */
+  const SIDEBAR_ROW =
+    "w-full flex items-center gap-2.5 h-9 px-2.5 rounded-lg text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
+
+  /** Live Practice owns the screen while it records; block navigation away. */
+  const guardWhileLive = (label: string) => (e: { preventDefault: () => void }) => {
+    if (!practiceScreenShareLock) return;
+    e.preventDefault();
+    toast({
+      title: 'Screen sharing is active',
+      description: `Finish Live Practice before opening ${label}.`,
+    });
+  };
 
   // Allow deep-linking / navigation to a specific tab.
   useEffect(() => {
@@ -2942,7 +2985,7 @@ export const InterviewAssistant = () => {
       {/* Key Status Badge - Only shown when key is missing */}
       {!hasApiKey && (
         <div
-          className={`fixed top-20 left-4 z-40 ${activeMainTab === "practice" ? "md:left-4" : isDesktopSidebarOpen ? "md:left-72" : "md:left-16"}`}
+          className={`fixed top-20 left-4 z-40 ${isInterviewSessionLive ? "md:left-4" : isDesktopSidebarOpen ? "md:left-72" : "md:left-16"}`}
         >
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-all duration-500 bg-amber-500/10 border-amber-500/20 text-amber-500 shadow-[0_0_158px_-5px_rgba(245,158,11,0.3)]">
             <Key className="w-3 h-3 animate-pulse" />
@@ -3291,8 +3334,8 @@ export const InterviewAssistant = () => {
           </div>
         )}
 
-        {/* Collapsed Sidebar Rail (Desktop) - Hidden in Practice Mode */}
-        {activeMainTab !== "practice" && !isDesktopSidebarOpen && (
+        {/* Collapsed Sidebar Rail (Desktop) — hidden only while a session runs */}
+        {!isInterviewSessionLive && !isDesktopSidebarOpen && (
           <div className="hidden md:flex fixed left-0 top-0 bottom-0 w-14 border-r border-border bg-background/50 backdrop-blur-xl z-50">
             <div className="w-full flex flex-col items-center pt-3">
               <button
@@ -3312,19 +3355,19 @@ export const InterviewAssistant = () => {
             </div>
           </div>
         )}
-        <aside className={`hidden md:flex fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-background/50 backdrop-blur-xl z-40 flex-col transition-transform duration-300 ${activeMainTab === "practice" ? "md:hidden" : ""} ${isDesktopSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center justify-between gap-3">
+        <aside className={`hidden md:flex fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-background/50 backdrop-blur-xl z-40 flex-col transition-transform duration-300 ${isInterviewSessionLive ? "md:hidden" : ""} ${isDesktopSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+          <div className="px-3 py-2.5 border-b border-border/60">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center shrink-0">
-                  <StrataxMark className="w-5 h-5 text-white" />
+                <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center shrink-0">
+                  <StrataxMark className="w-4 h-4 text-white" />
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent truncate">Stratax AI</h1>
+                <h1 className="text-base font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent truncate">Stratax AI</h1>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 shrink-0"
+                className="h-7 w-7 shrink-0"
                 onClick={() => setIsDesktopSidebarOpen(false)}
                 title="Hide history"
                 aria-label="Hide history sidebar"
@@ -3334,122 +3377,33 @@ export const InterviewAssistant = () => {
             </div>
           </div>
 
+          {/* Primary navigation — replaces the old top tab bar. */}
+          <nav className="px-2 py-2 border-b border-border/50 space-y-0.5">
+            {MAIN_NAV_ITEMS.map((item) => {
+              const isActive = activeMainTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleMainTabChange(item.id)}
+                  disabled={practiceScreenShareLock && item.id !== "practice"}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`${SIDEBAR_ROW} ${isActive
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium"
+                    }`}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
           <div className="flex-1 overflow-hidden">
-            {activeMainTab === "mock-interview" ? (
-              <Card className="h-full flex flex-col rounded-none border-0 shadow-none bg-transparent">
-                <CardHeader className="px-4 py-3 border-b">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-semibold">Interview History</CardTitle>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={loadMockInterviewHistory}
-                        disabled={mockInterviewHistoryLoading}
-                        title="Refresh history"
-                      >
-                        <RefreshCw className={`h-4 w-4 ${mockInterviewHistoryLoading ? 'animate-spin' : ''}`} />
-                      </Button>
-                      {mockInterviewSessions.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-red-500 hover:text-red-600"
-                          onClick={handleDeleteAllMockInterviewSessions}
-                          disabled={mockInterviewClearingAll}
-                          title="Clear all history"
-                        >
-                          {mockInterviewClearingAll ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 min-h-0 p-0 overflow-hidden flex flex-col">
-                  <ScrollArea className="flex-1">
-                    {mockInterviewHistoryLoading && !mockInterviewSessions.length ? (
-                      <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Loading history...
-                      </div>
-                    ) : mockInterviewSessions.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-10 text-center text-sm text-muted-foreground px-4">
-                        <AlertCircle className="h-5 w-5 mb-2" />
-                        <p>No completed interviews yet. Start your first interview!</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-1 p-1">
-                        {(() => {
-                          console.log("[MockHistory] Rendering sessions, count:", mockInterviewSessions.length);
-                          console.log("[MockHistory] Sessions to render:", mockInterviewSessions);
-                          return mockInterviewSessions.map((session, idx) => {
-                            console.log(`[MockHistory] Rendering session ${idx}:`, session);
-                            return (
-                              <div
-                                key={session.session_id}
-                                className={`group px-4 py-3 space-y-2 rounded-lg border-l-2 transition-all duration-200 cursor-pointer hover:bg-muted/50 ${selectedMockSession?.session_id === session.session_id ? "border-l-primary bg-primary/5 shadow-[0_0_12px_-3px_hsl(var(--primary)/0.25)]" : "border-l-transparent hover:border-l-primary/30"
-                                  }`}
-                                onClick={() => handleSelectMockSession(session)}
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-medium capitalize group-hover:text-foreground transition-colors">
-                                      {session.interview_type?.replace('_', ' ') || 'Interview'} • {session.difficulty || 'Unknown'}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {session.started_at ? new Date(session.started_at).toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                      }) : 'Unknown date'} · {session.questions_answered || 0}/{session.total_questions || 0} questions
-                                    </p>
-                                    {session.average_score != null && (
-                                      <p className="text-xs text-primary font-medium mt-1">
-                                        Avg Score: {session.average_score.toFixed(1)}/10
-                                      </p>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="text-red-500 hover:text-red-600 h-7 w-7"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteMockInterviewSession(session.session_id);
-                                      }}
-                                      disabled={mockInterviewDeletingSessionId === session.session_id}
-                                    >
-                                      {mockInterviewDeletingSessionId === session.session_id ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                      ) : (
-                                        <Trash2 className="h-4 w-4" />
-                                      )}
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          });
-                        })()}
-                      </div>
-                    )}
-                    {mockInterviewHistoryError && (
-                      <div className="px-4 py-3 text-xs text-red-500">{mockInterviewHistoryError}</div>
-                    )}
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
 
                 {/* New Chat Button - Moved to top for better UX */}
-                <div className="px-4 py-3 border-b border-border/40">
+                <div className="px-2 py-2 border-b border-border/40">
                   <Button
                     variant="outline"
                     onClick={handleNewChat}
@@ -3466,10 +3420,10 @@ export const InterviewAssistant = () => {
                 </div>
 
                 {/* Sessions */}
-                <div className="px-4 pt-4 pb-2">
-                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Previous Sessions</h2>
+                <div className="px-3 pt-2.5 pb-1.5">
+                  <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">Previous Sessions</h2>
                 </div>
-                <div className="px-2 overflow-y-auto max-h-[30vh]">
+                <div className="px-2 overflow-y-auto max-h-[34vh]">
                   {Array.isArray(sessions) && sessions.length ? (
                     <ul className="space-y-1 pr-2">
                       {sessions
@@ -3623,10 +3577,10 @@ export const InterviewAssistant = () => {
 
 
                 {/* Current History */}
-                <div className="px-4 pt-2 pb-2">
-                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Current Conversation</h2>
+                <div className="px-3 pt-2.5 pb-1.5">
+                  <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">Current Conversation</h2>
                 </div>
-                <div className="px-2 overflow-y-auto mb-2 max-h-[50vh] flex-1">
+                <div className="px-2 overflow-y-auto mb-1 max-h-[50vh] flex-1">
                   {history?.items?.length ? (
                     <ul className="space-y-1 pr-2">
                       {/* Show current session as ONE item */}
@@ -3748,135 +3702,93 @@ export const InterviewAssistant = () => {
                     <div className="px-4 text-xs text-muted-foreground">No history yet</div>
                   )}
                 </div>
-              </>
+          </div>
+
+          {/*
+           * Utilities — the actions that used to sit in the top bar. They live
+           * below the history rather than above it: pinned to the bottom they
+           * cost no vertical space the session list could have used, which is
+           * what pushed the history off-screen when they sat up top.
+           */}
+          <div className="mt-auto px-2 py-2 border-t border-border/50 space-y-0.5">
+            {user && !authLoading && (
+              <Link to="/progress" onClick={guardWhileLive('Progress')}>
+                <button
+                  type="button"
+                  disabled={practiceScreenShareLock}
+                  className={`${SIDEBAR_ROW} font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground`}
+                >
+                  <BarChart3 className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Progress</span>
+                </button>
+              </Link>
             )}
+
+            {user && !authLoading && (
+              <button
+                type="button"
+                disabled={practiceScreenShareLock}
+                onClick={() => setBridgeSettingsOpen(true)}
+                className={`${SIDEBAR_ROW} font-medium ${!hasApiKey
+                  ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  }`}
+              >
+                <Settings className="h-4 w-4 shrink-0" />
+                <span className="truncate">{hasApiKey ? "Bridge Settings" : "Connect AI Bridge"}</span>
+              </button>
+            )}
+
+            <Link to="/run" onClick={guardWhileLive('Run Code')}>
+              <button
+                type="button"
+                disabled={practiceScreenShareLock}
+                className={`${SIDEBAR_ROW} font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground`}
+              >
+                <Code2 className="h-4 w-4 shrink-0" />
+                <span className="truncate">Run Code</span>
+              </button>
+            </Link>
           </div>
 
           {/* Desktop Sidebar Footer */}
-          {user && !authLoading && (
-            <div className="p-2 border-t border-border/50">
-              <div className="flex items-center justify-between">
-                <UserProfile variant="sidebar" showTier={false} showEmailInTrigger={false} />
+          {!authLoading && (
+            user ? (
+              <div className="p-2 border-t border-border/50">
+                <div className="flex items-center justify-between">
+                  <UserProfile variant="sidebar" showTier={false} showEmailInTrigger={false} />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-2 border-t border-border/50 space-y-2">
+                <div className="flex items-center gap-2 px-1">
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">Guest mode</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link to="/login?mode=signin" className="flex-1">
+                    <Button variant="outline" size="sm" className="w-full h-8 text-xs">Sign In</Button>
+                  </Link>
+                  <Link to="/login?mode=signup" className="flex-1">
+                    <Button size="sm" className="w-full h-8 text-xs">Sign Up</Button>
+                  </Link>
+                </div>
+              </div>
+            )
           )}
         </aside>
 
         {/* Main content area */}
         <div
-          className={`flex-1 flex flex-col min-h-0 overflow-hidden overflow-x-hidden transition-all duration-300 ${isMobileSidebarOpen ? "overflow-hidden" : ""} ${activeMainTab === "practice" ? "md:pl-0" : isDesktopSidebarOpen ? "md:pl-64" : "md:pl-14"}`}
+          className={`flex-1 flex flex-col min-h-0 overflow-hidden overflow-x-hidden transition-all duration-300 ${isMobileSidebarOpen ? "overflow-hidden" : ""} ${isInterviewSessionLive ? "md:pl-0" : isDesktopSidebarOpen ? "md:pl-64" : "md:pl-14"}`}
         >
           <Tabs
             value={activeMainTab}
-            onValueChange={(v) => {
-              if (practiceScreenShareLock && v !== 'practice') {
-                toast({
-                  title: 'Screen sharing is active',
-                  description: 'Finish Live Practice before switching tabs.',
-                });
-                return;
-              }
-              setActiveMainTab(v as "answer" | "mock-interview" | "practice");
-              // Clear any lingering openTab navigation state so refresh doesn't hijack the tab.
-              navigate(location.pathname, { replace: true, state: {} });
-            }}
+            onValueChange={handleMainTabChange}
             className="flex-1 flex flex-col min-h-0"
           >
-            {/* Unified Desktop Header */}
-            <header className="hidden md:flex items-center justify-between px-6 py-2 border-b border-border/50 bg-background/50 backdrop-blur-xl sticky top-0 z-40 transition-all duration-300">
-              <div className="flex items-center gap-2">
-                <TabsList className="bg-transparent border-0 h-10 gap-2">
-                  <TabsTrigger
-                    value="answer"
-                    disabled={practiceScreenShareLock}
-                    className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-bold px-4 transition-all whitespace-nowrap"
-                  >
-                    AI Copilot
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="mock-interview"
-                    disabled={practiceScreenShareLock}
-                    className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-bold px-4 transition-all whitespace-nowrap"
-                  >
-                    Mock Interview
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="practice"
-                    className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-bold px-4 transition-all whitespace-nowrap"
-                  >
-                    Live Practice
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {!authLoading && (
-                  user ? (
-                    null
-                  ) : (
-                    <>
-                      <Badge variant="outline" className="text-[11px] px-2 py-1">
-                        Guest mode
-                      </Badge>
-                      <Link to="/login?mode=signin">
-                        <Button variant="ghost" size="sm">
-                          Sign In
-                        </Button>
-                      </Link>
-                      <Link to="/login?mode=signup">
-                        <Button size="sm">Sign Up</Button>
-                      </Link>
-                    </>
-                  )
-                )}
-                {user && !authLoading && (
-                  <Link
-                    to="/progress"
-                    onClick={(e) => {
-                      if (!practiceScreenShareLock) return;
-                      e.preventDefault();
-                      toast({
-                        title: 'Screen sharing is active',
-                        description: 'Finish Live Practice before opening Progress.',
-                      });
-                    }}
-                  >
-                    <Button variant="ghost" size="sm" disabled={practiceScreenShareLock}>Progress</Button>
-                  </Link>
-                )}
-                {user && !authLoading && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={practiceScreenShareLock}
-                    onClick={() => setBridgeSettingsOpen(true)}
-                    className={`h-9 flex items-center gap-2 transition-all duration-300 ${!hasApiKey
-                      ? 'bg-amber-500/10 text-amber-500 border-amber-500/50 hover:bg-amber-500/20 shadow-[0_0_15px_-5px_rgba(245,158,11,0.3)]'
-                      : 'hover:bg-accent'
-                      }`}
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span className="font-semibold">{hasApiKey ? 'Bridge Settings' : 'Connect AI Bridge'}</span>
-                  </Button>
-                )}
-                <Link
-                  to="/run"
-                  onClick={(e) => {
-                    if (!practiceScreenShareLock) return;
-                    e.preventDefault();
-                    toast({
-                      title: 'Screen sharing is active',
-                      description: 'Finish Live Practice before opening Run Code.',
-                    });
-                  }}
-                >
-                  <Button variant="outline" size="sm" className="hidden lg:flex" disabled={practiceScreenShareLock}>Run Code</Button>
-                </Link>
-              </div>
-            </header>
 
             {/* Content Section */}
-            <div ref={mainScrollRef} className={`ia-main-scroll flex-1 overflow-y-auto overflow-x-hidden scroll-professional px-3 py-2 md:px-6 md:py-6 ${showBottomSearchBar ? "pb-40 md:pb-44 ia-main-scroll-footer" : ""
+            <div ref={mainScrollRef} className={`ia-main-scroll flex-1 overflow-y-auto overflow-x-hidden scroll-professional px-3 py-2 md:px-6 md:py-6 ${activeMainTab === "practice" ? "hidden" : ""} ${showBottomSearchBar ? "pb-40 md:pb-44 ia-main-scroll-footer" : ""
               }`} style={{ scrollbarGutter: 'stable', overscrollBehaviorX: 'none', WebkitOverflowScrolling: 'touch' }}>
               <div className="max-w-4xl mx-auto w-full overflow-x-hidden">
 
@@ -4211,10 +4123,6 @@ export const InterviewAssistant = () => {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="practice" className="mt-0 h-[calc(var(--app-height,100dvh)-120px)]">
-                  <PracticeMode />
-                </TabsContent>
-
                 {/* Right-side popover for history item actions */}
                 {openMenuIndex !== null && menuPos && (
                   <div
@@ -4236,6 +4144,21 @@ export const InterviewAssistant = () => {
                 )}
               </div>
             </div>
+
+            {/*
+             * Live Practice is its own full-height surface, so it sits beside the
+             * reading scroller rather than inside it. Cancelling that scroller's
+             * padding with negative margins looked right at rest but left the top
+             * strip above the scroll origin — unreachable, and the source of the
+             * gap that reappeared whenever the page moved. Its own flex child has
+             * no padding to fight.
+             */}
+            <TabsContent
+              value="practice"
+              className="mt-0 flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide"
+            >
+              <PracticeMode />
+            </TabsContent>
           </Tabs>
         </div>
       </div >

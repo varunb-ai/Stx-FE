@@ -1,0 +1,1092 @@
+/* ============================================================================
+   PRACTICE OS — design system for Live Practice
+   ----------------------------------------------------------------------------
+   Everything here is scoped under `.px` so the rest of the app is untouched.
+   The language is "instrument panel", not "marketing page": one accent hue,
+   semantic colour used only to mean something, hairline structure, mono
+   numerals, and motion that reads as a system responding rather than a page
+   decorating itself.
+   ========================================================================== */
+
+.px {
+  /* ── Accent + semantic signals ───────────────────────────────────────── */
+  --px-accent: 217 91% 52%;
+  --px-accent-bright: 213 96% 62%;
+  --px-neural: 262 83% 62%;
+  --px-positive: 158 68% 36%;
+  --px-caution: 32 94% 44%;
+  --px-critical: 352 76% 52%;
+
+  /* ── Canvas + surfaces ───────────────────────────────────────────────── */
+  --px-canvas: 220 40% 98%;
+  --px-canvas-deep: 220 34% 95%;
+  --px-surface: 0 0% 100%;
+  --px-surface-2: 220 36% 98%;
+  --px-surface-3: 220 24% 95%;
+
+  /* ── Ink ─────────────────────────────────────────────────────────────── */
+  --px-ink: 222 30% 12%;
+  --px-ink-2: 220 12% 40%;
+  --px-ink-3: 220 10% 55%;
+
+  /* ── Structure ───────────────────────────────────────────────────────── */
+  --px-line: 220 20% 89%;
+  --px-line-soft: 220 22% 93%;
+  --px-line-strong: 220 18% 80%;
+
+  --px-shade-1: 0 0% 0% / 0.04;
+  --px-shade-2: 220 40% 20% / 0.08;
+  --px-shade-3: 220 40% 16% / 0.12;
+
+  --px-grid-ink: 220 40% 30% / 0.045;
+  --px-bloom-a: 217 91% 60% / 0.14;
+  --px-bloom-b: 262 83% 62% / 0.10;
+
+  /* ── Geometry + motion ───────────────────────────────────────────────── */
+  --px-r-xl: 22px;
+  --px-r-lg: 16px;
+  --px-r-md: 12px;
+  --px-r-sm: 9px;
+  --px-r-xs: 6px;
+
+  --px-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --px-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --px-t-fast: 160ms;
+  --px-t: 260ms;
+  --px-t-slow: 420ms;
+
+  --px-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+
+  color: hsl(var(--px-ink));
+}
+
+.dark .px {
+  --px-accent: 213 96% 64%;
+  --px-accent-bright: 199 94% 66%;
+  --px-neural: 265 92% 74%;
+  --px-positive: 156 64% 50%;
+  --px-caution: 38 96% 58%;
+  --px-critical: 353 86% 64%;
+
+  --px-canvas: 224 44% 5%;
+  --px-canvas-deep: 226 48% 3%;
+  --px-surface: 225 30% 9%;
+  --px-surface-2: 225 28% 11%;
+  --px-surface-3: 224 24% 15%;
+
+  --px-ink: 216 30% 96%;
+  --px-ink-2: 218 14% 68%;
+  --px-ink-3: 218 12% 55%;
+
+  --px-line: 220 20% 100% / 0.09;
+  --px-line-soft: 220 20% 100% / 0.055;
+  --px-line-strong: 220 20% 100% / 0.16;
+
+  --px-shade-1: 0 0% 0% / 0.3;
+  --px-shade-2: 0 0% 0% / 0.42;
+  --px-shade-3: 0 0% 0% / 0.55;
+
+  --px-grid-ink: 210 100% 80% / 0.05;
+  --px-bloom-a: 213 96% 60% / 0.16;
+  --px-bloom-b: 265 92% 66% / 0.14;
+}
+
+/* ============================================================================
+   1. SHELL — the canvas everything sits on
+   ========================================================================== */
+
+.px-shell {
+  position: relative;
+  isolation: isolate;
+  min-height: 100%;
+  color: hsl(var(--px-ink));
+}
+
+/*
+ * The two background layers pin flush to the shell. Practice Mode now renders as
+ * its own full-height column, so no viewport breakout is needed — and crucially,
+ * neither layer is ever transformed. An earlier version drifted the fill layer
+ * with `translate` to animate the blooms, which walked its edges off the shell
+ * and exposed a moving strip of the page behind it. Motion belongs to the
+ * gradients' background-position, never to the box that paints the canvas.
+ */
+.px-shell::before,
+.px-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Canvas fill + two slow atmospheric blooms. */
+.px-shell::before {
+  z-index: -2;
+  background-color: hsl(var(--px-canvas));
+  background-image:
+    radial-gradient(closest-side, hsl(var(--px-bloom-a)) 0%, transparent 100%),
+    radial-gradient(closest-side, hsl(var(--px-bloom-b)) 0%, transparent 100%);
+  background-repeat: no-repeat;
+  background-size: 120% 90%, 100% 78%;
+  background-position: -10% -18%, 96% -6%;
+  animation: px-bloom 26s var(--px-ease-in-out) infinite;
+}
+
+/* Hairline survey grid, faded out toward the bottom of the fold. */
+.px-shell::after {
+  z-index: -1;
+  background-image:
+    linear-gradient(to right, hsl(var(--px-grid-ink)) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--px-grid-ink)) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 74%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 74%);
+}
+
+@keyframes px-bloom {
+  0%, 100% { background-position: -10% -18%, 96% -6%; }
+  50%      { background-position: 4% -10%, 84% 2%; }
+}
+
+.px-frame {
+  position: relative;
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: clamp(0.875rem, 3vw, 2rem);
+}
+
+.px-frame--narrow { max-width: 58rem; }
+.px-frame--mid { max-width: 74rem; }
+.px-frame--wide { max-width: 88rem; }
+
+/* ============================================================================
+   2. PANEL — the single container primitive
+   ========================================================================== */
+
+.px-panel {
+  position: relative;
+  border-radius: var(--px-r-lg);
+  border: 1px solid hsl(var(--px-line));
+  background: hsl(var(--px-surface));
+  box-shadow:
+    0 1px 0 0 hsl(var(--px-shade-1)),
+    0 18px 40px -32px hsl(var(--px-shade-2));
+  transition:
+    border-color var(--px-t) var(--px-ease),
+    box-shadow var(--px-t) var(--px-ease),
+    transform var(--px-t) var(--px-ease);
+}
+
+.px-panel--flush {
+  background: hsl(var(--px-surface-2));
+  box-shadow: none;
+}
+
+.px-panel--inset {
+  border-radius: var(--px-r-md);
+  background: hsl(var(--px-surface-3));
+  border-color: hsl(var(--px-line-soft));
+  box-shadow: none;
+}
+
+/* Raised = the one surface asking for attention on a screen. */
+.px-panel--raised {
+  border-radius: var(--px-r-xl);
+  background:
+    linear-gradient(180deg, hsl(var(--px-surface)) 0%, hsl(var(--px-surface-2)) 100%);
+  box-shadow:
+    0 1px 0 0 hsl(var(--px-shade-1)),
+    0 40px 90px -60px hsl(var(--px-shade-3)),
+    0 8px 26px -22px hsl(var(--px-shade-2));
+}
+
+.px-panel--accent {
+  border-color: hsl(var(--px-accent) / 0.34);
+  box-shadow:
+    0 0 0 1px hsl(var(--px-accent) / 0.08),
+    0 30px 70px -56px hsl(var(--px-accent) / 0.6);
+}
+
+.px-panel--positive { border-color: hsl(var(--px-positive) / 0.34); }
+.px-panel--caution  { border-color: hsl(var(--px-caution) / 0.38); }
+.px-panel--critical { border-color: hsl(var(--px-critical) / 0.40); }
+
+.px-panel--interactive {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.px-panel--interactive:hover {
+  border-color: hsl(var(--px-accent) / 0.42);
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 0 hsl(var(--px-shade-1)),
+    0 34px 70px -48px hsl(var(--px-accent) / 0.5);
+}
+
+.px-panel--interactive:active { transform: translateY(0); }
+
+.px-panel--interactive:focus-visible,
+.px-focusable:focus-visible {
+  outline: none;
+  border-color: hsl(var(--px-accent) / 0.6);
+  box-shadow:
+    0 0 0 1px hsl(var(--px-accent) / 0.7),
+    0 0 0 4px hsl(var(--px-accent) / 0.18);
+}
+
+.px-panel--selected {
+  border-color: hsl(var(--px-accent) / 0.62);
+  box-shadow:
+    0 0 0 1px hsl(var(--px-accent) / 0.5),
+    0 0 0 5px hsl(var(--px-accent) / 0.12),
+    0 30px 60px -48px hsl(var(--px-accent) / 0.7);
+}
+
+/* HUD corner brackets — the one piece of pure ornament, reserved for the
+   surface that represents "the machine is live". */
+.px-brackets::before,
+.px-brackets::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid hsl(var(--px-accent) / 0.5);
+  pointer-events: none;
+}
+
+.px-brackets::before {
+  top: 10px;
+  left: 10px;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-top-left-radius: 4px;
+}
+
+.px-brackets::after {
+  right: 10px;
+  bottom: 10px;
+  border-left-color: transparent;
+  border-top-color: transparent;
+  border-bottom-right-radius: 4px;
+}
+
+/* Panel internals ---------------------------------------------------------- */
+
+.px-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--px-line-soft));
+}
+
+.px-panel__head--plain { border-bottom: 0; padding-bottom: 0; }
+
+.px-panel__body { padding: 1rem; }
+.px-panel__body--tight { padding: 0.75rem 1rem; }
+
+.px-panel__foot {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid hsl(var(--px-line-soft));
+}
+
+/* A 1px hairline that carries meaning through hue, replacing the old
+   3px gradient bars that sat on top of every card. */
+.px-seam {
+  height: 1px;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--px-seam-hue, var(--px-accent)) / 0.55) 18%,
+    hsl(var(--px-seam-hue, var(--px-accent)) / 0.9) 50%,
+    hsl(var(--px-seam-hue, var(--px-accent)) / 0.55) 82%,
+    transparent 100%
+  );
+}
+
+/* ============================================================================
+   3. TYPE
+   ========================================================================== */
+
+.px-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--px-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: hsl(var(--px-ink-3));
+}
+
+.px-eyebrow--accent { color: hsl(var(--px-accent)); }
+.px-eyebrow--positive { color: hsl(var(--px-positive)); }
+.px-eyebrow--caution { color: hsl(var(--px-caution)); }
+.px-eyebrow--critical { color: hsl(var(--px-critical)); }
+
+.px-display {
+  font-size: clamp(1.75rem, 4.2vw, 2.75rem);
+  font-weight: 640;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  color: hsl(var(--px-ink));
+  text-wrap: balance;
+}
+
+.px-title {
+  font-size: clamp(1.0625rem, 2vw, 1.3125rem);
+  font-weight: 620;
+  line-height: 1.22;
+  letter-spacing: -0.022em;
+  color: hsl(var(--px-ink));
+}
+
+.px-subtitle {
+  font-size: 0.9375rem;
+  font-weight: 560;
+  line-height: 1.35;
+  letter-spacing: -0.012em;
+  color: hsl(var(--px-ink));
+}
+
+.px-body {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: hsl(var(--px-ink-2));
+}
+
+.px-body--tight { line-height: 1.4; }
+
+.px-note {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: hsl(var(--px-ink-3));
+}
+
+.px-num {
+  font-family: var(--px-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  letter-spacing: -0.02em;
+}
+
+.px-ink { color: hsl(var(--px-ink)); }
+.px-ink-2 { color: hsl(var(--px-ink-2)); }
+.px-ink-3 { color: hsl(var(--px-ink-3)); }
+.px-accent-ink { color: hsl(var(--px-accent)); }
+
+/* ============================================================================
+   4. CHIPS + STATUS
+   ========================================================================== */
+
+.px-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 1.5rem;
+  padding-inline: 0.5rem;
+  border-radius: var(--px-r-xs);
+  border: 1px solid hsl(var(--px-line));
+  background: hsl(var(--px-surface-3));
+  color: hsl(var(--px-ink-2));
+  font-size: 0.6875rem;
+  font-weight: 560;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+}
+
+.px-chip--mono {
+  font-family: var(--px-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.px-chip--accent {
+  border-color: hsl(var(--px-accent) / 0.32);
+  background: hsl(var(--px-accent) / 0.1);
+  color: hsl(var(--px-accent));
+}
+
+.px-chip--neural {
+  border-color: hsl(var(--px-neural) / 0.34);
+  background: hsl(var(--px-neural) / 0.1);
+  color: hsl(var(--px-neural));
+}
+
+.px-chip--positive {
+  border-color: hsl(var(--px-positive) / 0.32);
+  background: hsl(var(--px-positive) / 0.1);
+  color: hsl(var(--px-positive));
+}
+
+.px-chip--caution {
+  border-color: hsl(var(--px-caution) / 0.34);
+  background: hsl(var(--px-caution) / 0.11);
+  color: hsl(var(--px-caution));
+}
+
+.px-chip--critical {
+  border-color: hsl(var(--px-critical) / 0.34);
+  background: hsl(var(--px-critical) / 0.1);
+  color: hsl(var(--px-critical));
+}
+
+.px-chip--solid {
+  border-color: transparent;
+  background: hsl(var(--px-accent));
+  color: #fff;
+}
+
+.px-chip--lg { height: 1.75rem; padding-inline: 0.625rem; font-size: 0.75rem; }
+
+/* Live status dot: a ring that pulses outward rather than a blinking dot. */
+.px-dot {
+  position: relative;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: currentColor;
+  flex: none;
+}
+
+.px-dot--live::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  border: 1px solid currentColor;
+  opacity: 0;
+  animation: px-ping 2.2s var(--px-ease-in-out) infinite;
+}
+
+@keyframes px-ping {
+  0%   { transform: scale(0.7); opacity: 0.8; }
+  70%  { transform: scale(1.9); opacity: 0; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* ============================================================================
+   5. CONTROLS
+   ========================================================================== */
+
+.px-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.625rem;
+  padding-inline: 1.125rem;
+  border-radius: var(--px-r-md);
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  white-space: nowrap;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    background-color var(--px-t-fast) var(--px-ease),
+    border-color var(--px-t-fast) var(--px-ease),
+    box-shadow var(--px-t-fast) var(--px-ease),
+    transform var(--px-t-fast) var(--px-ease),
+    color var(--px-t-fast) var(--px-ease);
+}
+
+.px-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.px-btn:not(:disabled):active { transform: translateY(1px); }
+
+.px-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px hsl(var(--px-canvas)),
+    0 0 0 3px hsl(var(--px-accent) / 0.55);
+}
+
+.px-btn--primary {
+  background: linear-gradient(180deg, hsl(var(--px-accent-bright)) 0%, hsl(var(--px-accent)) 100%);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 0 hsl(0 0% 100% / 0.22),
+    0 12px 26px -18px hsl(var(--px-accent) / 0.9);
+}
+
+.px-btn--primary:not(:disabled):hover {
+  box-shadow:
+    inset 0 1px 0 0 hsl(0 0% 100% / 0.28),
+    0 18px 34px -18px hsl(var(--px-accent) / 1);
+}
+
+/* A single light sweep on hover — the "premium" cue, used only on the CTA. */
+.px-btn--primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, hsl(0 0% 100% / 0.26) 50%, transparent 65%);
+  transform: translateX(-110%);
+  transition: transform 620ms var(--px-ease);
+}
+
+.px-btn--primary:not(:disabled):hover::after { transform: translateX(110%); }
+
+.px-btn--outline {
+  border-color: hsl(var(--px-line-strong));
+  background: hsl(var(--px-surface));
+  color: hsl(var(--px-ink));
+}
+
+.px-btn--outline:not(:disabled):hover {
+  border-color: hsl(var(--px-accent) / 0.5);
+  background: hsl(var(--px-accent) / 0.06);
+  color: hsl(var(--px-accent));
+}
+
+.px-btn--ghost {
+  background: transparent;
+  color: hsl(var(--px-ink-2));
+}
+
+.px-btn--ghost:not(:disabled):hover {
+  background: hsl(var(--px-surface-3));
+  color: hsl(var(--px-ink));
+}
+
+.px-btn--danger {
+  border-color: hsl(var(--px-critical) / 0.35);
+  background: hsl(var(--px-critical) / 0.1);
+  color: hsl(var(--px-critical));
+}
+
+.px-btn--danger:not(:disabled):hover {
+  background: hsl(var(--px-critical));
+  border-color: hsl(var(--px-critical));
+  color: #fff;
+}
+
+.px-btn--sm { height: 2.125rem; padding-inline: 0.75rem; font-size: 0.8125rem; border-radius: var(--px-r-sm); }
+.px-btn--lg { height: 3rem; padding-inline: 1.5rem; font-size: 0.9375rem; }
+.px-btn--block { width: 100%; }
+.px-btn--icon { width: 2.625rem; padding-inline: 0; }
+.px-btn--icon.px-btn--sm { width: 2.125rem; }
+
+/* Segmented control ------------------------------------------------------- */
+
+.px-segment {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  border-radius: var(--px-r-md);
+  border: 1px solid hsl(var(--px-line));
+  background: hsl(var(--px-surface-3));
+}
+
+.px-segment__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 2.125rem;
+  padding-inline: 0.875rem;
+  border-radius: var(--px-r-sm);
+  font-size: 0.8125rem;
+  font-weight: 580;
+  color: hsl(var(--px-ink-3));
+  cursor: pointer;
+  transition: all var(--px-t-fast) var(--px-ease);
+}
+
+.px-segment__item:hover { color: hsl(var(--px-ink)); }
+
+/*
+ * Doubled class = specificity 0-2-0. Radix's TabsList/TabsTrigger ship their own
+ * `h-10 bg-muted text-sm font-medium data-[state=active]:bg-background`
+ * utilities, and this stylesheet is imported ahead of Tailwind's, so a single
+ * class would lose. Only the primitives mounted onto shadcn components need it.
+ */
+.px-segment.px-segment {
+  display: inline-flex;
+  height: auto;
+  padding: 3px;
+  gap: 3px;
+  border-radius: var(--px-r-md);
+  border: 1px solid hsl(var(--px-line));
+  background: hsl(var(--px-surface-3));
+  color: hsl(var(--px-ink-3));
+}
+
+.px-segment--block.px-segment--block { display: flex; width: 100%; }
+.px-segment__item.px-segment__item {
+  height: 2.125rem;
+  padding-inline: 0.875rem;
+  border-radius: var(--px-r-sm);
+  font-size: 0.8125rem;
+  font-weight: 580;
+  color: hsl(var(--px-ink-3));
+  background: transparent;
+  box-shadow: none;
+}
+
+/* `data-active` is ours; `data-state` is what Radix Tabs sets. */
+.px-segment__item.px-segment__item[data-active="true"],
+.px-segment__item.px-segment__item[data-state="active"],
+.px-segment__item[data-active="true"],
+.px-segment__item[data-state="active"] {
+  background: hsl(var(--px-surface));
+  color: hsl(var(--px-ink));
+  box-shadow: 0 1px 2px 0 hsl(var(--px-shade-2));
+}
+
+.px-segment__item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--px-accent) / 0.55);
+}
+
+.px-segment--block { display: flex; width: 100%; }
+.px-segment--block .px-segment__item { flex: 1 1 0; min-width: 0; }
+
+/* Field ------------------------------------------------------------------- */
+
+.px-field {
+  width: 100%;
+  height: 2.75rem;
+  padding-inline: 0.875rem;
+  border-radius: var(--px-r-md);
+  border: 1px solid hsl(var(--px-line));
+  background: hsl(var(--px-surface-2));
+  color: hsl(var(--px-ink));
+  font-size: 0.875rem;
+  transition: all var(--px-t-fast) var(--px-ease);
+}
+
+.px-field::placeholder { color: hsl(var(--px-ink-3) / 0.75); }
+
+.px-field:focus {
+  outline: none;
+  border-color: hsl(var(--px-accent) / 0.55);
+  background: hsl(var(--px-surface));
+  box-shadow: 0 0 0 3px hsl(var(--px-accent) / 0.14);
+}
+
+.px-field--invalid {
+  border-color: hsl(var(--px-critical) / 0.5);
+  box-shadow: 0 0 0 3px hsl(var(--px-critical) / 0.1);
+}
+
+.px-field--area { height: auto; min-height: 4.5rem; padding-block: 0.625rem; resize: vertical; }
+
+/* Radix SelectTrigger arrives with `border-input bg-background text-sm` of its
+   own, so the field skin needs to outrank a single utility class. */
+.px-select.px-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  /* Height lives here rather than on a Tailwind `h-*`: SelectTrigger already
+     ships `h-10`, and two utilities of equal specificity resolve by generated
+     order, which is not something to bet a control's height on. */
+  height: 2.75rem;
+  padding-inline: 0.875rem;
+  border: 1px solid hsl(var(--px-line));
+  border-radius: var(--px-r-md);
+  background: hsl(var(--px-surface-2));
+  color: hsl(var(--px-ink));
+  font-size: 0.875rem;
+}
+
+.px-select--sm.px-select--sm { height: 2.25rem; padding-inline: 0.625rem; font-size: 0.8125rem; }
+
+.px-select.px-select[data-placeholder] { color: hsl(var(--px-ink-3)); }
+
+.px-select.px-select:focus {
+  outline: none;
+  border-color: hsl(var(--px-accent) / 0.55);
+  box-shadow: 0 0 0 3px hsl(var(--px-accent) / 0.14);
+}
+
+.px-select--invalid.px-select--invalid {
+  border-color: hsl(var(--px-critical) / 0.5);
+  box-shadow: 0 0 0 3px hsl(var(--px-critical) / 0.1);
+}
+
+/* Inline text action — Tailwind cannot generate `hover:` for a custom class. */
+.px-link { cursor: pointer; transition: color var(--px-t-fast) var(--px-ease); }
+.px-link:hover { color: hsl(var(--px-ink)); }
+
+/* ============================================================================
+   6. DATA DISPLAY
+   ========================================================================== */
+
+/* Own grid utility — the app has global animations bound to Tailwind's
+   `.grid-cols-*` children, which would fire on every tile here. */
+.px-grid {
+  display: grid;
+  gap: var(--px-gap, 0.625rem);
+  grid-template-columns: repeat(var(--px-cols, 1), minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .px-grid { grid-template-columns: repeat(var(--px-cols-sm, var(--px-cols, 1)), minmax(0, 1fr)); }
+}
+
+@media (min-width: 900px) {
+  .px-grid { grid-template-columns: repeat(var(--px-cols-md, var(--px-cols-sm, var(--px-cols, 1))), minmax(0, 1fr)); }
+}
+
+/* Stat tile --------------------------------------------------------------- */
+
+.px-tile {
+  position: relative;
+  padding: 0.875rem 0.875rem 0.8125rem;
+  border-radius: var(--px-r-md);
+  border: 1px solid hsl(var(--px-line-soft));
+  background: hsl(var(--px-surface-2));
+  overflow: hidden;
+  transition: border-color var(--px-t) var(--px-ease), background-color var(--px-t) var(--px-ease);
+}
+
+.px-tile:hover { border-color: hsl(var(--px-line)); }
+
+/* Left signal edge carries the tile's meaning without colouring the whole box. */
+.px-tile::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12%;
+  bottom: 12%;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: hsl(var(--px-tile-hue, var(--px-accent)) / 0.55);
+}
+
+.px-tile__label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--px-mono);
+  font-size: 0.5875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: hsl(var(--px-ink-3));
+}
+
+.px-tile__value {
+  margin-top: 0.4375rem;
+  font-family: var(--px-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: hsl(var(--px-ink));
+}
+
+.px-tile__unit {
+  margin-left: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: hsl(var(--px-ink-3));
+}
+
+.px-tile__foot { margin-top: 0.375rem; font-size: 0.6875rem; color: hsl(var(--px-ink-3)); }
+
+/* Meter ------------------------------------------------------------------- */
+
+.px-meter {
+  position: relative;
+  height: 5px;
+  border-radius: 999px;
+  background: hsl(var(--px-line-soft));
+  overflow: hidden;
+}
+
+.px-meter__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--px-meter-hue, var(--px-accent)) / 0.65),
+    hsl(var(--px-meter-hue, var(--px-accent)))
+  );
+  transform-origin: left center;
+  animation: px-meter-in 720ms var(--px-ease) both;
+  transition: width var(--px-t-slow) var(--px-ease);
+}
+
+@keyframes px-meter-in {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Segmented progress — reads as instrumentation rather than a download bar. */
+.px-ticks {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.px-ticks__tick {
+  height: 4px;
+  flex: 1 1 0;
+  min-width: 4px;
+  border-radius: 999px;
+  background: hsl(var(--px-line));
+  transition: background-color var(--px-t) var(--px-ease), box-shadow var(--px-t) var(--px-ease);
+}
+
+.px-ticks__tick[data-state="done"] { background: hsl(var(--px-accent) / 0.55); }
+
+.px-ticks__tick[data-state="current"] {
+  background: hsl(var(--px-accent));
+  box-shadow: 0 0 0 1px hsl(var(--px-accent) / 0.28), 0 0 10px 0 hsl(var(--px-accent) / 0.55);
+}
+
+/* Score dial -------------------------------------------------------------- */
+
+.px-dial { position: relative; display: grid; place-items: center; }
+.px-dial svg { transform: rotate(-90deg); overflow: visible; }
+.px-dial__track { stroke: hsl(var(--px-line)); }
+
+.px-dial__value {
+  stroke: hsl(var(--px-dial-hue, var(--px-accent)));
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px hsl(var(--px-dial-hue, var(--px-accent)) / 0.45));
+  animation: px-dial-in 1100ms var(--px-ease) both;
+}
+
+@keyframes px-dial-in {
+  from { stroke-dashoffset: var(--px-dial-circumference, 999); }
+}
+
+.px-dial__readout {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+/* Definition rows --------------------------------------------------------- */
+
+.px-rows { display: flex; flex-direction: column; }
+
+.px-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding-block: 0.375rem;
+  border-bottom: 1px solid hsl(var(--px-line-soft));
+  font-size: 0.8125rem;
+}
+
+.px-row:last-child { border-bottom: 0; }
+
+.px-row__marker {
+  flex: none;
+  margin-top: 0.5rem;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: hsl(var(--px-row-hue, var(--px-accent)));
+}
+
+.px-row__index {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--px-r-xs);
+  border: 1px solid hsl(var(--px-line));
+  background: hsl(var(--px-surface-3));
+  font-family: var(--px-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: hsl(var(--px-ink-2));
+}
+
+/* ============================================================================
+   7. LIVE — recording / speaking instruments
+   ========================================================================== */
+
+.px-orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--px-orb-size, 7.5rem);
+  height: var(--px-orb-size, 7.5rem);
+  border-radius: 999px;
+  border: 1px solid hsl(var(--px-orb-hue, var(--px-accent)) / 0.35);
+  background:
+    radial-gradient(70% 70% at 50% 22%, hsl(var(--px-orb-hue, var(--px-accent)) / 0.24) 0%, transparent 72%),
+    hsl(var(--px-surface-2));
+  color: hsl(var(--px-orb-hue, var(--px-accent)));
+  box-shadow:
+    inset 0 1px 0 0 hsl(0 0% 100% / 0.08),
+    0 24px 60px -40px hsl(var(--px-orb-hue, var(--px-accent)) / 0.9);
+}
+
+/* Two concentric rings, counter-rotating slowly. Reads as a system idling. */
+.px-orb::before,
+.px-orb::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.px-orb::before {
+  inset: -9px;
+  border: 1px solid hsl(var(--px-orb-hue, var(--px-accent)) / 0.22);
+  border-top-color: hsl(var(--px-orb-hue, var(--px-accent)) / 0.75);
+  animation: px-spin 7s linear infinite;
+}
+
+.px-orb::after {
+  inset: -18px;
+  border: 1px dashed hsl(var(--px-orb-hue, var(--px-accent)) / 0.16);
+  animation: px-spin 22s linear infinite reverse;
+}
+
+.px-orb--static::before,
+.px-orb--static::after { animation: none; }
+
+@keyframes px-spin { to { transform: rotate(360deg); } }
+
+/* Waveform ---------------------------------------------------------------- */
+
+.px-wave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 5.5rem;
+}
+
+.px-wave__bar {
+  width: 3px;
+  min-height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to top,
+    hsl(var(--px-wave-hue, var(--px-critical)) / 0.55),
+    hsl(var(--px-wave-hue, var(--px-critical)))
+  );
+  transition: height 90ms linear, opacity 90ms linear;
+}
+
+/* Scanline for the live camera feed */
+.px-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    hsl(var(--px-accent) / 0.16) 48%,
+    hsl(var(--px-accent) / 0.3) 50%,
+    hsl(var(--px-accent) / 0.16) 52%,
+    transparent 100%
+  );
+  background-size: 100% 200%;
+  animation: px-scan 4.5s linear infinite;
+  mix-blend-mode: screen;
+  opacity: 0.5;
+}
+
+@keyframes px-scan {
+  from { background-position: 0 -100%; }
+  to   { background-position: 0 200%; }
+}
+
+/* Indeterminate activity strip */
+.px-sweep {
+  position: relative;
+  height: 2px;
+  border-radius: 999px;
+  background: hsl(var(--px-line-soft));
+  overflow: hidden;
+}
+
+.px-sweep::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  width: 38%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, hsl(var(--px-accent)), transparent);
+  animation: px-sweep 1.5s var(--px-ease-in-out) infinite;
+}
+
+@keyframes px-sweep {
+  from { transform: translateX(-120%); }
+  to   { transform: translateX(320%); }
+}
+
+/* ============================================================================
+   8. ENTRANCE MOTION
+   ========================================================================== */
+
+.px-rise {
+  animation: px-rise var(--px-t-slow) var(--px-ease) both;
+  animation-delay: var(--px-delay, 0ms);
+}
+
+@keyframes px-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.px-fade {
+  animation: px-fade var(--px-t) var(--px-ease) both;
+  animation-delay: var(--px-delay, 0ms);
+}
+
+@keyframes px-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ============================================================================
+   9. ACCESSIBILITY
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .px *,
+  .px *::before,
+  .px *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+
+  .px-shell::before,
+  .px-orb::before,
+  .px-orb::after,
+  .px-scan,
+  .px-sweep::after {
+    animation: none !important;
+  }
+
+  /* The fill must survive the blanket animation reset above. */
+  .px-shell::before { background-position: -10% -18%, 96% -6%; }
+
+  .px-scan { opacity: 0.18; }
+}
+
+@media (forced-colors: active) {
+  .px-panel,
+  .px-tile,
+  .px-chip,
+  .px-btn { border: 1px solid CanvasText; }
+  .px-shell::before,
+  .px-shell::after,
+  .px-scan { display: none; }
+}

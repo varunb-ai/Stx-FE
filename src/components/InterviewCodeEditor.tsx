@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MonacoEditor } from './MonacoEditor';
 import { apiExecuteCode } from '@/lib/api';
@@ -15,21 +9,43 @@ import {
   Code2,
   Play,
   CheckCircle2,
-  XCircle,
+  CircleX,
   Clock,
   Loader2,
   Lightbulb,
-  AlertTriangle,
+  TriangleAlert,
   TrendingUp,
   Terminal,
   Send,
+  ListChecks,
 } from 'lucide-react';
 import type {
   Question,
-  TestCase,
   CodeTestResult,
   CodeEvaluationFeedback,
 } from '@/lib/practiceModeApi';
+import {
+  Panel,
+  PanelHead,
+  PanelBody,
+  Seam,
+  Eyebrow,
+  Chip,
+  PxButton,
+  Grid,
+  StatTile,
+  MeterRow,
+  FindingList,
+} from './practice/PracticeKit';
+import { toneColor, toneVar, type PxTone } from './practice/tones';
+
+/** Score→tone, matching the rest of Practice Mode. */
+const scoreTone = (value: number): PxTone => {
+  if (value >= 85) return 'positive';
+  if (value >= 70) return 'accent';
+  if (value >= 50) return 'caution';
+  return 'critical';
+};
 
 interface InterviewCodeEditorProps {
   question: Question;
@@ -138,35 +154,51 @@ export const InterviewCodeEditor = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getTimeColor = (): string => {
-    if (timeRemaining > 300) return 'text-green-500';
-    if (timeRemaining > 120) return 'text-yellow-500';
-    return 'text-red-500';
-  };
+  // Countdown pressure, on the same scale the rest of Practice Mode uses.
+  const timerTone: PxTone = timeRemaining > 300 ? 'positive' : timeRemaining > 120 ? 'caution' : 'critical';
+
+  const fileExtension =
+    language === 'python' ? 'py'
+      : language === 'cpp' || language === 'c' ? language
+        : language === 'java' ? 'java'
+          : language === 'go' ? 'go'
+            : language === 'typescript' ? 'ts'
+              : 'js';
 
   return (
-    <div className="space-y-4">
-      {/* Question Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <Code2 className="h-6 w-6 text-primary" />
-              <div>
-                <CardTitle className="text-xl">Coding Challenge</CardTitle>
-                <CardDescription className="flex items-center gap-2 mt-1">
-                  <Badge variant={question.difficulty === 'easy' ? 'secondary' : question.difficulty === 'medium' ? 'default' : 'destructive'}>
-                    {question.difficulty?.toUpperCase()}
-                  </Badge>
-                </CardDescription>
+    <div className="px space-y-3.5">
+
+      {/* ── Prompt ── */}
+      <Panel variant="raised" className="overflow-hidden">
+        <Seam tone="neural" />
+        <div className="px-4 sm:px-5 pt-4 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="min-w-0">
+              <Eyebrow tone="neural" icon={Code2}>
+                Coding challenge
+              </Eyebrow>
+              <div className="mt-2 flex items-center gap-2">
+                <Chip
+                  className="capitalize"
+                  tone={
+                    question.difficulty === 'easy'
+                      ? 'positive'
+                      : question.difficulty === 'medium'
+                        ? 'caution'
+                        : 'critical'
+                  }
+                >
+                  {question.difficulty ?? 'unrated'}
+                </Chip>
+                <Chip mono>{language}</Chip>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              {/* Language Selector */}
+
+            <div className="flex items-center gap-3 shrink-0">
               <div className="flex items-center gap-2">
-                <Label className="text-xs text-muted-foreground whitespace-nowrap">Language:</Label>
+                <label className="px-eyebrow">Language</label>
                 <Select value={language} onValueChange={handleLanguageChange}>
-                  <SelectTrigger className="w-32 h-8">
+                  <SelectTrigger className="px-select px-select--sm w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -180,63 +212,58 @@ export const InterviewCodeEditor = ({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className={`h-5 w-5 ${getTimeColor()}`} />
-                <span className={`text-2xl font-mono font-bold ${getTimeColor()}`}>
-                  {formatTime(timeRemaining)}
-                </span>
-              </div>
+
+              <span
+                className="px-num text-lg font-semibold inline-flex items-center gap-1.5"
+                style={toneColor(timerTone)}
+              >
+                <Clock className="w-4 h-4" />
+                {formatTime(timeRemaining)}
+              </span>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-base leading-relaxed whitespace-pre-wrap">
+
+          <p className="px-body mt-4 whitespace-pre-wrap text-[0.9375rem] px-ink">
             {question.question_text || question.text || 'No question text available'}
           </p>
-          
-          {/* Constraints */}
+
           {constraints.length > 0 && (
-            <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-              <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
+            <div className="px-panel px-panel--inset mt-4 px-3.5 py-3">
+              <Eyebrow tone="caution" icon={TriangleAlert}>
                 Constraints
-              </h4>
-              <ul className="space-y-1">
-                {constraints.map((constraint, idx) => (
-                  <li key={idx} className="text-sm text-muted-foreground">
-                    • {constraint}
-                  </li>
-                ))}
-              </ul>
+              </Eyebrow>
+              <div className="mt-1.5">
+                <FindingList items={constraints} tone="caution" />
+              </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </Panel>
 
-      {/* Main Editor Area */}
+      {/* ── Workspace ── */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="editor">Editor</TabsTrigger>
-          <TabsTrigger value="tests">Test Cases ({testCases.length})</TabsTrigger>
-          <TabsTrigger value="hints" disabled={hints.length === 0}>
-            Hints ({hints.length})
+        <TabsList className="px-segment px-segment--block">
+          <TabsTrigger value="editor" className="px-segment__item">Editor</TabsTrigger>
+          <TabsTrigger value="tests" className="px-segment__item">
+            Tests<span className="px-num opacity-60"> {testCases.length}</span>
           </TabsTrigger>
-          <TabsTrigger value="results" disabled={!evaluation}>
+          <TabsTrigger value="hints" className="px-segment__item" disabled={hints.length === 0}>
+            Hints<span className="px-num opacity-60"> {hints.length}</span>
+          </TabsTrigger>
+          <TabsTrigger value="results" className="px-segment__item" disabled={!evaluation}>
             Results
           </TabsTrigger>
         </TabsList>
 
-        {/* Editor Tab */}
-        <TabsContent value="editor" className="mt-4">
-          <Card>
-            <CardContent className="p-4 space-y-3">
-              {/* File badge */}
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className="text-xs font-mono">
-                  solution.{language === 'python' ? 'py' : language === 'cpp' || language === 'c' ? language : language === 'java' ? 'java' : language === 'go' ? 'go' : 'js'}
-                </Badge>
-              </div>
+        {/* Editor */}
+        <TabsContent value="editor" className="mt-3.5">
+          <Panel className="overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-3.5 py-2 border-b border-[hsl(var(--px-line-soft))]">
+              <span className="px-num text-[0.6875rem] px-ink-3">solution.{fileExtension}</span>
+              <span className="px-eyebrow">Autosaved locally</span>
+            </div>
 
+            <div className="p-3 space-y-3">
               <MonacoEditor
                 value={code}
                 language={language}
@@ -244,394 +271,306 @@ export const InterviewCodeEditor = ({
                 height="min(400px, 50vh)"
               />
 
-              {/* Output Panel */}
               {showOutput && (
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="flex items-center justify-between bg-muted/50 px-3 py-2 border-b">
-                    <div className="flex items-center gap-2">
-                      <Terminal className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs font-semibold text-muted-foreground">Output</span>
-                    </div>
-                    <button onClick={() => setShowOutput(false)} className="text-xs text-muted-foreground hover:text-foreground">
+                <div className="px-panel px-panel--inset overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-[hsl(var(--px-line-soft))]">
+                    <Eyebrow icon={Terminal}>Output</Eyebrow>
+                    <button
+                      onClick={() => setShowOutput(false)}
+                      className="px-focusable px-note px-link transition-colors"
+                    >
                       Clear
                     </button>
                   </div>
-                  <pre className="p-3 text-sm font-mono bg-black/90 text-green-400 overflow-x-auto max-h-[200px] overflow-y-auto whitespace-pre-wrap">
-                    {isRunningCode ? 'Running...' : (codeOutput || '(no output)')}
+                  <pre
+                    className="px-num p-3 text-[0.8125rem] overflow-x-auto max-h-[200px] overflow-y-auto whitespace-pre-wrap"
+                    style={{ background: 'hsl(224 48% 3%)', color: `hsl(${toneVar('positive')})` }}
+                  >
+                    {isRunningCode ? 'Running…' : (codeOutput || '(no output)')}
                   </pre>
                 </div>
               )}
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Write your solution above and click Submit when ready
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleRunCode}
-                    disabled={isRunningCode || !code.trim()}
-                    className="gap-2"
-                  >
-                    {isRunningCode ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Running...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4" />
-                        Run Code
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting || !code.trim()}
-                    className="min-w-32 gap-2"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4" />
-                        Submit Code
-                      </>
-                    )}
-                  </Button>
-                </div>
+            <div className="px-panel__foot flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <span className="px-note">Write your solution, run it, then submit.</span>
+              <div className="flex items-center gap-2">
+                <PxButton variant="outline" onClick={handleRunCode} disabled={isRunningCode || !code.trim()}>
+                  {isRunningCode ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Running…
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4" />
+                      Run code
+                    </>
+                  )}
+                </PxButton>
+                <PxButton variant="primary" onClick={handleSubmit} disabled={isSubmitting || !code.trim()} className="min-w-36">
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Submitting…
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Submit code
+                    </>
+                  )}
+                </PxButton>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </Panel>
         </TabsContent>
 
-        {/* Test Cases Tab */}
-        <TabsContent value="tests" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Test Cases</CardTitle>
-              <CardDescription>
-                Your solution will be evaluated against these test cases
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[400px] pr-4">
-                <div className="space-y-4">
+        {/* Test cases */}
+        <TabsContent value="tests" className="mt-3.5">
+          <Panel className="overflow-hidden">
+            <PanelHead
+              eyebrow="Test cases"
+              icon={ListChecks}
+              tone="neural"
+              title={`${testCases.length} case${testCases.length === 1 ? '' : 's'}`}
+              description="Your solution is evaluated against these."
+            />
+            <PanelBody>
+              <ScrollArea className="h-[400px] pr-3">
+                <div className="space-y-2.5">
                   {testCases.map((testCase, idx) => (
-                    <Card key={idx} className="border-2">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-sm flex items-center gap-2">
-                          Test Case {idx + 1}
-                          {testCase.is_hidden && (
-                            <Badge variant="secondary" className="text-xs">Hidden</Badge>
-                          )}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
+                    <div key={idx} className="px-panel px-panel--inset px-3.5 py-3 space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="px-num text-[0.6875rem] px-ink-3">
+                          CASE {String(idx + 1).padStart(2, '0')}
+                        </span>
+                        {testCase.is_hidden && <Chip>Hidden</Chip>}
+                      </div>
+                      <div>
+                        <Eyebrow>Input</Eyebrow>
+                        <pre className="px-num mt-1.5 text-[0.8125rem] px-ink p-2.5 rounded-[var(--px-r-xs)] bg-[hsl(var(--px-surface))] border border-[hsl(var(--px-line-soft))] overflow-x-auto">
+                          {testCase.input}
+                        </pre>
+                      </div>
+                      {!testCase.is_hidden && (
                         <div>
-                          <div className="text-xs font-semibold text-muted-foreground mb-1">Input:</div>
-                          <pre className="text-sm bg-muted p-2 rounded font-mono overflow-x-auto">
-                            {testCase.input}
+                          <Eyebrow>Expected output</Eyebrow>
+                          <pre className="px-num mt-1.5 text-[0.8125rem] px-ink p-2.5 rounded-[var(--px-r-xs)] bg-[hsl(var(--px-surface))] border border-[hsl(var(--px-line-soft))] overflow-x-auto">
+                            {testCase.expected_output}
                           </pre>
                         </div>
-                        {!testCase.is_hidden && (
-                          <div>
-                            <div className="text-xs font-semibold text-muted-foreground mb-1">Expected Output:</div>
-                            <pre className="text-sm bg-muted p-2 rounded font-mono overflow-x-auto">
-                              {testCase.expected_output}
-                            </pre>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                      )}
+                    </div>
                   ))}
                 </div>
               </ScrollArea>
-            </CardContent>
-          </Card>
+            </PanelBody>
+          </Panel>
         </TabsContent>
 
-        {/* Hints Tab */}
-        <TabsContent value="hints" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-yellow-500" />
-                Progressive Hints
-              </CardTitle>
-              <CardDescription>
-                Use hints carefully - they may affect your evaluation score
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* Hints */}
+        <TabsContent value="hints" className="mt-3.5">
+          <Panel tone="caution" className="overflow-hidden">
+            <PanelHead
+              eyebrow="Progressive hints"
+              icon={Lightbulb}
+              tone="caution"
+              title="Reveal only what you need"
+              description="Hints are recorded and may affect your evaluation score."
+            />
+            <PanelBody className="space-y-2.5">
               {hints.slice(0, currentHintIndex + 1).map((hint, idx) => (
-                <Alert key={idx}>
-                  <Lightbulb className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Hint {idx + 1}:</strong> {hint}
-                  </AlertDescription>
-                </Alert>
+                <div key={idx} className="px-panel px-panel--inset flex items-start gap-3 px-3.5 py-3">
+                  <span className="px-row__index shrink-0">{idx + 1}</span>
+                  <p className="px-body px-body--tight">{hint}</p>
+                </div>
               ))}
               {currentHintIndex < hints.length - 1 && (
-                <Button
-                  variant="outline"
-                  onClick={handleShowNextHint}
-                  className="w-full"
-                >
-                  Show Next Hint ({currentHintIndex + 1}/{hints.length})
-                </Button>
+                <PxButton variant="outline" block onClick={handleShowNextHint}>
+                  <Lightbulb className="w-4 h-4" />
+                  Show next hint ({currentHintIndex + 1}/{hints.length})
+                </PxButton>
               )}
-            </CardContent>
-          </Card>
+            </PanelBody>
+          </Panel>
         </TabsContent>
 
-        {/* Results Tab */}
-        <TabsContent value="results" className="mt-4">
+        {/* Results */}
+        <TabsContent value="results" className="mt-3.5">
           {evaluation && (
-            <div className="space-y-4">
-              {/* Overall Score Card */}
-              <Card className={evaluation.is_correct ? 'border-green-500' : 'border-yellow-500'}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      {evaluation.is_correct ? (
-                        <>
-                          <CheckCircle2 className="h-6 w-6 text-green-500" />
-                          Solution Accepted!
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="h-6 w-6 text-yellow-500" />
-                          Needs Improvement
-                        </>
-                      )}
-                    </CardTitle>
+            <div className="space-y-3.5">
+              <Panel variant="raised" tone={evaluation.is_correct ? 'positive' : 'caution'} className="overflow-hidden">
+                <Seam tone={evaluation.is_correct ? 'positive' : 'caution'} />
+                <PanelHead
+                  eyebrow="Verdict"
+                  icon={evaluation.is_correct ? CheckCircle2 : TriangleAlert}
+                  tone={evaluation.is_correct ? 'positive' : 'caution'}
+                  title={evaluation.is_correct ? 'Solution accepted' : 'Needs improvement'}
+                  actions={
                     <div className="text-right">
-                      <div className="text-3xl font-bold text-primary">
+                      <div className="px-num text-2xl font-semibold px-ink leading-none">
                         {evaluation.overall_score}%
                       </div>
-                      <div className="text-xs text-muted-foreground">Overall Score</div>
+                      <div className="px-eyebrow mt-1">overall</div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Score Breakdown */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <div className="text-xs text-muted-foreground mb-1">Correctness</div>
-                      <div className="flex items-center gap-2">
-                        <Progress value={evaluation.correctness_score} className="flex-1" />
-                        <span className="text-sm font-semibold">{evaluation.correctness_score}%</span>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground mb-1">Code Quality</div>
-                      <div className="flex items-center gap-2">
-                        <Progress value={evaluation.code_quality_score} className="flex-1" />
-                        <span className="text-sm font-semibold">{evaluation.code_quality_score}%</span>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground mb-1">Efficiency</div>
-                      <div className="flex items-center gap-2">
-                        <Progress value={evaluation.efficiency_score} className="flex-1" />
-                        <span className="text-sm font-semibold">{evaluation.efficiency_score}%</span>
-                      </div>
-                    </div>
+                  }
+                />
+                <PanelBody className="space-y-4">
+                  <div className="space-y-3">
+                    <MeterRow label="Correctness" value={evaluation.correctness_score} tone={scoreTone(evaluation.correctness_score)} />
+                    <MeterRow label="Code quality" value={evaluation.code_quality_score} tone={scoreTone(evaluation.code_quality_score)} />
+                    <MeterRow label="Efficiency" value={evaluation.efficiency_score} tone={scoreTone(evaluation.efficiency_score)} />
                   </div>
 
-                  {/* Test Results Summary */}
-                  <div className="p-3 bg-muted/30 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold">Test Cases</span>
-                      <span className="text-sm">
-                        {evaluation.test_cases_passed} / {evaluation.test_cases_total} passed
-                      </span>
-                    </div>
+                  <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3.5 py-2.5">
+                    <span className="px-note">Test cases</span>
+                    <span className="px-num text-[0.8125rem] font-semibold px-ink">
+                      {evaluation.test_cases_passed} / {evaluation.test_cases_total} passed
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
+                </PanelBody>
+              </Panel>
 
-              {/* Test Results Details */}
               {testResults && testResults.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Test Case Results</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ScrollArea className="h-[300px] pr-4">
-                      <div className="space-y-3">
+                <Panel className="overflow-hidden">
+                  <PanelHead eyebrow="Per-case results" icon={ListChecks} tone="neural" />
+                  <PanelBody>
+                    <ScrollArea className="h-[300px] pr-3">
+                      <div className="space-y-2.5">
                         {testResults.map((result, idx) => (
-                          <Card key={idx} className={result.passed ? 'border-green-500/50' : 'border-red-500/50'}>
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  {result.passed ? (
-                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                  ) : (
-                                    <XCircle className="h-4 w-4 text-red-500" />
-                                  )}
-                                  <span className="font-semibold text-sm">Test Case {result.test_case_number}</span>
-                                </div>
-                                {result.execution_time_ms && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {result.execution_time_ms}ms
-                                  </Badge>
+                          <div
+                            key={idx}
+                            className="px-panel px-panel--inset px-3.5 py-3 space-y-2.5"
+                            style={{ borderColor: `hsl(${toneVar(result.passed ? 'positive' : 'critical')} / 0.28)` }}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="flex items-center gap-2">
+                                {result.passed ? (
+                                  <CheckCircle2 className="w-3.5 h-3.5" style={toneColor('positive')} />
+                                ) : (
+                                  <CircleX className="w-3.5 h-3.5" style={toneColor('critical')} />
                                 )}
+                                <span className="px-num text-[0.75rem] font-semibold px-ink">
+                                  Case {result.test_case_number}
+                                </span>
+                              </span>
+                              {result.execution_time_ms && <Chip mono>{result.execution_time_ms}ms</Chip>}
+                            </div>
+
+                            <div>
+                              <Eyebrow>Input</Eyebrow>
+                              <pre className="px-num mt-1.5 text-[0.75rem] px-ink p-2 rounded-[var(--px-r-xs)] bg-[hsl(var(--px-surface))] border border-[hsl(var(--px-line-soft))] overflow-x-auto">
+                                {result.input}
+                              </pre>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Eyebrow>Expected</Eyebrow>
+                                <pre className="px-num mt-1.5 text-[0.75rem] px-ink p-2 rounded-[var(--px-r-xs)] bg-[hsl(var(--px-surface))] border border-[hsl(var(--px-line-soft))] overflow-x-auto">
+                                  {result.expected_output}
+                                </pre>
                               </div>
-                              <div className="space-y-2 text-sm">
-                                <div>
-                                  <div className="text-xs text-muted-foreground">Input:</div>
-                                  <pre className="bg-muted p-2 rounded font-mono text-xs overflow-x-auto">
-                                    {result.input}
-                                  </pre>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <div className="text-xs text-muted-foreground">Expected:</div>
-                                    <pre className="bg-muted p-2 rounded font-mono text-xs overflow-x-auto">
-                                      {result.expected_output}
-                                    </pre>
-                                  </div>
-                                  <div>
-                                    <div className="text-xs text-muted-foreground">Your Output:</div>
-                                    <pre className={`p-2 rounded font-mono text-xs overflow-x-auto ${
-                                      result.passed ? 'bg-green-500/10' : 'bg-red-500/10'
-                                    }`}>
-                                      {result.actual_output}
-                                    </pre>
-                                  </div>
-                                </div>
-                                {result.error_message && (
-                                  <Alert variant="destructive">
-                                    <AlertDescription className="text-xs">
-                                      {result.error_message}
-                                    </AlertDescription>
-                                  </Alert>
-                                )}
+                              <div>
+                                <Eyebrow>Yours</Eyebrow>
+                                <pre
+                                  className="px-num mt-1.5 text-[0.75rem] px-ink p-2 rounded-[var(--px-r-xs)] border overflow-x-auto"
+                                  style={{
+                                    background: `hsl(${toneVar(result.passed ? 'positive' : 'critical')} / 0.08)`,
+                                    borderColor: `hsl(${toneVar(result.passed ? 'positive' : 'critical')} / 0.24)`,
+                                  }}
+                                >
+                                  {result.actual_output}
+                                </pre>
                               </div>
-                            </CardContent>
-                          </Card>
+                            </div>
+
+                            {result.error_message && (
+                              <p className="px-note" style={toneColor('critical')}>
+                                {result.error_message}
+                              </p>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </ScrollArea>
-                  </CardContent>
-                </Card>
+                  </PanelBody>
+                </Panel>
               )}
 
-              {/* AI Feedback */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    AI Feedback & Analysis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Approach Feedback */}
+              <Panel className="overflow-hidden">
+                <PanelHead eyebrow="Analysis" icon={TrendingUp} tone="neural" title="AI feedback" />
+                <PanelBody className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-sm mb-2">Algorithm Approach</h4>
-                    <p className="text-sm text-muted-foreground">{evaluation.approach_feedback}</p>
+                    <Eyebrow>Algorithm approach</Eyebrow>
+                    <p className="px-body mt-1.5">{evaluation.approach_feedback}</p>
                   </div>
 
-                  {/* Complexity Analysis */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xs text-muted-foreground mb-1">Time Complexity</div>
-                      <div className="font-mono font-semibold">{evaluation.time_complexity}</div>
-                    </div>
-                    <div className="p-3 bg-muted/30 rounded-lg">
-                      <div className="text-xs text-muted-foreground mb-1">Space Complexity</div>
-                      <div className="font-mono font-semibold">{evaluation.space_complexity}</div>
-                    </div>
-                  </div>
+                  <Grid cols={2} gap="0.625rem">
+                    <StatTile label="Time complexity" value={evaluation.time_complexity} tone="neural" />
+                    <StatTile label="Space complexity" value={evaluation.space_complexity} tone="neural" />
+                  </Grid>
 
-                  {/* Code Quality Notes */}
                   {evaluation.code_quality_notes.length > 0 && (
                     <div>
-                      <h4 className="font-semibold text-sm mb-2">Code Quality</h4>
-                      <ul className="space-y-1">
-                        {evaluation.code_quality_notes.map((note, idx) => (
-                          <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                            <span className="text-primary mt-1">•</span>
-                            <span>{note}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      <Eyebrow>Code quality</Eyebrow>
+                      <div className="mt-1.5">
+                        <FindingList items={evaluation.code_quality_notes} tone="accent" />
+                      </div>
                     </div>
                   )}
 
-                  {/* Edge Cases */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <Grid cols={1} sm={2} gap="0.875rem">
                     {evaluation.edge_cases_handled.length > 0 && (
                       <div>
-                        <h4 className="font-semibold text-sm mb-2 text-green-600">✓ Handled Well</h4>
-                        <ul className="space-y-1">
-                          {evaluation.edge_cases_handled.map((edge, idx) => (
-                            <li key={idx} className="text-sm text-muted-foreground">• {edge}</li>
-                          ))}
-                        </ul>
+                        <Eyebrow tone="positive" icon={CheckCircle2}>Handled well</Eyebrow>
+                        <div className="mt-1.5">
+                          <FindingList items={evaluation.edge_cases_handled} tone="positive" />
+                        </div>
                       </div>
                     )}
                     {evaluation.edge_cases_missed.length > 0 && (
                       <div>
-                        <h4 className="font-semibold text-sm mb-2 text-yellow-600">⚠ Missed Cases</h4>
-                        <ul className="space-y-1">
-                          {evaluation.edge_cases_missed.map((edge, idx) => (
-                            <li key={idx} className="text-sm text-muted-foreground">• {edge}</li>
-                          ))}
-                        </ul>
+                        <Eyebrow tone="caution" icon={TriangleAlert}>Missed cases</Eyebrow>
+                        <div className="mt-1.5">
+                          <FindingList items={evaluation.edge_cases_missed} tone="caution" />
+                        </div>
                       </div>
                     )}
-                  </div>
+                  </Grid>
 
-                  {/* Optimization Suggestions */}
                   {evaluation.optimization_suggestions.length > 0 && (
                     <div>
-                      <h4 className="font-semibold text-sm mb-2">💡 Optimization Suggestions</h4>
-                      <ul className="space-y-1">
-                        {evaluation.optimization_suggestions.map((suggestion, idx) => (
-                          <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                            <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                            <span>{suggestion}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      <Eyebrow tone="accent" icon={Lightbulb}>Optimisation</Eyebrow>
+                      <div className="mt-1.5">
+                        <FindingList items={evaluation.optimization_suggestions} tone="accent" numbered />
+                      </div>
                     </div>
                   )}
 
-                  {/* Alternative Approaches */}
                   {evaluation.alternative_approaches.length > 0 && (
                     <div>
-                      <h4 className="font-semibold text-sm mb-2">🔄 Alternative Approaches</h4>
-                      <ul className="space-y-1">
-                        {evaluation.alternative_approaches.map((approach, idx) => (
-                          <li key={idx} className="text-sm text-muted-foreground">• {approach}</li>
-                        ))}
-                      </ul>
+                      <Eyebrow tone="neural">Alternative approaches</Eyebrow>
+                      <div className="mt-1.5">
+                        <FindingList items={evaluation.alternative_approaches} tone="neural" />
+                      </div>
                     </div>
                   )}
 
-                  {/* Best Practices */}
                   {evaluation.best_practices_violated.length > 0 && (
-                    <Alert>
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong className="text-sm">Best Practices to Consider:</strong>
-                        <ul className="mt-2 space-y-1">
-                          {evaluation.best_practices_violated.map((practice, idx) => (
-                            <li key={idx} className="text-sm">• {practice}</li>
-                          ))}
-                        </ul>
-                      </AlertDescription>
-                    </Alert>
+                    <div
+                      className="px-panel px-panel--inset px-3.5 py-3"
+                      style={{ borderColor: `hsl(${toneVar('caution')} / 0.3)` }}
+                    >
+                      <Eyebrow tone="caution" icon={TriangleAlert}>Best practices to consider</Eyebrow>
+                      <div className="mt-1.5">
+                        <FindingList items={evaluation.best_practices_violated} tone="caution" />
+                      </div>
+                    </div>
                   )}
-                </CardContent>
-              </Card>
+                </PanelBody>
+              </Panel>
             </div>
           )}
         </TabsContent>

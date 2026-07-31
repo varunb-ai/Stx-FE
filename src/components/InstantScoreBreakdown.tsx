@@ -1,16 +1,36 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { Loader2, Award, Target, TrendingUp } from 'lucide-react';
+import { Loader2, Award, Target, TrendingUp, ShieldAlert, Film, TriangleAlert, Gauge, BarChart3 } from 'lucide-react';
 import { getSessionScore, type SessionScore } from '@/lib/progressApi';
 import { StrataxApiError } from '@/lib/strataxClient';
+import {
+  Panel,
+  PanelHead,
+  PanelBody,
+  Seam,
+  Eyebrow,
+  Chip,
+  PxButton,
+  Grid,
+  MeterRow,
+  Dial,
+  FindingList,
+} from './practice/PracticeKit';
+import { toneColor, toneVar, type PxTone } from './practice/tones';
 
 interface InstantScoreBreakdownProps {
   sessionId: string;
   onViewProgress?: () => void;
 }
+
+/** Same score→tone scale the rest of Practice Mode reads by. */
+const scoreTone = (value: number): PxTone => {
+  if (value >= 85) return 'positive';
+  if (value >= 70) return 'accent';
+  if (value >= 50) return 'caution';
+  return 'critical';
+};
+
+const titleCase = (value: string) => value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function InstantScoreBreakdown({ sessionId, onViewProgress }: InstantScoreBreakdownProps) {
   const [loading, setLoading] = useState(true);
@@ -43,47 +63,43 @@ export default function InstantScoreBreakdown({ sessionId, onViewProgress }: Ins
     }
   };
 
-  const getScoreColor = (value: number): string => {
-    if (value >= 85) return 'text-green-600 dark:text-green-400';
-    if (value >= 70) return 'text-blue-600 dark:text-blue-400';
-    if (value >= 50) return 'text-amber-600 dark:text-amber-400';
-    return 'text-red-600 dark:text-red-400';
-  };
-
-  const getScoreBgColor = (value: number): string => {
-    if (value >= 85) return 'bg-green-500/10';
-    if (value >= 70) return 'bg-blue-500/10';
-    if (value >= 50) return 'bg-amber-500/10';
-    return 'bg-red-500/10';
-  };
-
   if (loading) {
     return (
-      <Card className="border-2">
-        <CardContent className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Loading your score breakdown...</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="px">
+        <Panel className="overflow-hidden">
+          <PanelBody className="flex flex-col items-center gap-4 py-12">
+            <Loader2 className="w-5 h-5 animate-spin" style={toneColor('accent')} />
+            <div className="text-center">
+              <Eyebrow tone="accent">Scoring</Eyebrow>
+              <p className="px-body mt-1.5">Compiling your score breakdown…</p>
+            </div>
+            <div className="w-40">
+              <div className="px-sweep" />
+            </div>
+          </PanelBody>
+        </Panel>
+      </div>
     );
   }
 
   if (error || !score) {
     return (
-      <Card className="border-2 border-amber-500/30">
-        <CardContent className="py-8 text-center">
-          <p className="text-muted-foreground">{error || 'Score not available'}</p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={loadScore}>
-            Retry
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="px">
+        <Panel tone="caution" className="overflow-hidden">
+          <PanelBody className="flex flex-col items-center gap-3 py-10 text-center">
+            <TriangleAlert className="w-5 h-5" style={toneColor('caution')} />
+            <p className="px-body">{error || 'Score not available'}</p>
+            <PxButton variant="outline" size="sm" onClick={loadScore}>
+              Retry
+            </PxButton>
+          </PanelBody>
+        </Panel>
+      </div>
     );
   }
 
   const dimensions = Object.entries(score.dimension_scores).sort((a, b) => b[1] - a[1]);
+  const overallTone = scoreTone(score.overall_score);
 
   const whyItems = Array.isArray(score.why)
     ? score.why.filter((item) => typeof item === 'string' && item.trim())
@@ -146,235 +162,214 @@ export default function InstantScoreBreakdown({ sessionId, onViewProgress }: Ins
           ? score.proctoring_summary.events
           : [];
 
+  const proctoringTone: PxTone = terminatedReason
+    ? 'critical'
+    : violationCount && violationCount > 0
+      ? 'caution'
+      : 'positive';
+
   return (
-    <div className="space-y-6">
-      {/* Overall Score Card */}
-      <Card className="border-2 bg-gradient-to-br from-primary/5 to-primary/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Award className="w-6 h-6 text-primary" />
-            Your Score Breakdown
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center mb-6">
-            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
-              <span className={`text-5xl sm:text-7xl font-bold ${getScoreColor(score.overall_score)}`}>
-                {score.overall_score.toFixed(0)}
-              </span>
-              <span className="text-xl sm:text-3xl text-muted-foreground">/100</span>
-            </div>
-            <Progress value={score.overall_score} className="h-3 max-w-md mx-auto" />
-          </div>
+    <div className="px space-y-4">
 
-          {/* Dimension Bars */}
-          <div className="space-y-3 mt-6">
-            <h4 className="text-sm font-semibold text-muted-foreground mb-3">Dimension Scores</h4>
-            {dimensions.map(([dimension, value]) => (
-              <div key={dimension} className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="capitalize font-medium">{dimension}</span>
-                  <span className={`font-bold ${getScoreColor(value)}`}>
-                    {value.toFixed(0)}
-                  </span>
+      {/* ── Overall score ── */}
+      <Panel variant="raised" brackets className="overflow-hidden px-rise">
+        <Seam tone={overallTone} />
+        <PanelHead
+          eyebrow="Session score"
+          icon={Award}
+          tone={overallTone}
+          title="Your score breakdown"
+          description="Scored against the dimensions a real interviewer weighs."
+        />
+        <PanelBody>
+          <div className="flex flex-col sm:flex-row items-center gap-7">
+            <Dial value={score.overall_score} size={156} stroke={9} tone={overallTone}>
+              <div>
+                <div className="px-num text-[2.5rem] font-semibold px-ink leading-none">
+                  {score.overall_score.toFixed(0)}
                 </div>
-                <div className="relative">
-                  <Progress value={value} className="h-2" />
-                </div>
+                <div className="px-eyebrow mt-2 justify-center">out of 100</div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </Dial>
 
-      {/* Why You Got This Score */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Why You Got This Score</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {whyItems.length > 0 ? (
-            <ul className="space-y-2">
-              {whyItems.map((item, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground leading-relaxed">
-                  <span className="text-primary mt-0.5 shrink-0">•</span>
-                  <span>{item}</span>
-                </li>
+            <div className="flex-1 w-full min-w-0 space-y-3.5">
+              <Eyebrow icon={Gauge}>Dimension scores</Eyebrow>
+              {dimensions.map(([dimension, value]) => (
+                <MeterRow
+                  key={dimension}
+                  label={<span className="capitalize">{dimension.replace(/_/g, ' ')}</span>}
+                  value={value}
+                  display={value.toFixed(0)}
+                  tone={scoreTone(value)}
+                />
               ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground leading-relaxed">No explanation available.</p>
-          )}
-        </CardContent>
-      </Card>
+            </div>
+          </div>
+        </PanelBody>
+      </Panel>
 
-      {/* Plans */}
+      {/* ── Rationale ── */}
+      <Panel className="overflow-hidden px-rise">
+        <PanelHead eyebrow="Rationale" icon={BarChart3} tone="neural" title="Why you got this score" />
+        <PanelBody>
+          <FindingList items={whyItems} tone="neural" empty="No explanation available." />
+        </PanelBody>
+      </Panel>
+
+      {/* ── Plans ── */}
       {(Array.isArray(score.improvement_plan) && score.improvement_plan.length > 0) ||
       (Array.isArray(score.next_session_plan) && score.next_session_plan.length > 0) ? (
-        <div className={`grid gap-4 ${
-          (Array.isArray(score.improvement_plan) && score.improvement_plan.length > 0) &&
-          (Array.isArray(score.next_session_plan) && score.next_session_plan.length > 0)
-            ? 'md:grid-cols-2'
-            : 'grid-cols-1'
-        }`}>
+        <Grid
+          cols={1}
+          md={
+            (Array.isArray(score.improvement_plan) && score.improvement_plan.length > 0) &&
+            (Array.isArray(score.next_session_plan) && score.next_session_plan.length > 0)
+              ? 2
+              : 1
+          }
+          gap="0.75rem"
+        >
           {Array.isArray(score.improvement_plan) && score.improvement_plan.length > 0 && (
-            <Card className="border-primary/30">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Target className="w-5 h-5 text-primary" />
-                  Improvement Plan
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {score.improvement_plan.map((step, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
-                        {idx + 1}
-                      </div>
-                      <span className="text-sm flex-1">{step}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <Panel tone="accent" className="overflow-hidden px-rise">
+              <PanelHead eyebrow="Improvement plan" icon={Target} tone="accent" />
+              <PanelBody>
+                <FindingList items={score.improvement_plan} tone="accent" numbered />
+              </PanelBody>
+            </Panel>
           )}
 
           {nextSessionPlan && (
-            <Card className="border-green-500/30 bg-green-500/5">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2 text-green-600 dark:text-green-400">
-                  <TrendingUp className="w-5 h-5" />
-                  Next Session Plan
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex flex-wrap gap-2">
-                    {nextSessionFocusDimension && <Badge variant="outline">Focus: {nextSessionFocusDimension}</Badge>}
-                    {nextSessionRound && <Badge variant="outline">Round: {nextSessionRound}</Badge>}
-                    {nextSessionDifficulty && <Badge variant="outline" className="capitalize">Difficulty: {nextSessionDifficulty}</Badge>}
-                    {typeof nextSessionQuestionCount === 'number' && <Badge variant="outline">Questions: {nextSessionQuestionCount}</Badge>}
-                  </div>
-
-                  {nextSessionFocus.length > 0 && (
-                    <ul className="space-y-2">
-                      {nextSessionFocus.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm">
-                          <span className="text-green-600 dark:text-green-400 shrink-0">✓</span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+            <Panel tone="positive" className="overflow-hidden px-rise">
+              <PanelHead eyebrow="Next session plan" icon={TrendingUp} tone="positive" />
+              <PanelBody className="space-y-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {nextSessionFocusDimension && <Chip mono>Focus · {nextSessionFocusDimension}</Chip>}
+                  {nextSessionRound && <Chip mono>Round · {nextSessionRound}</Chip>}
+                  {nextSessionDifficulty && (
+                    <Chip mono className="capitalize">Difficulty · {nextSessionDifficulty}</Chip>
                   )}
-
-                  {nextSessionFocus.length === 0 && (
-                    <p className="text-sm text-muted-foreground">Structured next-session guidance is available for this attempt.</p>
+                  {typeof nextSessionQuestionCount === 'number' && (
+                    <Chip mono>Questions · {nextSessionQuestionCount}</Chip>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+
+                <FindingList
+                  items={nextSessionFocus}
+                  tone="positive"
+                  empty="Structured next-session guidance is available for this attempt."
+                />
+              </PanelBody>
+            </Panel>
           )}
-        </div>
+        </Grid>
       ) : null}
 
-      {/* Live Practice: Recordings */}
+      {/* ── Recordings ── */}
       {(!!screenUrl || !!cameraUrl) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recordings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm">
-              {!!screenUrl && (
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Screen recording</span>
-                  <a className="text-primary underline underline-offset-4" href={screenUrl} target="_blank" rel="noreferrer">
-                    Open
-                  </a>
-                </div>
-              )}
-              {!!cameraUrl && (
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Camera recording</span>
-                  <a className="text-primary underline underline-offset-4" href={cameraUrl} target="_blank" rel="noreferrer">
-                    Open
-                  </a>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <Panel className="overflow-hidden px-rise">
+          <PanelHead eyebrow="Recordings" icon={Film} tone="accent" />
+          <PanelBody className="space-y-2">
+            {!!screenUrl && (
+              <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3.5 py-2.5">
+                <span className="px-body px-body--tight">Screen recording</span>
+                <a
+                  className="px-btn px-btn--ghost px-btn--sm"
+                  href={screenUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={toneColor('accent')}
+                >
+                  Open
+                </a>
+              </div>
+            )}
+            {!!cameraUrl && (
+              <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3.5 py-2.5">
+                <span className="px-body px-body--tight">Camera recording</span>
+                <a
+                  className="px-btn px-btn--ghost px-btn--sm"
+                  href={cameraUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={toneColor('accent')}
+                >
+                  Open
+                </a>
+              </div>
+            )}
+          </PanelBody>
+        </Panel>
       )}
 
-      {/* Live Practice: Proctoring summary */}
+      {/* ── Proctoring ── */}
       {(proctoringStatus || violationCount !== null || seriousViolationCount !== null || proctoringEvents.length > 0 || terminatedReason) && (
-        <Card className={violationCount && violationCount > 0 ? 'border-amber-500/30 bg-amber-500/5' : ''}>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center justify-between">
-              Proctoring Summary
-              <div className="flex items-center gap-2">
+        <Panel tone={proctoringTone === 'positive' ? undefined : proctoringTone} className="overflow-hidden px-rise">
+          <PanelHead
+            eyebrow="Integrity"
+            icon={ShieldAlert}
+            tone={proctoringTone}
+            title="Proctoring summary"
+            actions={
+              <div className="flex items-center gap-1.5">
                 {riskLevel && (
-                  <Badge variant={riskLevel === 'warning' || riskLevel === 'serious' ? 'destructive' : 'secondary'}>
+                  <Chip tone={riskLevel === 'warning' || riskLevel === 'serious' ? 'critical' : 'neutral'}>
                     {riskLevel}
-                  </Badge>
+                  </Chip>
                 )}
                 {violationCount !== null && (
-                  <Badge variant={violationCount > 0 ? 'destructive' : 'secondary'}>
-                    {violationCount} violation{violationCount === 1 ? '' : 's'}
-                  </Badge>
+                  <Chip mono tone={violationCount > 0 ? 'critical' : 'positive'}>
+                    {violationCount} event{violationCount === 1 ? '' : 's'}
+                  </Chip>
                 )}
               </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {(proctoringStatus || seriousViolationCount !== null || terminatedReason || eventCounts.length > 0) && (
-              <div className="mb-4 space-y-3">
-                {(proctoringStatus || riskLevel) && (
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    {proctoringStatus && (
-                      <Badge variant="outline">
-                        Status: {proctoringStatus.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                      </Badge>
-                    )}
-                    {seriousViolationCount !== null && (
-                      <Badge variant="outline">Serious violations: {seriousViolationCount}</Badge>
-                    )}
-                  </div>
-                )}
-
-                {terminatedReason && (
-                  <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">Termination reason:</span> {terminatedReason}
-                  </div>
-                )}
-
-                {eventCounts.length > 0 && (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {eventCounts.map(([eventType, count]) => (
-                      <div key={eventType} className="rounded-md border border-border/50 bg-card/50 px-3 py-2 text-sm flex items-center justify-between gap-3">
-                        <span className="text-muted-foreground">
-                          {eventType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                        </span>
-                        <span className="font-medium">{count}</span>
-                      </div>
-                    ))}
-                  </div>
+            }
+          />
+          <PanelBody className="space-y-3">
+            {(proctoringStatus || seriousViolationCount !== null) && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {proctoringStatus && <Chip mono>Status · {titleCase(proctoringStatus)}</Chip>}
+                {seriousViolationCount !== null && (
+                  <Chip mono tone={seriousViolationCount > 0 ? 'critical' : 'positive'}>
+                    Serious · {seriousViolationCount}
+                  </Chip>
                 )}
               </div>
             )}
 
+            {terminatedReason && (
+              <div
+                className="px-panel px-panel--inset px-3.5 py-3"
+                style={{ borderColor: `hsl(${toneVar('critical')} / 0.3)` }}
+              >
+                <Eyebrow tone="critical">Termination reason</Eyebrow>
+                <p className="px-body mt-1.5">{terminatedReason}</p>
+              </div>
+            )}
+
+            {eventCounts.length > 0 && (
+              <Grid cols={1} sm={2}>
+                {eventCounts.map(([eventType, count]) => (
+                  <div
+                    key={eventType}
+                    className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3.5 py-2.5"
+                  >
+                    <span className="px-note">{titleCase(eventType)}</span>
+                    <span className="px-num text-[0.8125rem] font-semibold px-ink">{count}</span>
+                  </div>
+                ))}
+              </Grid>
+            )}
+
             {proctoringEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No proctoring events recorded.</p>
+              <p className="px-note">No proctoring events recorded.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
+                <Eyebrow>Event log</Eyebrow>
                 {proctoringEvents.slice(0, 20).map((evt, idx) => {
                   const e = evt as Record<string, unknown>;
                   // Format event type: WINDOW_MINIMIZED → Window Minimized
                   const rawType = String(e.event_type ?? e.type ?? e.event ?? e.name ?? JSON.stringify(evt));
-                  const label = rawType
-                    .replace(/_/g, ' ')
-                    .replace(/\b\w/g, (c) => c.toUpperCase());
+                  const label = titleCase(rawType);
                   const ts = e.timestamp ?? e.created_at ?? e.time;
                   const detail = e.detail ?? e.details ?? e.message ?? e.description;
                   const timeStr = typeof ts === 'string'
@@ -382,36 +377,36 @@ export default function InstantScoreBreakdown({ sessionId, onViewProgress }: Ins
                     : null;
 
                   return (
-                    <div key={idx} className="flex items-center gap-3 text-sm rounded-md border border-border/50 bg-card/50 px-3 py-2">
-                      <span className="text-amber-500 shrink-0">⚠️</span>
+                    <div
+                      key={idx}
+                      className="px-panel px-panel--inset flex items-center gap-3 px-3.5 py-2.5"
+                    >
+                      <TriangleAlert className="w-3.5 h-3.5 shrink-0" style={toneColor('caution')} />
                       <div className="flex-1 min-w-0">
-                        <span className="font-medium">{label}</span>
+                        <span className="text-[0.8125rem] font-semibold px-ink">{label}</span>
                         {typeof detail === 'string' && detail && (
-                          <span className="text-muted-foreground ml-1.5">— {detail}</span>
+                          <span className="px-note ml-1.5">— {detail}</span>
                         )}
                       </div>
-                      {timeStr && (
-                        <span className="text-xs text-muted-foreground shrink-0">{timeStr}</span>
-                      )}
+                      {timeStr && <span className="px-note px-num shrink-0">{timeStr}</span>}
                     </div>
                   );
                 })}
                 {proctoringEvents.length > 20 && (
-                  <p className="text-xs text-muted-foreground">Showing first 20 events.</p>
+                  <p className="px-note">Showing the first 20 events.</p>
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </PanelBody>
+        </Panel>
       )}
 
-      {/* Next Session Button */}
       {onViewProgress && (
         <div className="flex justify-center">
-          <Button size="lg" onClick={onViewProgress} className="px-8">
-            <Award className="mr-2" />
-            View Full Progress
-          </Button>
+          <PxButton variant="outline" size="lg" onClick={onViewProgress}>
+            <Award className="w-4 h-4" />
+            View full progress
+          </PxButton>
         </div>
       )}
     </div>

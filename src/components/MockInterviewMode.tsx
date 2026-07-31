@@ -1205,33 +1205,16 @@ export const MockInterviewMode = ({ selectedHistorySession, onHistoryUpdate }: M
                 <div className="space-y-3">
                   <p className="text-base leading-7 font-medium">{currentQuestion.question_text}</p>
 
-                  {showCodeEditor && (
-                    <>
-                      <Separator className="my-3" />
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-muted-foreground">Example:</h4>
-                        <div className="bg-muted/50 rounded-md p-3 text-sm font-mono">
-                          <div className="text-green-600">Input: nums = [1,2,3,1]</div>
-                          <div className="text-blue-600">Output: true</div>
-                          <div className="text-muted-foreground mt-1">Explanation: The value 1 appears at indices 0 and 3.</div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-muted-foreground">Constraints:</h4>
-                        <ul className="text-sm text-muted-foreground space-y-1">
-                          <li className="flex gap-2">
-                            <span className="text-primary">•</span>
-                            <span>1 ≤ array.length ≤ 10⁵</span>
-                          </li>
-                          <li className="flex gap-2">
-                            <span className="text-primary">•</span>
-                            <span>Follow up: Could you solve it in O(1) time?</span>
-                          </li>
-                        </ul>
-                      </div>
-                    </>
-                  )}
+                  {/* No hardcoded example or constraints here.
+                      This block used to render a fixed LeetCode "Contains
+                      Duplicate" example — Input: nums = [1,2,3,1] — plus
+                      "1 ≤ array.length ≤ 10⁵" and an O(1) follow-up, under EVERY
+                      coding question, gated only on interviewType === "coding".
+                      The question is generated; the example was not, so a graph
+                      or concurrency problem was shown an array example and a
+                      complexity target that belonged to a different question.
+                      Examples and constraints have to come from the question
+                      itself or not appear at all. */}
                 </div>
 
                 {currentQuestion.hints && currentQuestion.hints.length > 0 && (
@@ -1563,16 +1546,8 @@ export const MockInterviewMode = ({ selectedHistorySession, onHistoryUpdate }: M
                     </div>
                   )}
 
-                  {showCodeEditor && (
-                    <div className="space-y-2 text-sm">
-                      <h4 className="font-semibold text-muted-foreground">Example:</h4>
-                      <div className="bg-muted/50 rounded-md p-3 font-mono text-xs">
-                        <div className="text-green-600">Input: nums = [1,2,3,1]</div>
-                        <div className="text-blue-600">Output: true</div>
-                        <div className="text-muted-foreground mt-1">Explanation: The value 1 appears at indices 0 and 3.</div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Second copy of the same fabricated example, removed. See the
+                      collapsed view above. */}
                 </div>
 
                 {/* Answer Panel */}

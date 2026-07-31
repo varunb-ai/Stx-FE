@@ -1,9 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -45,6 +40,19 @@ import {
 import type { ResumeContext } from '../types/resume';
 import ResumeUpload from './ResumeUpload';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Panel,
+  PanelHead,
+  PanelBody,
+  Seam,
+  Eyebrow,
+  Chip,
+  StatusDot,
+  PxButton,
+  Grid,
+  StatTile,
+} from './practice/PracticeKit';
+import { toneColor, toneVar, cx, type PxTone } from './practice/tones';
 
 interface RoundSelectionProps {
   onRoundStart: (sessionId: string, roundConfig: RoundConfig, firstQuestion: any, ttsAudioUrl?: string, totalQuestionsFromApi?: number) => void;
@@ -74,30 +82,33 @@ const ROUND_ICONS: Record<InterviewRound, any> = {
   [InterviewRound.FULL_INTERVIEW]: Award,
 };
 
-// Difficulty color mapping
-const DIFFICULTY_COLORS: Record<string, string> = {
-  easy: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  hard: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  mixed: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+const DIFFICULTY_TONE: Record<string, PxTone> = {
+  easy: 'positive',
+  medium: 'caution',
+  hard: 'critical',
+  mixed: 'neural',
 };
 
-// Round color gradients (fallback for backend data)
-const ROUND_COLORS: Record<InterviewRound, string> = {
-  [InterviewRound.HR_SCREENING]: 'from-blue-500 to-blue-600',
-  [InterviewRound.TECHNICAL_ROUND_1]: 'from-purple-500 to-purple-600',
-  [InterviewRound.TECHNICAL_ROUND_2]: 'from-purple-600 to-purple-700',
-  [InterviewRound.SYSTEM_DESIGN]: 'from-orange-500 to-orange-600',
-  [InterviewRound.BEHAVIORAL]: 'from-green-500 to-green-600',
-  [InterviewRound.MANAGERIAL]: 'from-indigo-500 to-indigo-600',
-  // Avoid pink-heavy accents to keep the Live Practice theme consistent.
-  [InterviewRound.MACHINE_LEARNING]: 'from-indigo-500 to-indigo-600',
-  [InterviewRound.DATA_ENGINEERING]: 'from-cyan-500 to-cyan-600',
-  [InterviewRound.FRONTEND_SPECIALIST]: 'from-teal-500 to-teal-600',
-  [InterviewRound.BACKEND_SPECIALIST]: 'from-violet-500 to-violet-600',
-  [InterviewRound.DEVOPS]: 'from-sky-500 to-sky-600',                     // ✅ Fixed
-  [InterviewRound.SECURITY]: 'from-red-500 to-red-600',
-  [InterviewRound.FULL_INTERVIEW]: 'from-amber-500 to-amber-600',
+/**
+ * Rounds no longer each get their own gradient. They map onto the three tones
+ * the design system already means something with, so the grid reads as one
+ * system: accent = conversational, neural = technical depth, caution = the
+ * high-stakes rounds.
+ */
+const ROUND_TONES: Record<InterviewRound, PxTone> = {
+  [InterviewRound.HR_SCREENING]: 'accent',
+  [InterviewRound.TECHNICAL_ROUND_1]: 'neural',
+  [InterviewRound.TECHNICAL_ROUND_2]: 'neural',
+  [InterviewRound.SYSTEM_DESIGN]: 'caution',
+  [InterviewRound.BEHAVIORAL]: 'accent',
+  [InterviewRound.MANAGERIAL]: 'accent',
+  [InterviewRound.MACHINE_LEARNING]: 'neural',
+  [InterviewRound.DATA_ENGINEERING]: 'neural',
+  [InterviewRound.FRONTEND_SPECIALIST]: 'neural',
+  [InterviewRound.BACKEND_SPECIALIST]: 'neural',
+  [InterviewRound.DEVOPS]: 'neural',
+  [InterviewRound.SECURITY]: 'critical',
+  [InterviewRound.FULL_INTERVIEW]: 'caution',
 };
 
 const normalizeRoundTypeToken = (value: unknown): string => {
@@ -128,11 +139,9 @@ const getRoundIconComponent = (roundType: unknown) => {
   return resolvedRoundType ? (ROUND_ICONS[resolvedRoundType] || Target) : Target;
 };
 
-const getRoundColorGradient = (roundType: unknown, explicitColor?: string | null) => {
-  if (typeof explicitColor === 'string' && explicitColor.trim()) return explicitColor;
-
+const getRoundTone = (roundType: unknown): PxTone => {
   const resolvedRoundType = resolveInterviewRound(roundType);
-  return resolvedRoundType ? (ROUND_COLORS[resolvedRoundType] || 'from-gray-500 to-gray-600') : 'from-gray-500 to-gray-600';
+  return resolvedRoundType ? (ROUND_TONES[resolvedRoundType] ?? 'accent') : 'accent';
 };
 
 // Domain keywords for smart filtering
@@ -539,22 +548,21 @@ export default function RoundSelection({
 
   const RoundCard = ({ round, isRecommended = false }: { round: RoundConfig; isRecommended?: boolean }) => {
     const Icon = getRoundIconComponent(round.round_type);
-    const colorGradient = getRoundColorGradient(round.round_type, round.color);
+    const tone = getRoundTone(round.round_type);
     const isSelected = selectedRound?.round_type === round.round_type;
     const isDomainMissing = !domain && !userProfile?.domain;
     const isStartHere = round.round_type === InterviewRound.HR_SCREENING;
     const contextualLabel = isRecommended ? getRecommendationLabel(round) : null;
 
     return (
-      <div
-        className={`group relative cursor-pointer transition-all duration-300 rounded-2xl overflow-hidden
-          ${isSelected
-            ? 'ring-2 ring-primary shadow-2xl scale-[1.01]'
-            : isStartHere
-              ? 'ring-1 ring-primary/30 shadow-lg hover:ring-primary/50'
-              : 'ring-1 ring-border/40 hover:ring-primary/30'
-          }
-          ${isDomainMissing ? 'opacity-40 pointer-events-none' : 'hover:shadow-xl hover:-translate-y-1'}`}
+      <Panel
+        as="button"
+        variant={isStartHere ? 'raised' : 'default'}
+        className={cx(
+          'px-panel--interactive group flex flex-col overflow-hidden text-left',
+          isSelected && 'px-panel--selected',
+          isDomainMissing && 'opacity-40 pointer-events-none',
+        )}
         onClick={() => {
           if (isDomainMissing) {
             toast({
@@ -567,536 +575,473 @@ export default function RoundSelection({
           setSelectedRound(round);
         }}
       >
-        {/* Gradient top accent */}
-        <div className={`h-1 bg-gradient-to-r ${colorGradient}`} />
+        <Seam tone={tone} />
 
-        <div className="p-4 sm:p-5 bg-gradient-to-b from-card/90 to-card space-y-4">
-          {/* Start-here micro-label */}
-          {isStartHere && (
-            <div className="flex items-center gap-1.5">
-              <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+        <div className="flex-1 p-4 sm:p-5 space-y-3.5">
+          <div className="flex items-start justify-between gap-3">
+            <div
+              className="shrink-0 grid place-items-center w-10 h-10 rounded-[var(--px-r-md)] border"
+              style={{
+                color: `hsl(${toneVar(tone)})`,
+                borderColor: `hsl(${toneVar(tone)} / 0.28)`,
+                background: `hsl(${toneVar(tone)} / 0.1)`,
+              }}
+            >
+              <Icon className="w-4.5 h-4.5" />
+            </div>
+            {isStartHere ? (
+              <Chip tone="accent">
+                <StatusDot tone="accent" live />
                 Start here
-              </span>
-            </div>
-          )}
-
-          {/* Icon + title row */}
-          <div className="flex items-start gap-3">
-            <div className={`shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br ${colorGradient} flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow`}>
-              <Icon className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm sm:text-[15px] font-bold leading-tight line-clamp-2 text-foreground">{round.name}</h3>
-                {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug line-clamp-2">
-                {round.description}
-              </p>
-            </div>
+              </Chip>
+            ) : isSelected ? (
+              <CheckCircle2 className="w-4 h-4" style={toneColor('accent')} />
+            ) : null}
           </div>
 
-          {/* Meta chips */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted/50 rounded-md px-2 py-1">
-              <Clock className="w-3 h-3" />
-              {round.duration_minutes}m
-            </span>
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted/50 rounded-md px-2 py-1">
-              <Target className="w-3 h-3" />
-              {round.question_count} Qs
-            </span>
-            <Badge className={`text-[10px] px-2 py-0.5 h-auto font-semibold ${DIFFICULTY_COLORS[round.difficulty]}`}>
-              {round.difficulty.charAt(0).toUpperCase() + round.difficulty.slice(1)}
-            </Badge>
+          <div className="min-w-0">
+            <h3 className="px-subtitle line-clamp-2">{round.name}</h3>
+            <p className="px-note mt-1 line-clamp-2">{round.description}</p>
           </div>
 
-          {/* Contextual recommendation badge */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Chip mono icon={Clock}>{round.duration_minutes}m</Chip>
+            <Chip mono icon={Target}>{round.question_count} Qs</Chip>
+            <Chip tone={DIFFICULTY_TONE[round.difficulty] ?? 'neutral'} className="capitalize">
+              {round.difficulty}
+            </Chip>
+          </div>
+
           {contextualLabel && !isStartHere && (
-            <Badge variant="outline" className="text-[10px] border-primary/25 bg-primary/5 px-2 py-0.5 font-medium">
-              <Sparkles className="w-2.5 h-2.5 mr-1 text-primary" />
-              {contextualLabel}
-            </Badge>
-          )}
-
-          {/* Focus Areas */}
-          {round.focus_areas && round.focus_areas.length > 0 && (
-            <div className="flex flex-wrap gap-1 pt-1 border-t border-border/20">
-              {round.focus_areas.slice(0, 4).map((area, idx) => (
-                <span key={idx} className="text-[9px] text-muted-foreground/70 bg-muted/30 rounded-md px-1.5 py-0.5">
-                  {area}
-                </span>
-              ))}
-              {round.focus_areas.length > 4 && (
-                <span className="text-[9px] text-muted-foreground/40 bg-muted/20 rounded-md px-1.5 py-0.5">
-                  +{round.focus_areas.length - 4}
-                </span>
-              )}
-            </div>
+            <Chip tone="accent" icon={Sparkles}>{contextualLabel}</Chip>
           )}
         </div>
-      </div>
+
+        {round.focus_areas && round.focus_areas.length > 0 && (
+          <div className="px-4 sm:px-5 py-3 border-t border-[hsl(var(--px-line-soft))] flex flex-wrap gap-1">
+            {round.focus_areas.slice(0, 4).map((area, idx) => (
+              <span key={idx} className="px-note text-[0.625rem] px-1.5 py-0.5 rounded-[var(--px-r-xs)] bg-[hsl(var(--px-surface-3))]">
+                {area}
+              </span>
+            ))}
+            {round.focus_areas.length > 4 && (
+              <span className="px-note text-[0.625rem] px-1.5 py-0.5">+{round.focus_areas.length - 4}</span>
+            )}
+          </div>
+        )}
+      </Panel>
     );
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto text-primary" />
-          <p className="text-muted-foreground">Loading interview rounds...</p>
+      <div className="px flex items-center justify-center h-96">
+        <div className="flex flex-col items-center gap-5 px-fade">
+          <div className="px-orb" style={{ ['--px-orb-size' as string]: '4.5rem' }}>
+            <Layers className="w-6 h-6" />
+          </div>
+          <div className="text-center">
+            <Eyebrow tone="accent">Loading</Eyebrow>
+            <p className="px-body mt-1.5">Fetching interview rounds…</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="w-full">
-        <div className="container max-w-7xl mx-auto px-2 sm:px-4 pb-8 pt-10 sm:pt-4 space-y-4 sm:space-y-8">
-          {!selectedRound ? (
-            <>
-              {/* Header */}
-              <div className="text-center py-6 sm:py-10 space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/8 border border-primary/15 mb-2">
-                  <Zap className="w-3 h-3 text-primary" />
-                  <span className="text-[11px] font-semibold text-primary tracking-wide uppercase">Full Interview Simulation</span>
-                </div>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-b from-foreground via-foreground/90 to-foreground/60 bg-clip-text text-transparent px-4">
-                  Choose Your Round
-                </h1>
-                <p className="text-sm sm:text-base text-muted-foreground/70 max-w-md mx-auto px-4 leading-relaxed">
-                  Pick a round and configure your session — questions adapt to your profile.
-                </p>
-              </div>
+    <div className="px w-full pb-10">
+      {!selectedRound ? (
+        <div className="space-y-5">
+          {/* Header */}
+          <header className="text-center pt-4 pb-1 px-rise">
+            <div className="inline-flex">
+              <Chip tone="accent" icon={Zap}>Full interview simulation</Chip>
+            </div>
+            <h1 className="px-display mt-3.5">Choose your round.</h1>
+            <p className="px-body mt-2.5 max-w-md mx-auto">
+              Pick a round and configure the session — questions adapt to the profile you set below.
+            </p>
+          </header>
 
-              {/* Profile Setup */}
-              <div className="max-w-3xl mx-auto">
-                <div className="relative rounded-2xl overflow-hidden">
-                  {/* Subtle background glow */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-purple-500/[0.04] rounded-2xl" />
-                  <div className="relative border border-border/20 rounded-2xl bg-card/60 backdrop-blur-md shadow-xl shadow-black/5">
-
-                    {/* Header strip */}
-                    <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border/15">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <div className="absolute -inset-1 bg-gradient-to-br from-primary/30 to-purple-500/30 rounded-xl blur-sm" />
-                          <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg shadow-primary/25">
-                            <Settings className="w-4 h-4 text-white" />
-                          </div>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-foreground tracking-tight">Profile Setup</h3>
-                          <p className="text-[10px] text-muted-foreground/70 font-medium">Personalizes your interview</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/8 border border-primary/15">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                        <span className="text-[10px] font-semibold text-primary">Required</span>
-                      </div>
-                    </div>
-
-                    {/* Form body */}
-                    <div className="p-5 sm:p-6">
-                      <div className="grid md:grid-cols-2 gap-5">
-                        {/* Domain Selection */}
-                        <div className="space-y-2">
-                          <Label htmlFor="domain" className="text-xs font-semibold flex items-center gap-1.5 text-foreground/80">
-                            <Code2 className="w-3 h-3 text-primary/60" />
-                            <span>Domain / Specialization</span>
-                            <span className="text-red-400 text-xs leading-none">*</span>
-                          </Label>
-                          <Select value={domain} onValueChange={setDomain}>
-                            <SelectTrigger
-                              id="domain"
-                              className={`h-11 rounded-xl bg-background/60 transition-all ${!domain ? 'border-red-400/30 focus:border-red-400/50 ring-1 ring-red-400/10 focus:ring-red-400/20' : 'border-border/30 focus:border-primary/40 focus:ring-1 focus:ring-primary/20'}`}
-                            >
-                              <SelectValue placeholder="Select your domain..." />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[300px]">
-                              <SelectItem value="Python Backend Development">Python Backend Development</SelectItem>
-                              <SelectItem value="Java Backend Development">Java Backend Development</SelectItem>
-                              <SelectItem value="JavaScript/Node.js Backend">JavaScript/Node.js Backend</SelectItem>
-                              <SelectItem value="Go Backend Development">Go Backend Development</SelectItem>
-                              <SelectItem value="C# .NET Development">C# .NET Development</SelectItem>
-                              <SelectItem value="Frontend Development (React)">Frontend Development (React)</SelectItem>
-                              <SelectItem value="Frontend Development (Vue)">Frontend Development (Vue)</SelectItem>
-                              <SelectItem value="Frontend Development (Angular)">Frontend Development (Angular)</SelectItem>
-                              <SelectItem value="Full Stack Development">Full Stack Development</SelectItem>
-                              <SelectItem value="Mobile Development (iOS)">Mobile Development (iOS)</SelectItem>
-                              <SelectItem value="Mobile Development (Android)">Mobile Development (Android)</SelectItem>
-                              <SelectItem value="Mobile Development (React Native)">Mobile Development (React Native)</SelectItem>
-                              <SelectItem value="Data Engineering">Data Engineering</SelectItem>
-                              <SelectItem value="Machine Learning Engineering">Machine Learning Engineering</SelectItem>
-                              <SelectItem value="Data Science">Data Science</SelectItem>
-                              <SelectItem value="DevOps Engineering">DevOps Engineering</SelectItem>
-                              <SelectItem value="Site Reliability Engineering (SRE)">Site Reliability Engineering (SRE)</SelectItem>
-                              <SelectItem value="Cloud Engineering (AWS)">Cloud Engineering (AWS)</SelectItem>
-                              <SelectItem value="Cloud Engineering (Azure)">Cloud Engineering (Azure)</SelectItem>
-                              <SelectItem value="Cloud Engineering (GCP)">Cloud Engineering (GCP)</SelectItem>
-                              <SelectItem value="Security Engineering">Security Engineering</SelectItem>
-                              <SelectItem value="System Design & Architecture">System Design & Architecture</SelectItem>
-                              <SelectItem value="Database Administration">Database Administration</SelectItem>
-                              <SelectItem value="Product Management">Product Management</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {!domain && (
-                            <p className="text-[10px] text-red-400/80 flex items-center gap-1.5 font-medium">
-                              <Target className="w-3 h-3" />
-                              Required for relevant questions
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Experience Years */}
-                        <div className="space-y-2">
-                          <Label htmlFor="experience" className="text-xs font-semibold flex items-center gap-1.5 text-foreground/80">
-                            <TrendingUp className="w-3 h-3 text-primary/60" />
-                            Years of Experience
-                          </Label>
-                          <Input
-                            id="experience"
-                            type="number"
-                            min="0"
-                            max="30"
-                            value={experienceYears || ''}
-                            onChange={(e) => setExperienceYears(parseInt(e.target.value) || 0)}
-                            placeholder="0-30 years"
-                            className="h-11 rounded-xl bg-background/60 border-border/30 focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all"
-                            maxLength={3}
-                          />
-                          <p className="text-[10px] text-muted-foreground/60 flex items-center gap-1 font-medium">
-                            <Sparkles className="w-3 h-3" />
-                            Personalizes question difficulty
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Update Button — slides in when profile differs */}
-                      {(domain !== (userProfile?.domain || '') || experienceYears !== (userProfile?.experience_years || 0)) && (
-                        <div className="mt-5">
-                          <Button
-                            onClick={loadRounds}
-                            className="w-full h-11 rounded-xl bg-gradient-to-r from-primary to-primary/85 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/15 text-sm font-bold transition-all"
-                            disabled={loading || !domain}
-                          >
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Update Recommendations
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Domain Detection Info */}
-              {domain && (
-                <div className="max-w-3xl mx-auto flex items-center justify-center gap-2.5 py-2">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/8 border border-primary/15">
-                    <span className="text-xs font-semibold text-primary">
-                      {getDomainCategoryName(detectDomainCategory(domain))}
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-muted-foreground">
-                    {allRounds.length} rounds available
-                  </span>
-                </div>
-              )}
-
-              <div className="flex justify-center gap-1 px-4">
-                <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-muted/40 border border-border/30">
-                  <Button
-                    variant={view === 'recommended' ? 'default' : 'ghost'}
-                    onClick={() => setView('recommended')}
-                    size="sm"
-                    className={`gap-1.5 px-4 h-9 text-xs sm:text-sm rounded-md transition-all ${view === 'recommended'
-                      ? 'shadow-md'
-                      : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                  >
-                    Recommended
-                  </Button>
-                  <Button
-                    variant={view === 'all' ? 'default' : 'ghost'}
-                    onClick={() => setView('all')}
-                    size="sm"
-                    className={`gap-1.5 px-4 h-9 text-xs sm:text-sm rounded-md transition-all ${view === 'all'
-                      ? 'shadow-md'
-                      : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                  >
-                    <Layers className="w-3.5 h-3.5" />
-                    All Rounds
-                  </Button>
-                </div>
-              </div>
-
-              {/* Rounds Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-8">
-                {(() => {
-                  const rounds = view === 'recommended' ? recommendedRounds : allRounds;
-                  // Sort: HR_SCREENING first ("Start here") to anchor the grid
-                  const sorted = [...(rounds || [])].sort((a, b) => {
-                    if (resolveInterviewRound(a.round_type) === InterviewRound.HR_SCREENING) return -1;
-                    if (resolveInterviewRound(b.round_type) === InterviewRound.HR_SCREENING) return 1;
-                    return 0;
-                  });
-                  return sorted.map((round) => (
-                    <RoundCard
-                      key={round.round_type}
-                      round={round}
-                      isRecommended={view === 'recommended'}
-                    />
-                  ));
-                })()}
-              </div>
-
-              {/* No Rounds Message */}
-              {(view === 'recommended' ? recommendedRounds : allRounds)?.length === 0 && (
-                <div className="max-w-2xl mx-auto rounded-2xl border-2 border-dashed border-muted-foreground/20 py-12 text-center">
-                  <Target className="w-12 h-12 mx-auto text-muted-foreground/40 mb-4" />
-                  <p className="text-lg font-bold text-muted-foreground mb-2">
-                    No rounds available
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {!domain
-                      ? 'Please select a domain to see available interview rounds'
-                      : 'Try selecting a different domain or view all rounds'}
-                  </p>
-                </div>
-              )}
-            </>
-          ) : (
-            /* Selection Confirmation Panel */
-            <div className="max-w-3xl mx-auto pt-6 space-y-5">
-              {/* Round Header Card */}
-              <div className="relative overflow-hidden rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm shadow-lg">
-                <div className={`h-1 bg-gradient-to-r ${getRoundColorGradient(selectedRound.round_type)}`} />
-                <div className="p-5 sm:p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className={`shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${getRoundColorGradient(selectedRound.round_type)} flex items-center justify-center shadow-lg`}>
-                        {(() => {
-                            const Icon = getRoundIconComponent(selectedRound.round_type);
-                          return <Icon className="w-6 h-6 text-white" />;
-                        })()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
-                          {selectedRound.name}
-                        </h2>
-                        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                          {selectedRound.description}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedRound(null)}
-                      disabled={starting}
-                      className="shrink-0 text-xs font-semibold text-muted-foreground hover:text-foreground"
-                    >
-                      Change
-                    </Button>
-                  </div>
-
-                  {/* Metric pills inline */}
-                  <div className="flex items-center gap-3 mt-5 flex-wrap">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/30">
-                      <Clock className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-sm font-bold">
-                        {questionCount > 0
-                          ? Math.round((questionCount / selectedRound.question_count) * selectedRound.duration_minutes)
-                          : selectedRound.duration_minutes
-                        }
-                      </span>
-                      <span className="text-xs text-muted-foreground">min</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/30">
-                      <Target className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-sm font-bold">
-                        {questionCount > 0 ? questionCount : selectedRound.question_count}
-                      </span>
-                      <span className="text-xs text-muted-foreground">questions</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/30">
-                      <TrendingUp className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-sm font-bold capitalize">{selectedRound.difficulty}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Profile Summary */}
-              <div className="rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm overflow-hidden">
-                <div className="px-5 py-3.5 border-b border-border/20 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-bold">Your Profile</span>
-                </div>
-                <div className="p-5">
-                  <div className="grid md:grid-cols-2 gap-3">
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/20">
-                      <span className="text-xs text-muted-foreground font-medium">Domain:</span>
-                      <span className="text-sm font-bold">{domain || userProfile?.domain || '—'}</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/20">
-                      <span className="text-xs text-muted-foreground font-medium">Experience:</span>
-                      <span className="text-sm font-bold">{experienceYears || userProfile?.experience_years || 0} years</span>
-                    </div>
-                  </div>
-                  {(!domain && !userProfile?.domain) && (
-                    <div className="flex items-center gap-2 p-3 mt-3 rounded-xl bg-red-500/5 border border-red-500/20">
-                      <Target className="w-4 h-4 text-red-400" />
-                      <p className="text-sm text-red-400 font-medium">
-                        Go back and select your domain to start
+          {/* Profile setup */}
+          <div className="max-w-3xl mx-auto px-rise">
+            <Panel variant="raised" className="overflow-hidden">
+              <Seam tone="accent" />
+              <PanelHead
+                eyebrow="Profile"
+                icon={Settings}
+                tone="accent"
+                title="Who is being interviewed?"
+                description="This drives which rounds are recommended and how hard the questions get."
+                actions={
+                  <Chip tone={domain ? 'positive' : 'caution'}>
+                    <StatusDot tone={domain ? 'positive' : 'caution'} live={!domain} />
+                    {domain ? 'Ready' : 'Required'}
+                  </Chip>
+                }
+              />
+              <PanelBody className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label htmlFor="domain" className="px-eyebrow">
+                      <Code2 className="w-3 h-3" />
+                      Domain / specialisation <span style={toneColor('critical')}>*</span>
+                    </label>
+                    <Select value={domain} onValueChange={setDomain}>
+                      <SelectTrigger
+                        id="domain"
+                        className={cx('px-select', !domain && 'px-select--invalid')}
+                      >
+                        <SelectValue placeholder="Select your domain…" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        <SelectItem value="Python Backend Development">Python Backend Development</SelectItem>
+                        <SelectItem value="Java Backend Development">Java Backend Development</SelectItem>
+                        <SelectItem value="JavaScript/Node.js Backend">JavaScript/Node.js Backend</SelectItem>
+                        <SelectItem value="Go Backend Development">Go Backend Development</SelectItem>
+                        <SelectItem value="C# .NET Development">C# .NET Development</SelectItem>
+                        <SelectItem value="Frontend Development (React)">Frontend Development (React)</SelectItem>
+                        <SelectItem value="Frontend Development (Vue)">Frontend Development (Vue)</SelectItem>
+                        <SelectItem value="Frontend Development (Angular)">Frontend Development (Angular)</SelectItem>
+                        <SelectItem value="Full Stack Development">Full Stack Development</SelectItem>
+                        <SelectItem value="Mobile Development (iOS)">Mobile Development (iOS)</SelectItem>
+                        <SelectItem value="Mobile Development (Android)">Mobile Development (Android)</SelectItem>
+                        <SelectItem value="Mobile Development (React Native)">Mobile Development (React Native)</SelectItem>
+                        <SelectItem value="Data Engineering">Data Engineering</SelectItem>
+                        <SelectItem value="Machine Learning Engineering">Machine Learning Engineering</SelectItem>
+                        <SelectItem value="Data Science">Data Science</SelectItem>
+                        <SelectItem value="DevOps Engineering">DevOps Engineering</SelectItem>
+                        <SelectItem value="Site Reliability Engineering (SRE)">Site Reliability Engineering (SRE)</SelectItem>
+                        <SelectItem value="Cloud Engineering (AWS)">Cloud Engineering (AWS)</SelectItem>
+                        <SelectItem value="Cloud Engineering (Azure)">Cloud Engineering (Azure)</SelectItem>
+                        <SelectItem value="Cloud Engineering (GCP)">Cloud Engineering (GCP)</SelectItem>
+                        <SelectItem value="Security Engineering">Security Engineering</SelectItem>
+                        <SelectItem value="System Design & Architecture">System Design & Architecture</SelectItem>
+                        <SelectItem value="Database Administration">Database Administration</SelectItem>
+                        <SelectItem value="Product Management">Product Management</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {!domain && (
+                      <p className="px-note" style={toneColor('critical')}>
+                        Required — rounds stay locked until a domain is set.
                       </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Configuration */}
-              <div className="rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm overflow-hidden">
-                <div className="px-5 py-3.5 border-b border-border/20 flex items-center gap-2">
-                  <Settings className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-bold">Session Settings</span>
-                </div>
-                <div className="p-5 space-y-5">
-
-                  {/* Company-Specific Input */}
-                  <div className="space-y-2">
-                    <Label htmlFor="company" className="text-xs font-semibold flex items-center gap-2 text-foreground/80">
-                      <Briefcase className="w-3.5 h-3.5" />
-                      Company-Specific Preparation
-                      <span className="text-muted-foreground font-normal">(Optional)</span>
-                    </Label>
-                    <Input
-                      id="company"
-                      placeholder="e.g., Google, Meta, Amazon, Netflix, Microsoft..."
-                      value={companySpecific}
-                      onChange={(e) => setCompanySpecific(e.target.value)}
-                      className="h-10 rounded-xl bg-background/50 border-border/30 focus:border-primary/40 focus:ring-1 focus:ring-primary/20"
-                    />
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" />
-                      Tailors questions to specific company interview styles
-                    </p>
+                    )}
                   </div>
 
-                  {/* Question Count Selector */}
                   <div className="space-y-2">
-                    <Label htmlFor="questionCount" className="text-xs font-semibold flex items-center gap-2 text-foreground/80">
-                      <Target className="w-3.5 h-3.5" />
-                      Number of Questions
-                    </Label>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                      <span className="font-medium">
-                        {questionCount === 0 ? `Default (${selectedRound.question_count})` : questionCount}
-                      </span>
-                      <span>1-15 questions</span>
-                    </div>
+                    <label htmlFor="experience" className="px-eyebrow">
+                      <TrendingUp className="w-3 h-3" />
+                      Years of experience
+                    </label>
                     <input
-                      id="questionCount"
-                      type="range"
+                      id="experience"
+                      type="number"
                       min="0"
-                      max="15"
-                      value={questionCount}
-                      onChange={(e) => setQuestionCount(parseInt(e.target.value))}
-                      className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                      max="30"
+                      value={experienceYears || ''}
+                      onChange={(e) => setExperienceYears(parseInt(e.target.value) || 0)}
+                      placeholder="0–30"
+                      className="px-field px-num"
                     />
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" />
-                      {questionCount === 0
-                        ? 'Using default count for this round type'
-                        : `Custom: ${questionCount} question${questionCount !== 1 ? 's' : ''}`
-                      }
-                    </p>
-                  </div>
-
-                  {/* Resume Upload */}
-                  <ResumeUpload
-                    mode="practice"
-                    onParsed={(ctx) => onResumeChange?.(ctx)}
-                    onClear={() => onResumeChange?.(null)}
-                    existing={resumeContext}
-                  />
-                </div>
-              </div>
-
-              {/* Consent */}
-              <div className="rounded-2xl border border-primary/15 bg-primary/[0.03] p-4">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="round-selection-live-practice-consent"
-                    checked={livePracticeConsentChecked}
-                    onCheckedChange={(value) => onLivePracticeConsentChange(!!value)}
-                    className="mt-0.5"
-                  />
-                  <div className="min-w-0">
-                    <Label
-                      htmlFor="round-selection-live-practice-consent"
-                      className="cursor-pointer text-sm font-semibold leading-snug text-foreground"
-                    >
-                      I understand that Live Practice uses camera, screen, and recording to simulate real interview conditions.
-                    </Label>
-                    <div className="mt-2 space-y-1 text-[11px] text-muted-foreground leading-relaxed">
-                      <p>Camera and full-screen monitoring stay active while the session runs.</p>
-                      <p>Recordings may be uploaded for interview evaluation and review.</p>
-                      <p>Camera-proctored mode adds automated integrity checks and warning enforcement.</p>
-                    </div>
+                    <p className="px-note">Sets the difficulty band for generated questions.</p>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col-reverse sm:flex-row gap-3 pb-8">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedRound(null)}
-                  disabled={starting}
-                  size="lg"
-                  className="sm:flex-1 h-12 rounded-xl"
+                {(domain !== (userProfile?.domain || '') || experienceYears !== (userProfile?.experience_years || 0)) && (
+                  <PxButton variant="primary" block onClick={loadRounds} disabled={loading || !domain}>
+                    <Sparkles className="w-4 h-4" />
+                    Update recommendations
+                  </PxButton>
+                )}
+              </PanelBody>
+            </Panel>
+          </div>
+
+          {/* Filter summary + view switch */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-center gap-3">
+            {domain && (
+              <div className="flex items-center justify-center gap-2.5">
+                <Chip tone="accent">{getDomainCategoryName(detectDomainCategory(domain))}</Chip>
+                <span className="px-note px-num">{allRounds.length} rounds available</span>
+              </div>
+            )}
+
+            <div className="flex justify-center">
+              <div className="px-segment">
+                <button
+                  type="button"
+                  className="px-segment__item"
+                  data-active={view === 'recommended'}
+                  onClick={() => setView('recommended')}
                 >
-                  <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
-                  Back to Selection
-                </Button>
-                <Button
-                  onClick={handleStartRound}
-                  disabled={starting || (!domain && !userProfile?.domain) || !livePracticeConsentChecked}
-                  className="sm:flex-1 h-12 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/20 font-bold"
-                  size="lg"
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Recommended
+                </button>
+                <button
+                  type="button"
+                  className="px-segment__item"
+                  data-active={view === 'all'}
+                  onClick={() => setView('all')}
                 >
-                  {starting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Starting Interview...
-                    </>
-                  ) : (!domain && !userProfile?.domain) ? (
-                    <>
-                      <Target className="w-5 h-5 mr-2" />
-                      Select Domain First
-                    </>
-                  ) : !livePracticeConsentChecked ? (
-                    <>
-                      <Shield className="w-5 h-5 mr-2" />
-                      Review Consent First
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-5 h-5 mr-2" />
-                      Start Interview Round
-                    </>
-                  )}
-                </Button>
+                  <Layers className="w-3.5 h-3.5" />
+                  All rounds
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Rounds grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(() => {
+              const rounds = view === 'recommended' ? recommendedRounds : allRounds;
+              // Sort: HR_SCREENING first ("Start here") to anchor the grid
+              const sorted = [...(rounds || [])].sort((a, b) => {
+                if (resolveInterviewRound(a.round_type) === InterviewRound.HR_SCREENING) return -1;
+                if (resolveInterviewRound(b.round_type) === InterviewRound.HR_SCREENING) return 1;
+                return 0;
+              });
+              return sorted.map((round) => (
+                <RoundCard
+                  key={round.round_type}
+                  round={round}
+                  isRecommended={view === 'recommended'}
+                />
+              ));
+            })()}
+          </div>
+
+          {(view === 'recommended' ? recommendedRounds : allRounds)?.length === 0 && (
+            <div className="max-w-2xl mx-auto">
+              <div className="px-panel px-panel--inset flex flex-col items-center gap-2 py-12 text-center">
+                <Target className="w-6 h-6 px-ink-3 opacity-60" />
+                <p className="px-subtitle">No rounds available</p>
+                <p className="px-note max-w-sm">
+                  {!domain
+                    ? 'Select a domain to see the interview rounds that match it.'
+                    : 'Try a different domain, or switch to All rounds.'}
+                </p>
               </div>
             </div>
           )}
         </div>
-      </div>
+      ) : (
+        /* ── Confirmation ── */
+        <div className="max-w-3xl mx-auto pt-4 space-y-4 px-rise">
+          {(() => {
+            const tone = getRoundTone(selectedRound.round_type);
+            const Icon = getRoundIconComponent(selectedRound.round_type);
+            const effectiveQuestions = questionCount > 0 ? questionCount : selectedRound.question_count;
+            const effectiveMinutes = questionCount > 0
+              ? Math.round((questionCount / selectedRound.question_count) * selectedRound.duration_minutes)
+              : selectedRound.duration_minutes;
+
+            return (
+              <Panel variant="raised" brackets className="overflow-hidden">
+                <Seam tone={tone} />
+                <div className="p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4 min-w-0">
+                      <div
+                        className="shrink-0 grid place-items-center w-12 h-12 rounded-[var(--px-r-md)] border"
+                        style={{
+                          color: `hsl(${toneVar(tone)})`,
+                          borderColor: `hsl(${toneVar(tone)} / 0.3)`,
+                          background: `hsl(${toneVar(tone)} / 0.1)`,
+                        }}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <Eyebrow tone={tone}>Selected round</Eyebrow>
+                        <h2 className="px-title mt-2">{selectedRound.name}</h2>
+                        <p className="px-body mt-1.5">{selectedRound.description}</p>
+                      </div>
+                    </div>
+                    <PxButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedRound(null)}
+                      disabled={starting}
+                    >
+                      Change
+                    </PxButton>
+                  </div>
+
+                  <Grid cols={3} gap="0.625rem" className="mt-5">
+                    <StatTile label="Duration" value={effectiveMinutes} unit="min" icon={Clock} tone={tone} />
+                    <StatTile label="Questions" value={effectiveQuestions} icon={Target} tone={tone} />
+                    <StatTile
+                      label="Difficulty"
+                      value={<span className="capitalize">{selectedRound.difficulty}</span>}
+                      icon={TrendingUp}
+                      tone={DIFFICULTY_TONE[selectedRound.difficulty] ?? 'neutral'}
+                    />
+                  </Grid>
+                </div>
+              </Panel>
+            );
+          })()}
+
+          {/* Profile summary */}
+          <Panel className="overflow-hidden">
+            <PanelHead eyebrow="Your profile" icon={Sparkles} tone="accent" />
+            <PanelBody className="space-y-3">
+              <Grid cols={1} sm={2}>
+                <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3.5 py-2.5">
+                  <span className="px-note">Domain</span>
+                  <span className="text-[0.8125rem] font-semibold px-ink truncate">
+                    {domain || userProfile?.domain || '—'}
+                  </span>
+                </div>
+                <div className="px-panel px-panel--inset flex items-center justify-between gap-3 px-3.5 py-2.5">
+                  <span className="px-note">Experience</span>
+                  <span className="px-num text-[0.8125rem] font-semibold px-ink">
+                    {experienceYears || userProfile?.experience_years || 0} yrs
+                  </span>
+                </div>
+              </Grid>
+
+              {(!domain && !userProfile?.domain) && (
+                <div
+                  className="px-panel px-panel--inset flex items-center gap-2.5 px-3.5 py-3"
+                  style={{ borderColor: `hsl(${toneVar('critical')} / 0.3)` }}
+                >
+                  <Target className="w-4 h-4 shrink-0" style={toneColor('critical')} />
+                  <p className="px-body px-body--tight">Go back and select your domain to start.</p>
+                </div>
+              )}
+            </PanelBody>
+          </Panel>
+
+          {/* Session settings */}
+          <Panel className="overflow-hidden">
+            <PanelHead eyebrow="Session settings" icon={Settings} />
+            <PanelBody className="space-y-5">
+              <div className="space-y-2">
+                <label htmlFor="company" className="px-eyebrow">
+                  <Briefcase className="w-3 h-3" />
+                  Company-specific preparation
+                </label>
+                <input
+                  id="company"
+                  className="px-field"
+                  placeholder="e.g., Google, Meta, Amazon, Netflix…"
+                  value={companySpecific}
+                  onChange={(e) => setCompanySpecific(e.target.value)}
+                />
+                <p className="px-note">Optional — tailors questions to that company's interview style.</p>
+              </div>
+
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <label htmlFor="questionCount" className="px-eyebrow">
+                    <Target className="w-3 h-3" />
+                    Number of questions
+                  </label>
+                  <span className="px-num text-[0.8125rem] font-semibold px-ink">
+                    {questionCount === 0 ? `Default · ${selectedRound.question_count}` : questionCount}
+                  </span>
+                </div>
+                <input
+                  id="questionCount"
+                  type="range"
+                  min="0"
+                  max="15"
+                  value={questionCount}
+                  onChange={(e) => setQuestionCount(parseInt(e.target.value))}
+                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-[hsl(var(--px-accent))] bg-[hsl(var(--px-line))]"
+                />
+                <div className="flex items-center justify-between">
+                  <span className="px-note px-num">0 = default</span>
+                  <span className="px-note px-num">15 max</span>
+                </div>
+              </div>
+
+              <ResumeUpload
+                mode="practice"
+                onParsed={(ctx) => onResumeChange?.(ctx)}
+                onClear={() => onResumeChange?.(null)}
+                existing={resumeContext}
+              />
+            </PanelBody>
+          </Panel>
+
+          {/* Consent */}
+          <div
+            className="px-panel px-panel--inset p-4"
+            style={{ borderColor: livePracticeConsentChecked ? `hsl(${toneVar('accent')} / 0.34)` : undefined }}
+          >
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="round-selection-live-practice-consent"
+                checked={livePracticeConsentChecked}
+                onCheckedChange={(value) => onLivePracticeConsentChange(!!value)}
+                className="mt-0.5"
+              />
+              <div className="min-w-0">
+                <Eyebrow tone={livePracticeConsentChecked ? 'accent' : 'neutral'} icon={Shield}>
+                  Live Practice consent
+                </Eyebrow>
+                <label
+                  htmlFor="round-selection-live-practice-consent"
+                  className="block mt-1.5 cursor-pointer text-[0.8125rem] font-semibold leading-snug px-ink"
+                >
+                  I understand that Live Practice uses camera, screen, and recording to simulate real interview conditions.
+                </label>
+                <div className="px-note mt-2 space-y-1">
+                  <p>Camera and full-screen monitoring stay active while the session runs.</p>
+                  <p>Recordings may be uploaded for interview evaluation and review.</p>
+                  <p>Camera-proctored mode adds automated integrity checks and warning enforcement.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col-reverse sm:flex-row gap-3">
+            <PxButton
+              variant="outline"
+              size="lg"
+              onClick={() => setSelectedRound(null)}
+              disabled={starting}
+              className="sm:flex-1"
+            >
+              <ArrowRight className="w-4 h-4 rotate-180" />
+              Back to selection
+            </PxButton>
+            <PxButton
+              variant="primary"
+              size="lg"
+              onClick={handleStartRound}
+              disabled={starting || (!domain && !userProfile?.domain) || !livePracticeConsentChecked}
+              className="sm:flex-[1.4]"
+            >
+              {starting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Starting interview…
+                </>
+              ) : (!domain && !userProfile?.domain) ? (
+                <>
+                  <Target className="w-4 h-4" />
+                  Select domain first
+                </>
+              ) : !livePracticeConsentChecked ? (
+                <>
+                  <Shield className="w-4 h-4" />
+                  Review consent first
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Start interview round
+                </>
+              )}
+            </PxButton>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
