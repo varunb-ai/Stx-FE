@@ -1,3 +1,13 @@
+---
+title: StrataxFE
+emoji: "🧠"
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Stratax AI - AI Interview Assistant
 
 A React + Vite frontend for the Stratax AI interview platform, with a docs-first public entry, a protected application workspace, installable PWA support, and feature areas for AI-assisted answers, Live Practice, mock interviews, code execution, architecture generation, and progress tracking.
