@@ -29,6 +29,7 @@ import {
   Award,
   Settings,
   Loader2,
+  GraduationCap,
 } from 'lucide-react';
 import {
   InterviewRound,
@@ -68,6 +69,7 @@ interface RoundSelectionProps {
 // Icon mapping for each round type
 const ROUND_ICONS: Record<InterviewRound, any> = {
   [InterviewRound.HR_SCREENING]: Users,
+  [InterviewRound.CAMPUS_PLACEMENT]: GraduationCap,
   [InterviewRound.TECHNICAL_ROUND_1]: Code2,
   [InterviewRound.TECHNICAL_ROUND_2]: Code2,
   [InterviewRound.SYSTEM_DESIGN]: Layers,
@@ -97,6 +99,7 @@ const DIFFICULTY_TONE: Record<string, PxTone> = {
  */
 const ROUND_TONES: Record<InterviewRound, PxTone> = {
   [InterviewRound.HR_SCREENING]: 'accent',
+  [InterviewRound.CAMPUS_PLACEMENT]: 'positive',
   [InterviewRound.TECHNICAL_ROUND_1]: 'neural',
   [InterviewRound.TECHNICAL_ROUND_2]: 'neural',
   [InterviewRound.SYSTEM_DESIGN]: 'caution',

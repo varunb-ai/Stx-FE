@@ -2573,7 +2573,12 @@ export const PracticeMode = () => {
 
   // Adaptive Profile state
   const [profileDomain, setProfileDomain] = useState('');
-  const [profileExperience, setProfileExperience] = useState<number>(0);
+  // `number | null`, because "nothing entered yet" and "zero years" are
+  // different answers and the old `number` initialised to 0 could not tell
+  // them apart -- parseInt('') is NaN, `NaN || 0` is 0, so clearing the field
+  // and typing 0 both produced 0. That ambiguity is why 0 was treated as
+  // "unset" and freshers were silently dropped from adaptive mode.
+  const [profileExperience, setProfileExperience] = useState<number | null>(null);
   const [profileSkills, setProfileSkills] = useState<string>('');
   const [profileJobRole, setProfileJobRole] = useState('');
   const [profileCompany, setProfileCompany] = useState('');
@@ -3191,7 +3196,12 @@ export const PracticeMode = () => {
 
       // Build user profile if adaptive mode is enabled
       let userProfile: UserProfile | undefined = undefined;
-      if (enableAdaptive && profileDomain && profileExperience > 0) {
+      // `profileExperience > 0` excluded exactly the people who need the
+      // entry-level path most: a student answering 0 honestly got no adaptive
+      // profile at all -- no domain, no skills, no round targeting -- and no
+      // explanation. The backend has always accepted 0 (ge=0) and maps it to
+      // Junior/Entry-level, so the only thing rejecting it was this check.
+      if (enableAdaptive && profileDomain && profileExperience !== null && profileExperience >= 0) {
         userProfile = {
           domain: profileDomain,
           experience_years: profileExperience,
@@ -4597,6 +4607,15 @@ export const PracticeMode = () => {
                           autoFocus
                         />
                         <datalist id="role-suggestions">
+                          {/* Entry-level first. The field has always accepted any
+                              text (the backend's `domain` is free-form), but every
+                              suggestion named a mid-career professional role, so
+                              the platform read as closed to students even though
+                              it was not. */}
+                          <option value="Student / Fresher" />
+                          <option value="Final-year Undergraduate" />
+                          <option value="Software Engineer Intern" />
+                          <option value="Campus Placement" />
                           <option value="Software Engineer" />
                           <option value="Data Scientist" />
                           <option value="Product Manager" />
@@ -4763,7 +4782,7 @@ export const PracticeMode = () => {
   }
 
   if (phase === 'round-selection') {
-    const userProfile = enableAdaptive && profileDomain && profileExperience > 0 ? {
+    const userProfile = enableAdaptive && profileDomain && profileExperience !== null && profileExperience >= 0 ? {
       domain: profileDomain,
       experience_years: profileExperience,
       skills: profileSkills.split(',').map(s => s.trim()).filter(Boolean),
@@ -4836,7 +4855,8 @@ export const PracticeMode = () => {
   }
 
   if (phase === 'setup') {
-    const adaptiveProfileReady = !!(profileDomain && profileExperience && profileSkills);
+    // Number(0) is falsy, so a fresher's profile never counted as ready.
+    const adaptiveProfileReady = !!(profileDomain && profileSkills) && profileExperience !== null && profileExperience >= 0;
 
     return (
       <div className="px px-shell min-h-full">
@@ -4923,8 +4943,13 @@ export const PracticeMode = () => {
                           min="0"
                           max="50"
                           placeholder="e.g., 5"
-                          value={profileExperience || ''}
-                          onChange={(e) => setProfileExperience(parseInt(e.target.value) || 0)}
+                          value={profileExperience === null ? '' : profileExperience}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === '') { setProfileExperience(null); return; }
+                            const n = parseInt(raw, 10);
+                            setProfileExperience(Number.isNaN(n) ? null : n);
+                          }}
                         />
                       </div>
 

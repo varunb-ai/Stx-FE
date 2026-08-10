@@ -588,6 +588,10 @@ export function getPracticeSessionMediaUrl(sessionId: string, mediaId: string | 
 
 export enum InterviewRound {
   HR_SCREENING = 'hr_screening',
+  // Must mirror app/schemas.py InterviewRound. Entry-level round for candidates
+  // with no professional experience; the backend recommends it for 0 years and
+  // offers it for every domain.
+  CAMPUS_PLACEMENT = 'campus_placement',
   TECHNICAL_ROUND_1 = 'technical_round_1',
   TECHNICAL_ROUND_2 = 'technical_round_2',
   SYSTEM_DESIGN = 'system_design',
