@@ -1062,11 +1062,26 @@ export const InterviewAssistant = () => {
   useEffect(() => {
     if (authLoading) return;
 
-    // Guest mode (logged out): allow full navigation without onboarding/keys.
+    // Guest mode (logged out).
+    //
+    // Being logged out is not itself a reason to prompt: a guest may bring their
+    // own key, and the backend accepts X-API-Key without auth. Having no key at
+    // all is the reason.
+    //
+    // This used to assert hasApiKey(true) unconditionally, which was true while
+    // anonymous traffic was served from server keys. It no longer is
+    // (REQUIRE_USER_API_KEY now defaults to true), so the assertion became a
+    // lie that suppressed the "Key Entry Required" badge and the BYOK prompt --
+    // leaving a keyless visitor in a fully functional-looking app that 401s on
+    // their first question, with nothing pointing them at the demo.
     if (!user) {
-      setHasApiKey(true);
-      setShowKeyOnboarding(false);
+      const guestHasKey = Boolean(
+        localStorage.getItem("user_api_key") || localStorage.getItem("gemini_api_key")
+      );
+      setHasApiKey(guestHasKey);
+      // No account, so there is no per-account tour to run; the key is the gate.
       setShowOnboardingTour(false);
+      setShowKeyOnboarding(!guestHasKey);
       return;
     }
 

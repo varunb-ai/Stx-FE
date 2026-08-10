@@ -442,6 +442,18 @@ export const BYOKOnboarding = ({ onComplete }: BYOKOnboardingProps) => {
                                 </>
                             )}
                         </Button>
+                        {/* The way out for someone who has no key and does not
+                            want to go and create one just to find out whether
+                            the product is any good. Every LLM-backed route now
+                            requires the caller's own key, so without this the
+                            only alternative to this dialog is leaving. */}
+                        <p className="text-center text-xs text-zinc-500">
+                            Don’t have a key yet?{" "}
+                            <a href="/showcase" className="font-semibold text-zinc-300 underline hover:text-white">
+                                See real output first
+                            </a>{" "}
+                            — no key needed.
+                        </p>
                         <p className="text-center text-[10px] text-zinc-600 uppercase tracking-widest font-black flex items-center justify-center gap-2">
                             <ShieldCheck className="w-3 h-3" />
                             Keys stored locally • Never transmitted
