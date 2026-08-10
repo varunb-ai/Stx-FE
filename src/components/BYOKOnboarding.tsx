@@ -24,8 +24,13 @@ interface BYOKOnboardingProps {
 }
 
 export const BYOKOnboarding = ({ onComplete }: BYOKOnboardingProps) => {
-    const [groqKey, setGroqKey] = useState("");
-    const [geminiKey, setGeminiKey] = useState("");
+    // One field, not one per provider. The two-field version implied the user
+    // had to understand and supply two engines before anything worked; the code
+    // never required it (strataxClient already sends a Gemini-only key as the
+    // primary, and the backend routes on key prefix). A second key is still
+    // supported -- it just belongs in Bridge Settings, not in the way of a
+    // first-time visitor.
+    const [apiKey, setApiKey] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [videoError, setVideoError] = useState(false);
@@ -51,14 +56,42 @@ export const BYOKOnboarding = ({ onComplete }: BYOKOnboardingProps) => {
         };
     }, []);
 
-    const handleSave = () => {
-        const groq = groqKey.trim();
-        const gemini = geminiKey.trim();
+    /**
+     * Which provider a pasted key belongs to, by prefix.
+     *
+     * The same prefixes the backend recognises (`_looks_like_llm_key` in
+     * app/utils/demo_mode.py), so the UI and the server agree on what a key is.
+     * Returning null for anything else is deliberate: a key we cannot place must
+     * not be stored under a provider it does not belong to, because it would
+     * then be sent to that provider and come back "invalid" -- blaming a key
+     * that is perfectly valid somewhere else.
+     */
+    const detectProvider = (key: string): "groq" | "gemini" | null => {
+        const k = key.trim();
+        if (k.startsWith("gsk_")) return "groq";
+        if (k.startsWith("AIza") || k.startsWith("ATza")) return "gemini";
+        return null;
+    };
 
-        if (!groq && !gemini) {
+    const handleSave = () => {
+        const key = apiKey.trim();
+
+        if (!key) {
             toast({
                 title: "API Key Required",
-                description: "Add at least one key (Groq or Gemini) to continue.",
+                description: "Paste your Groq or Gemini API key to continue.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const provider = detectProvider(key);
+        if (!provider) {
+            toast({
+                title: "Key not recognised",
+                description:
+                    "This build supports Groq (gsk_…) and Gemini (AIza…) keys. " +
+                    "Keys from other providers won't work yet.",
                 variant: "destructive",
             });
             return;
@@ -66,25 +99,14 @@ export const BYOKOnboarding = ({ onComplete }: BYOKOnboardingProps) => {
 
         setIsSubmitting(true);
         setTimeout(() => {
-            if (groq) localStorage.setItem("user_api_key", groq);
-            if (gemini) localStorage.setItem("gemini_api_key", gemini);
+            // One connection, used by every AI-powered feature: strataxClient
+            // attaches whichever key is stored to all requests.
+            localStorage.setItem(provider === "groq" ? "user_api_key" : "gemini_api_key", key);
 
             setIsSubmitting(false);
-
-            const enginesConnected = groq && gemini ? "both" : groq ? "interview" : "answer";
             toast({
-                title:
-                    enginesConnected === "both"
-                        ? "🚀 All Engines Connected!"
-                        : enginesConnected === "interview"
-                            ? "⚡ Interview Engine Connected!"
-                            : "🧠 Answer Engine Connected!",
-                description:
-                    enginesConnected === "both"
-                        ? "Full platform unlocked. Ready for advanced preparation."
-                        : enginesConnected === "interview"
-                            ? "Questions, Mock, and Search unlocked. Add Answer Engine anytime for advanced answers."
-                            : "Advanced Answer Card unlocked. Add Groq anytime for Questions, Mock Interviews, and Search.",
+                title: provider === "groq" ? "⚡ Connected via Groq" : "🧠 Connected via Gemini",
+                description: "All AI features are unlocked. You can add a second key later in Bridge Settings.",
             });
 
             onComplete();
@@ -246,11 +268,15 @@ export const BYOKOnboarding = ({ onComplete }: BYOKOnboardingProps) => {
                         <Key className="w-3 h-3" />
                         Engine Configuration
                     </div>
+                    {/* Singular, and no "required/optional" split: there is one
+                        field and one key, and it serves every AI feature. The
+                        previous copy described the two-engine setup this
+                        replaced. */}
                     <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">
-                        Connect Your AI Engines
+                        Connect your engine
                     </h2>
                     <p className="text-zinc-400 text-sm max-w-md mx-auto">
-                        Start with Interview Engine (required). Add Answer Engine anytime for advanced features.
+                        One API key unlocks every AI feature — Copilot, Mock Interview, Live Practice and Run Code.
                     </p>
                 </div>
 
@@ -259,67 +285,40 @@ export const BYOKOnboarding = ({ onComplete }: BYOKOnboardingProps) => {
 
                         {/* Center: key form */}
                         <div className="space-y-6">
-                            {/* Interview Engine - Required */}
+                            {/* One engine field. Whichever provider the key
+                                belongs to is detected from its prefix, and the
+                                same connection serves every AI feature. */}
                             <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-orange-500/20">
-                                    <Zap className="w-5 h-5 text-orange-400" />
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-blue-500/20">
+                                        <Zap className="w-5 h-5 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-white text-sm">Connect your engine</h3>
+                                        <p className="text-xs text-zinc-500">One key • Powers every AI feature</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="font-bold text-white text-sm">Interview Engine (Groq)</h3>
-                                    <p className="text-xs text-zinc-500">Required • Questions, Mock, Search</p>
-                                </div>
-                            </div>
-                            <div className="px-2 py-1 rounded-md bg-orange-500/10 border border-orange-500/20">
-                                <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Required</span>
-                            </div>
-                        </div>
 
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Lock className="h-4 w-4 text-zinc-500" />
-                            </div>
-                            <Input
-                                type="password"
-                                placeholder="gsk_..."
-                                className="pl-11 h-12 bg-black/40 border-zinc-800 text-white rounded-xl focus:ring-orange-500/40 focus:border-orange-500/60 transition-all"
-                                value={groqKey}
-                                onChange={(e) => setGroqKey(e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                            {/* Answer Engine - Optional */}
-                            <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-blue-500/20">
-                                    <Brain className="w-5 h-5 text-blue-400" />
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <Lock className="h-4 w-4 text-zinc-500" />
+                                    </div>
+                                    <Input
+                                        type="password"
+                                        placeholder="Paste your API key (gsk_... or AIza...)"
+                                        className="pl-11 h-12 bg-black/40 border-zinc-800 text-white rounded-xl focus:ring-blue-500/40 focus:border-blue-500/60 transition-all"
+                                        value={apiKey}
+                                        onChange={(e) => setApiKey(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+                                    />
                                 </div>
-                                <div>
-                                    <h3 className="font-bold text-white text-sm">Answer Engine (Gemini)</h3>
-                                    <p className="text-xs text-zinc-500">Optional • Advanced Answer Card</p>
-                                </div>
-                            </div>
-                            <div className="px-2 py-1 rounded-md bg-blue-500/10 border border-blue-500/20">
-                                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Optional</span>
-                            </div>
-                        </div>
 
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Lock className="h-4 w-4 text-zinc-500" />
+                                <p className="text-[11px] text-zinc-500 leading-relaxed">
+                                    Groq or Gemini, whichever you have. Both offer a free tier. You can add
+                                    a second key later in Bridge Settings.
+                                </p>
                             </div>
-                            <Input
-                                type="password"
-                                placeholder="AIza... (Add later in Settings)"
-                                className="pl-11 h-12 bg-black/40 border-zinc-800 text-white rounded-xl focus:ring-blue-500/40 focus:border-blue-500/60 transition-all"
-                                value={geminiKey}
-                                onChange={(e) => setGeminiKey(e.target.value)}
-                            />
-                        </div>
-                    </div>
+
                             <div className="pt-2 space-y-3">
                         <div className="flex items-center justify-center gap-2 text-[11px] text-zinc-500">
                             <Globe className="w-3.5 h-3.5" />
@@ -429,15 +428,9 @@ export const BYOKOnboarding = ({ onComplete }: BYOKOnboardingProps) => {
                             onClick={handleSave}
                             className="w-full h-14 bg-white text-black hover:bg-zinc-200 rounded-xl font-bold text-lg shadow-lg transition-all active:scale-[0.98]"
                         >
-                            {isSubmitting ? "Connecting Engines..." : (
+                            {isSubmitting ? "Connecting..." : (
                                 <>
-                                    {groqKey.trim() && geminiKey.trim()
-                                        ? "Connect Both Engines"
-                                        : groqKey.trim()
-                                            ? "Connect Interview Engine"
-                                            : geminiKey.trim()
-                                                ? "Connect Answer Engine"
-                                                : "Connect"}
+                                    Connect
                                     <ArrowRight className="w-5 h-5 ml-2" />
                                 </>
                             )}

@@ -83,7 +83,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { BYOKOnboarding } from "./BYOKOnboarding";
 import { OnboardingOverlay } from "./OnboardingOverlay";
 import { ApiKeySettings } from "./ApiKeySettings";
-import { UnlockAnswerEngine } from "./UnlockAnswerEngine";
 import { AnimatePresence } from "framer-motion";
 import { Key, Settings } from "lucide-react";
 import { PoweredByBadge } from "./PoweredByBadge";
@@ -420,7 +419,6 @@ export const InterviewAssistant = () => {
   };
 
   // Answer Engine unlock dialog
-  const [showUnlockAnswerEngine, setShowUnlockAnswerEngine] = useState(false);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
   // Backend suggestion shown when the user appears to be circling one topic.
   // Cleared on dismissal, on acting on it, and whenever the session changes -
@@ -1078,10 +1076,18 @@ export const InterviewAssistant = () => {
       const guestHasKey = Boolean(
         localStorage.getItem("user_api_key") || localStorage.getItem("gemini_api_key")
       );
+      // Report the truth so the "Key Entry Required" badge shows...
       setHasApiKey(guestHasKey);
-      // No account, so there is no per-account tour to run; the key is the gate.
       setShowOnboardingTour(false);
-      setShowKeyOnboarding(!guestHasKey);
+      // ...but do not open the key dialog on arrival. "Start free" leading
+      // straight into a full-screen "Connect Your Engines" wall is a worse first
+      // impression than the 401 it replaced: the visitor is asked to go and
+      // register with a provider before seeing anything at all.
+      //
+      // The prompt instead arrives just in time, when they actually try
+      // something that needs a key -- see the `byok:required` handler below,
+      // which the backend's 401 already triggers.
+      setShowKeyOnboarding(false);
       return;
     }
 
@@ -1143,7 +1149,19 @@ export const InterviewAssistant = () => {
     if (typeof window === 'undefined') return;
 
     const onByokRequired = () => {
-      if (!user || authLoading) return;
+      if (authLoading) return;
+
+      // Guests used to be skipped here (`if (!user) return`), which was fine
+      // while anonymous traffic ran on server keys -- they never saw this 401.
+      // They do now, and skipping them meant the request failed with no prompt
+      // and no explanation. They get the full BYOK dialog instead of Bridge
+      // Settings because it explains what the keys are for and links to the
+      // demo, which is what someone seeing this for the first time needs.
+      if (!user) {
+        setShowKeyOnboarding(true);
+        return;
+      }
+
       setBridgeSettingsOpen(true);
       toast({
         title: 'API key required',
@@ -4349,15 +4367,10 @@ export const InterviewAssistant = () => {
         )}
       </AnimatePresence>
 
-      {/* Answer Engine Unlock Dialog */}
-      <UnlockAnswerEngine
-        open={showUnlockAnswerEngine}
-        onClose={() => setShowUnlockAnswerEngine(false)}
-        onUnlock={() => {
-          // Refresh any state that depends on Gemini key
-          setShowUnlockAnswerEngine(false);
-        }}
-      />
+      {/* The per-feature "unlock Answer Engine" dialog lived here. It was
+          already unreachable -- nothing ever opened it -- and a second,
+          provider-specific key prompt is exactly what the single-field
+          connection replaces. One key now serves every AI feature. */}
 
       <input
         ref={profileInputRef}
