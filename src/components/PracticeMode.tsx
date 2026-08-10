@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
@@ -107,6 +107,8 @@ import {
   Fingerprint,
   Briefcase,
   Compass,
+  Minus,
+  ChevronUp,
 } from 'lucide-react';
 import RoundSelection from './RoundSelection';
 import {
@@ -481,6 +483,28 @@ const buildPracticeQuestionStateKey = (
 };
 
 const PRACTICE_STRATEGY_DEBUG_STORAGE_KEY = 'practice_strategy_debug';
+/**
+ * Camera constraints for the proctoring preview.
+ *
+ * This was a bare `{ video: true }`, which lets the browser pick -- and it
+ * often picks a low or variable frame rate, or a resolution far larger than a
+ * 13rem preview needs, both of which read as a choppy feed. Asking for a
+ * modest size at a steady 30fps is cheaper *and* smoother, and `ideal` keeps
+ * it a hint so a webcam that cannot honour it still opens.
+ */
+const PRACTICE_CAMERA_CONSTRAINTS: MediaStreamConstraints = {
+  video: {
+    width: { ideal: 640 },
+    height: { ideal: 480 },
+    frameRate: { ideal: 30, min: 15 },
+    facingMode: 'user',
+  },
+  audio: false,
+};
+
+const FACE_PREVIEW_COLLAPSED_KEY = 'practice_face_preview_collapsed';
+const FACE_PREVIEW_POS_KEY = 'practice_face_preview_pos';
+
 const PRACTICE_PROGRESS_REFRESH_HINT_STORAGE_KEY = 'practice_progress_refresh_hint';
 const PRACTICE_PROGRESS_REFRESH_EVENT = 'practice:session-complete';
 
@@ -1558,28 +1582,119 @@ export const PracticeMode = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Camera preview: collapsed state and position, both remembered so the
+  // choice survives a reload mid-interview.
+  const [facePreviewCollapsed, setFacePreviewCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem(FACE_PREVIEW_COLLAPSED_KEY) === '1'; } catch { return false; }
+  });
+  const [facePreviewPos, setFacePreviewPos] = useState<{ x: number; y: number } | null>(() => {
+    try {
+      const raw = localStorage.getItem(FACE_PREVIEW_POS_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return typeof parsed?.x === 'number' && typeof parsed?.y === 'number' ? parsed : null;
+    } catch { return null; }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem(FACE_PREVIEW_COLLAPSED_KEY, facePreviewCollapsed ? '1' : '0'); } catch { /* ignore */ }
+  }, [facePreviewCollapsed]);
+
+  // Pointer events rather than mouse events, so the panel drags with a finger
+  // as well as a cursor. Capture keeps the drag alive when the pointer leaves
+  // the small header while moving quickly.
+  const onFacePreviewDragStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const panel = e.currentTarget.parentElement as HTMLElement | null;
+    if (!panel) return;
+    const host = panel.parentElement as HTMLElement | null;
+    if (!host) return;
+
+    const rect = host.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+
+    const clampToViewport = (x: number, y: number) => ({
+      // Always leave the panel grabbable: never let it be dragged so far that
+      // its header sits off-screen and cannot be reached again.
+      x: Math.min(Math.max(8, x), Math.max(8, window.innerWidth - rect.width - 8)),
+      y: Math.min(Math.max(8, y), Math.max(8, window.innerHeight - 40)),
+    });
+
+    const onMove = (ev: PointerEvent) => {
+      setFacePreviewPos(clampToViewport(ev.clientX - offsetX, ev.clientY - offsetY));
+    };
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      setFacePreviewPos((pos) => {
+        if (pos) {
+          try { localStorage.setItem(FACE_PREVIEW_POS_KEY, JSON.stringify(pos)); } catch { /* ignore */ }
+        }
+        return pos;
+      });
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  }, []);
+
+  // A window that shrank while the panel was parked near an edge would leave
+  // it off-screen and unreachable.
+  useEffect(() => {
+    const onResize = () => {
+      setFacePreviewPos((pos) => {
+        if (!pos) return pos;
+        return {
+          x: Math.min(pos.x, Math.max(8, window.innerWidth - 80)),
+          y: Math.min(pos.y, Math.max(8, window.innerHeight - 40)),
+        };
+      });
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   useEffect(() => {
     const el = facePreviewVideoRef.current;
     if (!el) return;
 
-    try {
-      (el as any).srcObject = cameraPreviewStream ?? null;
-    } catch {
-      // ignore
+    // Only touch srcObject when the stream genuinely changed. Re-assigning the
+    // same MediaStream tears the element's pipeline down and back up, and this
+    // effect also ran on `sessionId` and `phase` -- so the preview visibly
+    // stuttered and re-buffered at every phase transition of the interview,
+    // which is most of what "the camera isn't smooth" was.
+    const next = cameraPreviewStream ?? null;
+    if ((el as any).srcObject !== next) {
+      try {
+        (el as any).srcObject = next;
+      } catch {
+        // ignore
+      }
     }
 
-    if (cameraPreviewStream) {
+    if (cameraPreviewStream && el.paused) {
       el.muted = true;
       el.playsInline = true;
       void el.play().catch(() => {
         // ignore
       });
     }
-  }, [cameraPreviewStream, sessionId, phase]);
+  }, [cameraPreviewStream]);
 
   const renderFacePreview = () => {
     const show = !!sessionId && !!cameraPreviewStream && phase !== 'welcome' && phase !== 'setup' && phase !== 'round-selection';
     if (!show) return null;
+
+    // The panel was pinned to `bottom-4 left-4` with no way to move or shrink
+    // it, so it sat over whatever happened to be in that corner for the whole
+    // interview. Position is remembered per browser; the video element itself
+    // is never unmounted while collapsed, because remounting it would restart
+    // the stream and drop the detector's input.
 
     const track = cameraPreviewStream?.getVideoTracks?.()?.[0];
     const trackLive = !!track && track.readyState === 'live';
@@ -1591,17 +1706,42 @@ export const PracticeMode = () => {
     const feedTone: PxTone = isTerminated ? 'critical' : isWarning ? 'caution' : 'accent';
 
     return (
-      <div className="px fixed top-4 left-4 z-[90] px-fade">
+      /* Bottom-left: the interview content is a centred column, and a preview
+         pinned top-left sat straight on top of the question text once the
+         sidebar hides for a live session. Nothing else occupies this corner. */
+      <div
+        className="px fixed z-[90] px-fade"
+        style={
+          facePreviewPos
+            ? { left: facePreviewPos.x, top: facePreviewPos.y }
+            : { left: '1rem', bottom: '1rem' }
+        }
+      >
         <Panel
           brackets
           tone={feedTone === 'accent' ? undefined : feedTone}
-          className="w-[min(15rem,calc(100vw-2rem))] overflow-hidden backdrop-blur-xl"
+          className="w-[min(11rem,calc(100vw-8rem))] sm:w-[min(13rem,calc(100vw-2rem))] overflow-hidden backdrop-blur-xl"
         >
-          <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[hsl(var(--px-line-soft))]">
+          <div
+            onPointerDown={onFacePreviewDragStart}
+            className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[hsl(var(--px-line-soft))] cursor-grab active:cursor-grabbing select-none touch-none"
+            title="Drag to move"
+          >
             <Eyebrow tone={feedTone} icon={Camera}>
               Feed
             </Eyebrow>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => setFacePreviewCollapsed((v) => !v)}
+                className="grid h-4 w-4 place-items-center rounded-sm text-[hsl(var(--px-ink-3))] hover:text-[hsl(var(--px-ink-1))] transition-colors"
+                title={facePreviewCollapsed ? 'Expand camera' : 'Minimise camera'}
+                aria-label={facePreviewCollapsed ? 'Expand camera' : 'Minimise camera'}
+                aria-expanded={!facePreviewCollapsed}
+              >
+                {facePreviewCollapsed ? <ChevronUp className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
+              </button>
               {(seriousViolationCount > 0 || proctoringSnapshot?.remaining_serious_violations !== undefined) && (
                 <span
                   className="px-num text-[0.625rem] font-semibold"
@@ -1617,7 +1757,11 @@ export const PracticeMode = () => {
             </div>
           </div>
 
-          <div className="relative aspect-square w-full bg-black">
+          {/* Hidden, not unmounted: unmounting the <video> would detach the
+              stream and the feed would have to restart on every expand. */}
+          <div
+            className={`relative aspect-square w-full bg-black ${facePreviewCollapsed ? 'hidden' : ''}`}
+          >
             <video
               ref={facePreviewVideoRef}
               className="w-full h-full object-cover -scale-x-100"
@@ -2038,7 +2182,7 @@ export const PracticeMode = () => {
     cameraAcquiringRef.current = true;
     try {
       try { cameraStreamRef.current?.getTracks().forEach((t) => t.stop()); } catch { }
-      cameraStreamRef.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      cameraStreamRef.current = await navigator.mediaDevices.getUserMedia(PRACTICE_CAMERA_CONSTRAINTS);
 
       if (!hasLiveVideo(cameraStreamRef.current)) {
         throw new Error('Camera video track is not live');
@@ -2115,7 +2259,7 @@ export const PracticeMode = () => {
       }
       if (!hasLiveVideo(cameraStreamRef.current)) {
         try { cameraStreamRef.current?.getTracks().forEach((t) => t.stop()); } catch { }
-        cameraStreamRef.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        cameraStreamRef.current = await navigator.mediaDevices.getUserMedia(PRACTICE_CAMERA_CONSTRAINTS);
       }
 
       if (!hasLiveVideo(screenStreamRef.current) || !hasLiveVideo(cameraStreamRef.current)) {
@@ -2296,6 +2440,31 @@ export const PracticeMode = () => {
     setLiveMediaStatus('inactive');
     setLiveMediaInfo('');
   }, [phase]);
+
+  /**
+   * Immersive mode: the app sidebar steps aside the moment the user commits to
+   * a practice path. The gateway is still browsing; everything past it — setup,
+   * round selection, the interview itself — is the session, and it should own
+   * the screen. Distinct from the screen-share lock below, which additionally
+   * *blocks* navigation and only applies once capture is genuinely running.
+   */
+  useEffect(() => {
+    const immersive = !(phase === 'welcome' && welcomeStep === 'gateway');
+    try {
+      window.dispatchEvent(new CustomEvent('app:immersive-mode', { detail: { active: immersive } }));
+    } catch {
+      // ignore
+    }
+  }, [phase, welcomeStep]);
+
+  // Unmounting the tab must release the chrome, whatever phase we were in.
+  useEffect(() => () => {
+    try {
+      window.dispatchEvent(new CustomEvent('app:immersive-mode', { detail: { active: false } }));
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Best-effort navigation lock while screen sharing is active.
   useEffect(() => {
@@ -4883,19 +5052,28 @@ export const PracticeMode = () => {
     const timeElapsedPct = timeLimit > 0 ? Math.max(0, Math.min(100, ((timeLimit - timeRemaining) / timeLimit) * 100)) : 0;
 
     return (
-      <div className="px px-shell min-h-full">
+      /* A voice question is a single screen: it claims the viewport and never
+         scrolls, so the prompt, the timer, and the controls are all in view at
+         once. A coding question needs room for the editor, so that branch keeps
+         its own scroller. */
+      <div className={cx('px px-shell h-full', isCodeQuestion ? 'overflow-y-auto scrollbar-hide' : 'overflow-hidden')}>
         {renderFacePreview()}
         {renderFaceWarningOverlay()}
         {renderProctoringStatusPanel()}
 
-        <div className="px-frame px-frame--mid py-4 sm:py-6 flex flex-col gap-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <div
+          className={cx(
+            'px-frame px-frame--mid py-3 sm:py-4 flex flex-col gap-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
+            !isCodeQuestion && 'h-full',
+          )}
+        >
           {renderGuestGateBanner()}
 
           {/* A drill skips the Live Practice consent card, because that card is
               about screen and camera capture which a drill does not perform. It
               does record the microphone, so say so plainly rather than not at all. */}
           {isDrillSession && (
-            <div className="px-panel px-panel--inset flex items-start gap-2.5 px-3.5 py-2.5">
+            <div className="px-panel px-panel--inset flex items-start gap-2.5 px-3.5 py-2 shrink-0">
               <Mic className="w-3.5 h-3.5 mt-0.5 shrink-0" style={toneColor('accent')} />
               <span className="px-note">
                 Your microphone records this answer so it can be scored. No screen or camera capture.
@@ -4904,8 +5082,8 @@ export const PracticeMode = () => {
           )}
 
           {/* ── Session HUD ── */}
-          <Panel className="overflow-hidden px-fade">
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 py-3">
+          <Panel className="overflow-hidden px-fade shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2.5">
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className="px-num text-[0.625rem] px-ink-3 tracking-[0.14em]">
                   Q{String(currentQuestionNumber).padStart(2, '0')}
@@ -4949,7 +5127,7 @@ export const PracticeMode = () => {
               </div>
             </div>
 
-            <div className="px-4 pb-3">
+            <div className="px-4 pb-2.5">
               <Ticks total={totalQuestions} current={currentQuestionNumber} />
             </div>
           </Panel>
@@ -4987,142 +5165,140 @@ export const PracticeMode = () => {
               key={currentQuestionRenderKey}
               variant="raised"
               brackets={phase === 'recording'}
-              className="overflow-hidden px-rise"
+              className="flex-1 min-h-0 flex flex-col overflow-hidden px-rise"
             >
               <Seam tone={phase === 'recording' ? 'critical' : questionTone} />
-              {/* Prompt and stage sit side by side once there is room. Stacked,
-                  the stage stretched to fill the column and opened a dead band
-                  between the question and the controls. */}
-              <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                <div className="px-5 sm:px-6 py-5 border-b lg:border-b-0 lg:border-r border-[hsl(var(--px-line-soft))]">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <Eyebrow tone={questionTone} icon={MessageSquare}>
-                        {currentQuestion?.category ? String(currentQuestion.category).replace(/_/g, ' ') : 'Interview question'}
-                      </Eyebrow>
-                      <h2 className="mt-3 text-[1.0625rem] sm:text-[1.1875rem] font-semibold leading-[1.45] tracking-[-0.012em] px-ink text-pretty">
-                        {deliveredQuestionText || (fullQuestionText ? '…' : 'No question text available')}
-                      </h2>
-                    </div>
 
-                    {enableTTS && (
-                      <PxButton
-                        variant="outline"
-                        iconOnly
-                        size="sm"
-                        aria-label="Replay question audio"
-                        onClick={() => {
-                          if (currentQuestion && sessionId) {
-                            // Replay audio logic here
-                          }
-                        }}
-                        disabled={isPlayingAudio}
-                      >
-                        {isPlayingAudio ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                      </PxButton>
-                    )}
+              {/* Prompt block — fixed to its content; the stage takes the slack. */}
+              <div className="shrink-0 px-5 sm:px-7 pt-4 pb-4 border-b border-[hsl(var(--px-line-soft))]">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <Eyebrow tone={questionTone} icon={MessageSquare}>
+                      {currentQuestion?.category ? String(currentQuestion.category).replace(/_/g, ' ') : 'Interview question'}
+                    </Eyebrow>
+                    <h2 className="mt-2.5 text-[1.0625rem] sm:text-[1.1875rem] font-semibold leading-[1.45] tracking-[-0.012em] px-ink text-pretty max-w-3xl">
+                      {deliveredQuestionText || (fullQuestionText ? '…' : 'No question text available')}
+                    </h2>
                   </div>
 
-                  {/* Time budget reads as a burn-down bar while recording. */}
-                  {timeLimit > 0 && (
-                    <div className="mt-5 flex items-center gap-3">
-                      <span className="px-eyebrow shrink-0">Time budget</span>
-                      <Meter
-                        value={phase === 'recording' ? 100 - timeElapsedPct : 100}
-                        tone={phase === 'recording' ? timerTone : 'neutral'}
-                        className="flex-1"
-                      />
-                      <span className="px-num text-[0.6875rem] px-ink-3 shrink-0">{timeLimit}s</span>
+                  {enableTTS && (
+                    <PxButton
+                      variant="outline"
+                      iconOnly
+                      size="sm"
+                      aria-label="Replay question audio"
+                      onClick={() => {
+                        if (currentQuestion && sessionId) {
+                          // Replay audio logic here
+                        }
+                      }}
+                      disabled={isPlayingAudio}
+                    >
+                      {isPlayingAudio ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    </PxButton>
+                  )}
+                </div>
+
+                {/* Time budget reads as a burn-down bar while recording. */}
+                {timeLimit > 0 && (
+                  <div className="mt-4 flex items-center gap-3">
+                    <span className="px-eyebrow shrink-0">Time budget</span>
+                    <Meter
+                      value={phase === 'recording' ? 100 - timeElapsedPct : 100}
+                      tone={phase === 'recording' ? timerTone : 'neutral'}
+                      className="flex-1"
+                    />
+                    <span className="px-num text-[0.6875rem] px-ink-3 shrink-0">{timeLimit}s</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Stage — absorbs whatever height is left, centred within it. */}
+              <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex flex-col items-center justify-center gap-4 px-5 py-5">
+                {phase === 'recording' ? (
+                  <>
+                    {/* Live waveform, driven by the analyser's level. */}
+                    <div className="px-wave" style={{ ['--px-wave-hue' as string]: toneVar('critical') }}>
+                      {[...Array(19)].map((_, i) => {
+                        const centre = 9;
+                        const position = Math.abs(i - centre) / centre;
+                        const heightMultiplier = (1 - position * 0.55) * audioLevel;
+                        const height = 4 + (84 - 4) * Math.max(0, heightMultiplier);
+                        return (
+                          <span
+                            key={i}
+                            className="px-wave__bar"
+                            style={{ height: `${height}px`, opacity: 0.45 + audioLevel * 0.55 }}
+                          />
+                        );
+                      })}
                     </div>
-                  )}
-                </div>
 
-                <div className="flex flex-col items-center justify-center gap-5 px-5 py-8 sm:py-10">
-                  {phase === 'recording' ? (
-                    <>
-                      {/* Live waveform, driven by the analyser's level. */}
-                      <div className="px-wave" style={{ ['--px-wave-hue' as string]: toneVar('critical') }}>
-                        {[...Array(19)].map((_, i) => {
-                          const centre = 9;
-                          const position = Math.abs(i - centre) / centre;
-                          const heightMultiplier = (1 - position * 0.55) * audioLevel;
-                          const height = 4 + (84 - 4) * Math.max(0, heightMultiplier);
-                          return (
-                            <span
-                              key={i}
-                              className="px-wave__bar"
-                              style={{ height: `${height}px`, opacity: 0.45 + audioLevel * 0.55 }}
-                            />
-                          );
-                        })}
-                      </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <span
+                        className="inline-flex items-center gap-2 px-3.5 h-8 rounded-full border px-num text-[0.875rem] font-semibold"
+                        style={{
+                          color: `hsl(${toneVar('critical')})`,
+                          borderColor: `hsl(${toneVar('critical')} / 0.36)`,
+                          background: `hsl(${toneVar('critical')} / 0.1)`,
+                        }}
+                      >
+                        <StatusDot tone="critical" live />
+                        REC {formatTime(recordingTime)}
+                      </span>
+                      <h3 className="px-title">Recording your answer</h3>
+                      <p className="px-body text-center max-w-sm">
+                        Speak clearly and at a natural pace. Stop when you have finished your point.
+                      </p>
+                    </div>
 
-                      <div className="flex flex-col items-center gap-2.5">
-                        <span
-                          className="inline-flex items-center gap-2 px-3.5 h-8 rounded-full border px-num text-[0.875rem] font-semibold"
-                          style={{
-                            color: `hsl(${toneVar('critical')})`,
-                            borderColor: `hsl(${toneVar('critical')} / 0.36)`,
-                            background: `hsl(${toneVar('critical')} / 0.1)`,
-                          }}
-                        >
-                          <StatusDot tone="critical" live />
-                          REC {formatTime(recordingTime)}
-                        </span>
-                        <h3 className="px-title">Recording your answer</h3>
-                        <p className="px-body text-center max-w-sm">
-                          Speak clearly and at a natural pace. Stop when you have finished your point.
-                        </p>
-                      </div>
+                    <PxButton variant="danger" size="lg" onClick={handleStopRecording} disabled={isProcessing}>
+                      <MicOff className="w-4 h-4" />
+                      Stop &amp; Submit
+                    </PxButton>
+                  </>
+                ) : (isPlayingAudio || isAudioLoading) ? (
+                  <>
+                    <div className="px-orb" style={{ ['--px-orb-hue' as string]: toneVar('neural'), ['--px-orb-size' as string]: '6.5rem' }}>
+                      <Volume2 className="w-10 h-10" />
+                    </div>
 
-                      <PxButton variant="danger" size="lg" onClick={handleStopRecording} disabled={isProcessing}>
-                        <MicOff className="w-4 h-4" />
-                        Stop &amp; Submit
-                      </PxButton>
-                    </>
-                  ) : (isPlayingAudio || isAudioLoading) ? (
-                    <>
-                      <div className="px-orb" style={{ ['--px-orb-hue' as string]: toneVar('neural') }}>
-                        <Volume2 className="w-11 h-11" />
-                      </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <Chip tone="neural" icon={Bot}>
+                        Interviewer speaking
+                      </Chip>
+                      <h3 className="px-title">Listen to the question</h3>
+                      <p className="px-body text-center max-w-sm">
+                        The AI interviewer is reading the question aloud. Recording opens as soon as it finishes.
+                      </p>
+                    </div>
 
-                      <div className="flex flex-col items-center gap-2.5">
-                        <Chip tone="neural" icon={Bot}>
-                          Interviewer speaking
-                        </Chip>
-                        <h3 className="px-title">Listen to the question</h3>
-                        <p className="px-body text-center max-w-sm">
-                          The AI interviewer is reading the question aloud. Recording opens as soon as it finishes.
-                        </p>
-                      </div>
+                    <div className="w-40">
+                      <div className="px-sweep" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="px-orb" style={{ ['--px-orb-size' as string]: '6.5rem' }}>
+                      <Mic className="w-10 h-10" />
+                    </div>
 
-                      <div className="w-40">
-                        <div className="px-sweep" />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="px-orb">
-                        <Mic className="w-11 h-11" />
-                      </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <Eyebrow tone="accent">Standing by</Eyebrow>
+                      <h3 className="px-title">Ready to answer</h3>
+                      <p className="px-body text-center max-w-sm">
+                        {autoStartVoiceRecording
+                          ? 'Recording starts on its own once the question is ready. The timer begins with the recording.'
+                          : 'Start recording when you are ready. The timer begins with the recording, not before.'}
+                      </p>
+                    </div>
 
-                      <div className="flex flex-col items-center gap-2.5">
-                        <Eyebrow tone="accent">Standing by</Eyebrow>
-                        <h3 className="px-title">Ready to answer</h3>
-                        <p className="px-body text-center max-w-sm">
-                          {autoStartVoiceRecording
-                            ? 'Recording starts on its own once the question is ready. The timer begins with the recording.'
-                            : 'Start recording when you are ready. The timer begins with the recording, not before.'}
-                        </p>
-                      </div>
-
-                      <PxButton variant="primary" size="lg" onClick={handleStartRecording} disabled={isProcessing}>
-                        <Mic className="w-4 h-4" />
-                        Start Recording
-                      </PxButton>
-                    </>
-                  )}
-                </div>
+                    <PxButton variant="primary" size="lg" onClick={handleStartRecording} disabled={isProcessing}>
+                      <Mic className="w-4 h-4" />
+                      Start Recording
+                    </PxButton>
+                  </>
+                )}
               </div>
             </Panel>
           )}

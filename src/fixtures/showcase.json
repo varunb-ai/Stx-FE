@@ -1,0 +1,96 @@
+{
+  "_meta": {
+    "captured_at": "2026-08-10T06:09:11.491495+00:00",
+    "note": "Real product output captured once by scripts/capture_demo.py. Copilot, mirror and code critique are genuine LLM responses; the practice score is computed by the deterministic scoring engine (no LLM). Served statically so demo visitors never trigger a provider request."
+  },
+  "practice": {
+    "overall_score": 92.4,
+    "dimension_scores": {
+      "correctness": 94,
+      "delivery": 94,
+      "clarity": 88.8,
+      "structure": 71
+    },
+    "measured_dimensions": [
+      "correctness",
+      "delivery",
+      "clarity",
+      "structure"
+    ],
+    "why": [
+      "Correctness avg: 94/100",
+      "Delivery avg: 94/100 (fillers=0, overtalked=0)",
+      "Clarity avg: 89/100 (avg_wpm=148)",
+      "Structure avg: 71/100"
+    ],
+    "improvement_plan": [
+      "Use explicit structure: 'First…, Second…, Finally…' in every answer.",
+      "Target ~150 WPM: slow down on key points, speed up on setup.",
+      "After each question, restate the problem and give a crisp 2–3 step solution before details."
+    ],
+    "weights_applied": {
+      "correctness": 0.45,
+      "delivery": 0.25,
+      "clarity": 0.15,
+      "structure": 0.15
+    },
+    "unmeasured_dimensions": [],
+    "per_answer": [
+      {
+        "question_id": 1,
+        "overall_score": 88.9,
+        "measured_dimensions": [
+          "correctness",
+          "delivery",
+          "clarity",
+          "structure"
+        ]
+      },
+      {
+        "question_id": 2,
+        "overall_score": 96,
+        "measured_dimensions": [
+          "correctness"
+        ]
+      }
+    ]
+  },
+  "copilot": {
+    "question": "How would you design a rate limiter for a distributed API gateway?",
+    "answer": "To design a rate limiter for a distributed API gateway, we must first define the requirements: are we targeting a specific user ID, IP, or API key? We must also balance strict consistency (preventing any over-limit requests) against latency (ensuring the rate check doesn't bottleneck the gateway).\n\n- Use a **centralized cache** like Redis to maintain counters across distributed gateway nodes.\n- Implement the **Fixed Window** algorithm for simplicity, or **Token Bucket** to allow for bursts of traffic.\n- Use a **Lua script** or Redis transaction to perform the read-increment-check operation atomically to prevent race conditions.\n\n### **Architectural Flow**\n\n1.  **Request Arrival:** A request hits the API Gateway.\n2.  **Identity Extraction:** The gateway extracts the identifier (e.g., API Key) from the header or token.\n3.  **Counter Check:** The gateway sends a request to the distributed Redis store to check if the current count exceeds the limit.\n4.  **Decision:** If below the limit, the count is incremented and the request proceeds; if over, the gateway returns `429 Too Many Requests`.\n\n### **Scaling and Reliability**\n\n- **Latency:** To minimize network overhead, use local in-memory caches (e.g., Caffeine) for a \"best effort\" limit, periodically syncing with Redis.\n- **Fail-open vs. Fail-closed:** Decide if the system should allow traffic if Redis is unreachable; usually, you **fail-open** to prioritize availability over strict enforcement.\n- **Sharding:** If the throughput is extreme, shard the Redis keys based on the User ID to distribute the load across multiple Redis instances.\n\n**Trade-offs:** A purely centralized approach via Redis provides high accuracy but introduces a network hop per request, increasing latency. Implementing local caches improves speed but risks \"drift\" where users slightly exceed limits because nodes aren't perfectly synced.\n\n**Trap:** Candidates often forget to mention how to handle race conditions in the cache layer; always emphasize that the read-modify-write cycle must be atomic to prevent multiple concurrent requests from slipping through the limit.\n\n**Follow-up probe:** How would you handle a \"distributed denial of service\" (DDoS) attack where attackers rotate IP addresses to bypass your per-IP rate limits?\n\nThink about how you would handle clock skew if you were implementing a sliding window log that relies on timestamps.",
+    "truncated": false
+  },
+  "mirror": {
+    "question": "Tell me about a time you disagreed with a senior engineer.",
+    "draft": "I disagreed with my tech lead about using microservices. I thought it was too complex for our team size. I told him and eventually we kept the monolith. It worked out fine.",
+    "report": "## Interview Mirror (Conflict Resolution and Communication)\n\nLow confidence (tentative): The user provided a brief example of disagreeing with a senior engineer, but the details are limited. Assessment tentative (limited confidence); gaps are provisional.\n\n**Strengths**\n- Provided a specific example of a disagreement\n- Described the outcome of the situation\n\n**Gaps to Close**\n- Missing core concept: description of the situation\n- Missing core concept: reason for disagreement\n\n**Red Flags**\n- Brief and lacking in depth, may indicate a lack of self-awareness or accountability\n\n**Likely Follow-ups**\n- What was the most challenging part of the conversation?\n- How did you ensure your concerns were heard?\n- What did you learn from the experience?\n\n**Upgrade Lines (say this instead)**\n- I approached the conversation by focusing on the technical aspects and expressing my concerns in a respectful manner.\n- Through this experience, I learned the importance of active listening and considering multiple perspectives in a technical discussion.\n\nConfidence: 45%\n",
+    "truncated": false
+  },
+  "code": {
+    "problem": "Two Sum",
+    "language": "python",
+    "code": "def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target - n], i]\n        seen[n] = i\n    return []\n",
+    "critique": "Summary: This implementation is the idiomatic and optimal solution for the classic Two Sum problem. It effectively uses a hash map to reduce the search complexity from quadratic to linear time.\n\nApproach: The algorithm utilizes a hash map (dictionary in Python) to perform a single pass over the input array. For each element `n`, it calculates the `complement` (`target - n`) and checks if that value already exists in the `seen` dictionary. If found, the indices of the complement and the current element are returned; if not, the current element and its index are stored in the dictionary for future lookups.\n\nStrengths:\n- Optimal time complexity: Achieving $O(n)$ by leveraging the average $O(1)$ lookup time of hash tables.\n- Concise and readable: The code follows Pythonic conventions, making it easy to maintain and understand.\n- Single-pass efficiency: It avoids unnecessary iterations or pre-processing by building the lookup table on the fly.\n\nWeaknesses:\n- Space-time trade-off: The solution requires $O(n)$ extra space to store the dictionary, which could be an issue in extremely memory-constrained environments.\n- Lack of type hinting: While functional, the code lacks PEP 484 type annotations, which would improve self-documentation and IDE support in larger projects.\n\nRecommendations:\n- Add type hints to the function signature (e.g., `def two_sum(nums: list[int], target: int) -> list[int]:`) to improve code robustness.\n- Consider adding a docstring to define the expected behavior for edge cases, such as an empty input list or cases where no solution exists.\n\nScores: {\"correctness\": 10, \"optimization\": 10, \"approach_explanation\": 9, \"complexity_discussion\": 9, \"edge_cases_testing\": 8, \"total\": 9.2}",
+    "scores": {
+      "correctness": 10,
+      "optimization": 10,
+      "approach_explanation": 9,
+      "complexity_discussion": 9,
+      "edge_cases_testing": 8,
+      "total": 9.2
+    },
+    "scores_available": true,
+    "scores_notes": [],
+    "static_signals": {
+      "uses_recursion": false,
+      "uses_memoization": false,
+      "uses_dynamic_programming": false,
+      "loop_nesting_depth": 1,
+      "uses_slicing_heavily": false,
+      "uses_list_or_set_comprehension": false,
+      "function_count": 1,
+      "comment_density": 0,
+      "estimated_time_complexity_hint": null
+    }
+  }
+}

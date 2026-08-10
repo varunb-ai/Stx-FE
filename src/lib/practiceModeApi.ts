@@ -30,13 +30,32 @@ export type ProctoringEventType =
   | 'user_left_frame';
 
 // New proctoring event contract (session-scoped audit trail)
+/**
+ * Must match `PracticeProctoringEventType` in app/schemas.py exactly.
+ *
+ * `MULTIPLE_FACES_DETECTED` was in this list and is not in that enum, so the
+ * one camera-derived signal the detector produces was rejected with a 422 on
+ * every single occurrence -- face detection ran every two seconds for the whole
+ * interview and every result it found was thrown away. The server calls it
+ * `MULTIPLE_FACES`.
+ */
 export type PracticeSessionProctoringEventType =
   | 'SCREEN_STOPPED'
+  | 'CAMERA_STARTED'
   | 'CAMERA_STOPPED'
+  | 'CAMERA_HEARTBEAT'
   | 'TAB_SWITCH'
+  | 'WINDOW_BLUR'
   | 'WINDOW_MINIMIZED'
+  | 'FACE_MISSING'
+  | 'MULTIPLE_FACES'
+  | 'PHONE_DETECTED'
+  | 'OBJECT_DETECTED'
+  | 'USER_LEFT_FRAME'
+  | 'MONITORING_INTERRUPTED'
+  | 'DISPLAY_SURFACE_MISMATCH'
   | 'SESSION_STARTED_WITH_PROCTORING'
-  | 'MULTIPLE_FACES_DETECTED';
+  | 'SESSION_STARTED_WITHOUT_PROCTORING';
 
 export type ProctoringEventIn = {
   session_id: string;

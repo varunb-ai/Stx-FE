@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stratax AI — Interview Intelligence Platform</title>
-  <meta name="description" content="The AI-powered interview intelligence platform. Real-time answers, adaptive mock interviews, proctored practice, explainable scoring, and resume-aware preparation — all in one place.">
+  <meta name="description" content="Interviews are scored. Now the scoring shows its work. Eight AI modules evaluate every answer you give — spoken, written or executed — and every score decomposes into the evidence that produced it.">
   <link rel="canonical" href="https://www.strataxai.in/" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" type="image/png" href="/icons/stratax-ai-192.png?v=16" />
@@ -20,7 +20,7 @@
   <!-- Open Graph -->
   <meta property="og:url" content="https://www.strataxai.in/" />
   <meta property="og:title" content="Stratax AI — Interview Intelligence Platform" />
-  <meta property="og:description" content="The AI-powered interview intelligence platform. Real-time answers, adaptive mock interviews, proctored practice, and explainable scoring." />
+  <meta property="og:description" content="Interviews are scored. Now the scoring shows its work. Every score decomposes into the evidence that produced it." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Stratax AI" />
   <meta property="og:image" content="https://www.strataxai.in/icons/stratax-ai-512.png?v=16" />
@@ -28,7 +28,7 @@
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Stratax AI — Interview Intelligence Platform" />
-  <meta name="twitter:description" content="The AI-powered interview intelligence platform. Real-time answers, adaptive mock interviews, proctored practice, and explainable scoring." />
+  <meta name="twitter:description" content="Interviews are scored. Now the scoring shows its work. Every score decomposes into the evidence that produced it." />
   <meta name="twitter:image" content="https://www.strataxai.in/icons/stratax-ai-512.png?v=16" />
 
   <!-- Structured Data -->
@@ -38,7 +38,7 @@
     "@type": "WebApplication",
     "name": "Stratax AI",
     "headline": "Stratax AI — Interview Intelligence Platform",
-    "description": "The AI-powered interview intelligence platform. Real-time answers, adaptive mock interviews, proctored practice, explainable scoring, and resume-aware preparation.",
+    "description": "Eight AI modules evaluate every answer you give — spoken, written or executed — and every score decomposes into the evidence that produced it.",
     "url": "https://www.strataxai.in/",
     "applicationCategory": "Education",
     "author": { "@type": "Organization", "name": "Stratax AI", "url": "https://www.strataxai.in" },
@@ -54,2024 +54,2165 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    /* ═══════════════════════════════════════════
-       DESIGN TOKENS
-       ═══════════════════════════════════════════ */
+  /* ═══════════════════════════════════════════════════════════════════════
+     STRATAX AI — LANDING SURFACE
+     Built against STRATAX_LANDING_EXPERIENCE_DESIGN.md.
+
+     The one idea: strata = layers. The product does not hand you a number,
+     it hands you a column of evidence. So the page does not *describe*
+     explainable scoring — it *performs* it.
+
+     Three laws enforced in this stylesheet:
+       1. Depth is structural. Every surface declares a stratum (S0–S5).
+          Z-order carries meaning: raw signal is deep, conclusions surface.
+       2. Motion is causal. Nothing moves because "the page loaded".
+          The signature `rise` is used five times, and only for a conclusion
+          being derived from evidence.
+       3. Restraint. One accent hue. Semantic colour only where it means
+          something. Type does the work.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  :root {
+    /* ══ BEDROCK / DEPTH — unchanged from the established surface ══ */
+    --bedrock:       hsl(220 13% 9%);
+    --bedrock-2:     hsl(220 13% 7%);
+    --substrate:     hsl(220 13% 11%);
+    --sediment:      hsl(220 13% 13%);
+    --sediment-2:    hsl(220 12% 17%);
+
+    /* ══ SIGNAL — the only accent. Emissive: used for live or derived things ══ */
+    --signal:        hsl(213 96% 64%);
+    --signal-bright: hsl(211 100% 74%);
+    --signal-deep:   hsl(217 90% 52%);
+    --signal-dim:    hsl(213 96% 64% / 0.10);
+    --signal-glow:   hsl(213 96% 64% / 0.20);
+    --signal-trace:  hsl(207 100% 80%);
+
+    /* ══ EVALUATIVE — meaning only, never decoration ══ */
+    --band-strong:   hsl(152 69% 45%);
+    --band-mid:      hsl(38 92% 60%);
+    --band-low:      hsl(14 88% 60%);
+
+    /* ══ INK ══ */
+    --ink:           hsl(220 30% 97%);
+    --ink-2:         hsl(220 14% 76%);
+    --ink-3:         hsl(220 10% 56%);
+    --ink-4:         hsl(220 9% 40%);
+
+    /* ══ EDGES — the lit top edge is the "thickness" cue ══ */
+    --edge:          hsl(220 13% 20%);
+    --edge-lit:      hsl(220 13% 28%);
+    --edge-subtle:   hsl(220 13% 15%);
+
+    --font-display:  'Outfit', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-mono:     'JetBrains Mono', ui-monospace, 'Fira Code', monospace;
+
+    --t-hero:  clamp(2.5rem, 5.2vw, 4.5rem);
+    --t-h2:    clamp(1.9rem, 3.6vw, 3rem);
+    --t-h3:    clamp(1.1rem, 1.6vw, 1.35rem);
+    --t-lead:  clamp(1rem, 1.4vw, 1.22rem);
+
+    --tr-wide: 0.16em;
+    --measure: 66ch;
+    --content-max: 1320px;
+    --gutter: clamp(1.15rem, 4vw, 3rem);
+
+    --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-xl: 24px; --r-full: 999px;
+
+    --elev-s2: 0 1px 2px hsl(220 40% 3% / .40);
+    --elev-s3: 0 1px 2px hsl(220 40% 3% / .50), 0 8px 24px -8px hsl(220 40% 3% / .45);
+    --elev-s4: 0 2px 4px hsl(220 40% 3% / .55), 0 16px 40px -12px hsl(220 40% 3% / .50);
+    --elev-s5: 0 4px 8px hsl(220 40% 3% / .60), 0 28px 64px -16px hsl(220 40% 3% / .55);
+
+    --m-instant: 90ms; --m-quick: 180ms; --m-base: 320ms;
+    --m-deliberate: 620ms; --m-rise: 1400ms;
+    --e-out:   cubic-bezier(.22, 1, .36, 1);
+    --e-rise:  cubic-bezier(.19, 1, .22, 1);
+    --e-sharp: cubic-bezier(.4, 0, .2, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
     :root {
-      --bg:            hsl(220, 13%, 9%);
-      --bg-card:       hsl(220, 13%, 11%);
-      --bg-surface:    hsl(220, 13%, 13%);
-      --border:        hsl(220, 13%, 18%);
-      --border-subtle: hsl(220, 13%, 15%);
-      --text:          hsl(220, 13%, 93%);
-      --text-secondary:hsl(220, 9%, 65%);
-      --text-muted:    hsl(220, 9%, 45%);
-      --primary:       hsl(217, 91%, 65%);
-      --primary-dim:   hsla(217, 91%, 65%, 0.1);
-      --primary-glow:  hsla(217, 91%, 65%, 0.15);
-      --purple:        hsl(250, 80%, 65%);
-      --green:         hsl(152, 69%, 45%);
-      --green-dim:     hsla(152, 69%, 45%, 0.1);
-      --amber:         hsl(38, 92%, 60%);
-      --amber-dim:     hsla(38, 92%, 60%, 0.1);
-      --red:           hsl(0, 84%, 60%);
-      --font-sans:     'Outfit', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      --font-mono:     'JetBrains Mono', 'Fira Code', monospace;
+      --m-instant: 1ms; --m-quick: 1ms; --m-base: 120ms;
+      --m-deliberate: 120ms; --m-rise: 120ms;
     }
+  }
 
-    /* ═══════════════════════════════════════════
-       RESET & BASE
-       ═══════════════════════════════════════════ */
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; scroll-padding-top: 80px; }
-    body {
-      font-family: var(--font-sans);
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-      cursor: default;
-    }
-    a { color: inherit; text-decoration: none; }
-    ::selection { background: var(--primary); color: #fff; }
-    *::-webkit-scrollbar { width: 6px; }
-    *::-webkit-scrollbar-track { background: transparent; }
-    *::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  /* ─────────────────────────────  RESET  ───────────────────────────── */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html {
+    background: var(--bedrock);
+    scroll-behavior: smooth;
+    scroll-padding-top: 88px;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    font-family: var(--font-display);
+    background: transparent;
+    color: var(--ink-2);
+    font-size: 1rem;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+  h1, h2, h3, h4 { color: var(--ink); font-weight: 600; line-height: 1.14; letter-spacing: -0.03em; text-wrap: balance; }
+  p { text-wrap: pretty; }
+  ::selection { background: var(--signal); color: #06101f; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bedrock-2); }
+  ::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--edge-lit); }
 
-    /* ═══════════════════════════════════════════
-       GLOBAL BACKGROUND LAYERS
-       ═══════════════════════════════════════════ */
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
 
-    /* Noise grain overlay */
-    .noise {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      opacity: 0.035;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-      background-repeat: repeat;
-      background-size: 256px 256px;
-    }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .skip {
+    position: absolute; top: -100px; left: var(--gutter); z-index: 999;
+    background: var(--signal); color: #06101f; font-weight: 700;
+    padding: 12px 20px; border-radius: var(--r-md);
+    transition: top var(--m-quick) var(--e-sharp);
+  }
+  .skip:focus { top: 14px; }
 
-    /* Animated gradient mesh background */
-    .aurora {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      overflow: hidden;
-    }
-    .aurora-orb {
-      position: absolute; border-radius: 50%;
-      filter: blur(100px);
-      animation: auroraFloat 20s ease-in-out infinite;
-      will-change: transform;
-    }
-    .aurora-orb:nth-child(1) {
-      width: 600px; height: 600px;
-      top: -15%; left: 20%;
-      background: radial-gradient(circle, hsla(217,91%,65%,0.12), transparent 70%);
-      animation-duration: 25s;
-    }
-    .aurora-orb:nth-child(2) {
-      width: 500px; height: 500px;
-      top: 30%; right: -10%;
-      background: radial-gradient(circle, hsla(250,80%,65%,0.1), transparent 70%);
-      animation-duration: 30s; animation-delay: -5s;
-    }
-    .aurora-orb:nth-child(3) {
-      width: 400px; height: 400px;
-      bottom: 10%; left: -5%;
-      background: radial-gradient(circle, hsla(152,69%,45%,0.08), transparent 70%);
-      animation-duration: 22s; animation-delay: -10s;
-    }
-    @keyframes auroraFloat {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      25%      { transform: translate(40px, -30px) scale(1.05); }
-      50%      { transform: translate(-20px, 20px) scale(0.95); }
-      75%      { transform: translate(30px, 40px) scale(1.02); }
-    }
+  /* ═══════════════  S0 — THE STRATA FIELD  ═══════════════
+     A near-still cross-section of layered sediment: horizontal bands,
+     a measured coordinate grid and one accent bloom. It reads as
+     instrumentation (a core sample, a seismograph) rather than sci-fi,
+     and it renders with zero JS and zero canvas. */
+  .field { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
 
-    /* Dot grid */
-    .dot-grid {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background-image: radial-gradient(circle, hsla(220,13%,30%,0.15) 1px, transparent 1px);
-      background-size: 32px 32px;
-    }
+  .field-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, hsl(213 60% 70% / 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(213 60% 70% / 0.045) 1px, transparent 1px);
+    background-size: clamp(54px, 6vw, 88px) clamp(54px, 6vw, 88px);
+    -webkit-mask-image: radial-gradient(125% 78% at 50% 0%, #000 26%, transparent 100%);
+            mask-image: radial-gradient(125% 78% at 50% 0%, #000 26%, transparent 100%);
+    translate: calc((var(--mx, .5) - .5) * 12px) calc((var(--my, .5) - .5) * 8px);
+    transition: translate 1200ms var(--e-out);
+  }
 
-    /* Mouse-following glow */
-    .cursor-glow {
-      position: fixed; z-index: 0; pointer-events: none;
-      width: 500px; height: 500px;
-      border-radius: 50%;
-      background: radial-gradient(circle, hsla(217,91%,65%,0.07), transparent 70%);
-      transform: translate(-50%, -50%);
-      transition: left 0.3s ease-out, top 0.3s ease-out;
-      will-change: left, top;
-    }
+  /* Sedimentary banding — the name, drawn. */
+  .field-strata {
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(
+      180deg,
+      hsl(220 20% 40% / 0.030) 0px,
+      hsl(220 20% 40% / 0.030) 1px,
+      transparent 1px,
+      transparent 7px,
+      hsl(220 20% 40% / 0.016) 7px,
+      hsl(220 20% 40% / 0.016) 8px,
+      transparent 8px,
+      transparent 22px
+    );
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 18%, #000 62%, transparent 92%);
+            mask-image: linear-gradient(180deg, transparent, #000 18%, #000 62%, transparent 92%);
+    opacity: .8;
+  }
 
-    /* Particle canvas */
-    #particles {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    }
+  .field-bloom {
+    position: absolute; top: -24vh; left: 50%;
+    width: min(1180px, 148vw); height: min(660px, 70vh);
+    transform: translateX(-50%);
+    border-radius: 50%; filter: blur(96px);
+    background: radial-gradient(60% 60% at 50% 40%, hsl(213 96% 60% / .16) 0%, transparent 70%);
+  }
+  .field-bloom-2 {
+    position: absolute; bottom: -18vh; right: -12vw;
+    width: 46vw; height: 46vw; max-width: 720px; max-height: 720px;
+    border-radius: 50%; filter: blur(110px); opacity: .5;
+    background: radial-gradient(circle, hsl(217 90% 52% / .16), transparent 68%);
+    translate: calc((var(--mx, .5) - .5) * 24px) calc((var(--my, .5) - .5) * 18px);
+    transition: translate 1100ms var(--e-out);
+  }
 
-    /* ═══════════════════════════════════════════
-       KEYFRAMES
-       ═══════════════════════════════════════════ */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(40px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-    @keyframes gradientShift {
-      0%, 100% { background-position: 0% 50%; }
-      50%      { background-position: 100% 50%; }
-    }
-    @keyframes float {
-      0%, 100% { transform: rotateX(4deg) translateY(0); }
-      50%      { transform: rotateX(4deg) translateY(-12px); }
-    }
-    @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 20px hsla(217,91%,65%,0.15); }
-      50%      { box-shadow: 0 0 40px hsla(217,91%,65%,0.3), 0 0 80px hsla(217,91%,65%,0.1); }
-    }
-    @keyframes slideRight {
-      from { transform: translateX(0); }
-      to   { transform: translateX(-50%); }
-    }
-    @keyframes textReveal {
-      from { opacity: 0; transform: translateY(100%); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes shimmer {
-      0%   { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
-    }
-    @keyframes spin {
-      to { transform: translate(-50%, -50%) rotate(360deg); }
-    }
+  /* A signal trace rising through the bands: raw input at the bottom,
+     conclusion at the top. One instance, 26s apart. Causal, not ambient —
+     it depicts the product's actual mechanic. */
+  .field-trace {
+    position: absolute; left: 22%; bottom: -10%;
+    width: 1px; height: 34vh;
+    background: linear-gradient(to top, transparent, hsl(207 100% 80% / .5), transparent);
+    opacity: 0;
+    animation: traceRise 26s var(--e-rise) infinite;
+  }
+  .field-trace.t2 { left: 71%; animation-delay: -13s; }
+  @keyframes traceRise {
+    0%   { transform: translateY(0);      opacity: 0; }
+    8%   { opacity: .9; }
+    46%  { opacity: .5; }
+    58%  { transform: translateY(-118vh); opacity: 0; }
+    100% { transform: translateY(-118vh); opacity: 0; }
+  }
 
-    /* Scroll reveals */
-    .reveal {
-      opacity: 0; transform: translateY(40px);
-      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-    .reveal-scale {
-      opacity: 0; transform: scale(0.92);
-      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .reveal-scale.visible { opacity: 1; transform: scale(1); }
-    .reveal-left {
-      opacity: 0; transform: translateX(-60px);
-      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .reveal-left.visible { opacity: 1; transform: translateX(0); }
-    .reveal-right {
-      opacity: 0; transform: translateX(60px);
-      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .reveal-right.visible { opacity: 1; transform: translateX(0); }
-    .rd1 { transition-delay: 0.1s; }
-    .rd2 { transition-delay: 0.2s; }
-    .rd3 { transition-delay: 0.3s; }
-    .rd4 { transition-delay: 0.4s; }
-    .rd5 { transition-delay: 0.5s; }
-    .rd6 { transition-delay: 0.6s; }
+  .field-grain {
+    position: absolute; inset: 0; opacity: .03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+  }
 
-    /* ═══════════════════════════════════════════
-       UTILITY
-       ═══════════════════════════════════════════ */
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-    .section-label {
-      display: inline-flex; align-items: center; gap: 8px;
-      font-size: 12px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.12em; color: var(--primary);
-      padding: 8px 18px; border-radius: 100px;
-      background: var(--primary-dim);
-      border: 1px solid hsla(217,91%,65%,0.15);
-      margin-bottom: 20px;
-    }
-    .section-label svg { width: 14px; height: 14px; }
+  @media (prefers-reduced-motion: reduce) {
+    .field-trace { display: none; }
+  }
 
-    /* ═══════════════════════════════════════════
-       GLASSMORPHISM CARD
-       ═══════════════════════════════════════════ */
-    .glass-card {
-      position: relative;
-      background: hsla(220,13%,11%,0.6);
-      backdrop-filter: blur(20px) saturate(1.5);
-      border: 1px solid hsla(220,13%,25%,0.3);
-      border-radius: 20px;
-      overflow: hidden;
-      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1),
-                  border-color 0.4s, box-shadow 0.4s;
-    }
-    .glass-card::before {
-      content: ''; position: absolute; inset: 0; border-radius: 20px;
-      padding: 1px;
-      background: linear-gradient(135deg, hsla(217,91%,65%,0.2), transparent 40%, transparent 60%, hsla(250,80%,65%,0.15));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor; mask-composite: exclude;
-      opacity: 0; transition: opacity 0.4s;
-      pointer-events: none;
-    }
-    .glass-card:hover::before { opacity: 1; }
-    .glass-card:hover {
-      transform: translateY(-6px);
-      border-color: hsla(217,91%,65%,0.15);
-      box-shadow: 0 25px 50px -15px rgba(0,0,0,0.5),
-                  0 0 40px hsla(217,91%,65%,0.06);
-    }
-    /* Top glow line on hover */
-    .glass-card::after {
-      content: ''; position: absolute; top: 0; left: 0;
-      width: 100%; height: 1px;
-      background: linear-gradient(90deg, transparent, hsla(217,91%,65%,0.4), transparent);
-      opacity: 0; transition: opacity 0.4s;
-    }
-    .glass-card:hover::after { opacity: 1; }
+  /* ═══════════════  SHARED PRIMITIVES  ═══════════════ */
+  .wrap { max-width: var(--content-max); margin-inline: auto; padding-inline: var(--gutter); }
 
-    /* ═══════════════════════════════════════════
-       NAVIGATION
-       ═══════════════════════════════════════════ */
-    .nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      height: 68px; display: flex; align-items: center;
-      background: hsla(220,13%,9%,0.4);
-      backdrop-filter: blur(20px) saturate(1.8);
-      border-bottom: 1px solid hsla(220,13%,25%,0.2);
-      padding: 0 32px;
-      transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
-    }
-    .nav.scrolled {
-      background: hsla(220,13%,9%,0.85);
-      border-bottom-color: hsla(220,13%,25%,0.4);
-      box-shadow: 0 4px 30px rgba(0,0,0,0.3);
-    }
-    .nav-inner {
-      max-width: 1200px; width: 100%; margin: 0 auto;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .nav-logo {
-      display: flex; align-items: center; gap: 10px;
-      font-weight: 800; font-size: 17px; color: var(--text);
-      letter-spacing: -0.02em;
-    }
-    .nav-logo img {
-      width: 32px; height: 32px; border-radius: 8px;
-      box-shadow: 0 0 15px hsla(217,91%,65%,0.3);
-    }
-    .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; margin: 0; padding: 0; }
-    .nav-links a {
-      font-size: 14px; font-weight: 500; color: var(--text-secondary);
-      transition: color 0.2s; position: relative;
-    }
-    .nav-links a::after {
-      content: ''; position: absolute; bottom: -4px; left: 0;
-      width: 0; height: 2px; border-radius: 1px;
-      background: var(--primary); transition: width 0.3s;
-    }
-    .nav-links a:hover { color: var(--text); }
-    .nav-links a:hover::after { width: 100%; }
-    .nav-right { display: flex; align-items: center; gap: 12px; }
-    .nav-cta {
-      padding: 9px 22px; border-radius: 10px; font-size: 14px; font-weight: 700;
-      background: linear-gradient(135deg, var(--primary), var(--purple));
-      color: #fff; border: none; cursor: pointer;
-      transition: all 0.3s; position: relative; overflow: hidden;
-      box-shadow: 0 2px 15px hsla(217,91%,65%,0.3);
-    }
-    .nav-cta::before {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg, hsla(0,0%,100%,0.2), transparent);
-      opacity: 0; transition: opacity 0.3s;
-    }
-    .nav-cta:hover::before { opacity: 1; }
-    .nav-cta:hover {
-      transform: translateY(-1px); color: #fff;
-      box-shadow: 0 4px 25px hsla(217,91%,65%,0.5);
-    }
-    .nav-login {
-      padding: 8px 16px; border-radius: 10px; font-size: 14px; font-weight: 500;
-      color: var(--text-secondary); background: transparent;
-      border: 1px solid var(--border); cursor: pointer; transition: all 0.2s;
-    }
-    .nav-login:hover { color: var(--text); border-color: var(--text-muted); }
-    .mobile-toggle {
-      display: none; background: none; border: 1px solid var(--border);
-      color: var(--text); padding: 8px 12px; border-radius: 10px;
-      font-size: 20px; cursor: pointer; min-height: 44px; min-width: 44px;
-      align-items: center; justify-content: center;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      z-index: 101;
-      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-    }
-    .mobile-toggle:hover { border-color: var(--primary); color: var(--primary); }
-    .nav.menu-open .mobile-toggle {
-      border-color: hsla(220,13%,60%,0.3);
-      background: hsla(220,13%,20%,0.5);
-    }
+  section { position: relative; z-index: 1; }
 
-    /* ═══════════════════════════════════════════
-       HERO
-       ═══════════════════════════════════════════ */
-    .hero {
-      position: relative; z-index: 1;
-      min-height: 100vh;
-      padding: 160px 24px 80px;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center;
-      overflow: hidden;
-    }
-    /* Animated concentric rings */
-    .hero-ring {
-      position: absolute;
-      width: 650px; height: 650px;
-      border-radius: 50%;
-      border: 1px solid hsla(217,91%,65%,0.08);
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-    }
-    .hero-ring::before {
-      content: ''; position: absolute; inset: -60px;
-      border-radius: 50%;
-      border: 1px solid hsla(250,80%,65%,0.06);
-    }
-    .hero-ring::after {
-      content: ''; position: absolute; inset: -120px;
-      border-radius: 50%;
-      border: 1px solid hsla(152,69%,45%,0.04);
-    }
-    /* Rotating conic gradient ring */
-    .hero-ring-glow {
-      position: absolute;
-      width: 600px; height: 600px;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      pointer-events: none;
-      background: conic-gradient(from 0deg, transparent, hsla(217,91%,65%,0.15), transparent, hsla(250,80%,65%,0.1), transparent);
-      animation: spin 12s linear infinite;
-      opacity: 0.4;
-      filter: blur(40px);
-    }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-family: var(--font-mono); font-size: .7rem; font-weight: 600;
+    letter-spacing: var(--tr-wide); text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .eyebrow::before {
+    content: ''; width: 5px; height: 5px; border-radius: 1px;
+    background: var(--signal); rotate: 45deg;
+    box-shadow: 0 0 8px var(--signal-glow);
+  }
 
-    .hero-badge {
-      margin-bottom: 32px;
-      animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) both;
-    }
-    .hero-badge .badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 8px 20px; border-radius: 100px;
-      font-size: 13px; font-weight: 600;
-      background: hsla(217,91%,65%,0.08);
-      color: var(--primary);
-      border: 1px solid hsla(217,91%,65%,0.15);
-      backdrop-filter: blur(10px);
-      animation: pulseGlow 3s ease-in-out infinite;
-    }
-    .hero-badge .badge svg { width: 14px; height: 14px; }
+  .lede {
+    font-size: var(--t-lead); color: var(--ink-2);
+    max-width: var(--measure); line-height: 1.6;
+  }
 
-    .hero h1 {
-      font-size: clamp(44px, 6.5vw, 82px);
-      font-weight: 900; letter-spacing: -0.04em;
-      line-height: 1.05; margin-bottom: 28px;
-      color: var(--text); position: relative;
-    }
-    .hero-line {
-      display: block; overflow: hidden;
-    }
-    .hero-line-inner {
-      display: inline-block;
-      animation: textReveal 0.9s cubic-bezier(0.16,1,0.3,1) both;
-    }
-    .hero-line:nth-child(2) .hero-line-inner { animation-delay: 0.15s; }
-    .gradient-text {
-      background: linear-gradient(135deg, var(--primary), var(--purple), #818cf8, var(--primary));
-      background-size: 300% 300%;
-      animation: gradientShift 6s ease infinite;
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent;
-      position: relative;
-    }
-    /* Shimmer sweep */
-    .gradient-text::after {
-      content: attr(data-text);
-      position: absolute; inset: 0;
-      background: linear-gradient(90deg, transparent 30%, hsla(0,0%,100%,0.15) 50%, transparent 70%);
-      background-size: 200% 100%;
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: shimmer 4s ease-in-out infinite;
-    }
+  /* Sediment: a slab with thickness, lit from above. Not glassmorphism. */
+  .sed {
+    background: linear-gradient(180deg, hsl(220 13% 14% / .94) 0%, hsl(220 13% 11% / .97) 100%);
+    border: 1px solid var(--edge);
+    border-top-color: var(--edge-lit);
+    border-radius: var(--r-lg);
+    box-shadow: inset 0 1px 0 hsl(220 40% 70% / .06), var(--elev-s3);
+  }
+  /* Hover raises one stratum. Never translateY — that is 2020. */
+  .sed-i { transition: border-color var(--m-base) var(--e-out), box-shadow var(--m-base) var(--e-out), background var(--m-base) var(--e-out); }
+  .sed-i:hover {
+    border-top-color: var(--signal);
+    box-shadow: inset 0 1px 0 hsl(213 96% 74% / .12), var(--elev-s4);
+  }
 
-    .hero-sub {
-      font-size: clamp(16px, 2vw, 20px); color: var(--text-secondary);
-      max-width: 680px; margin: 0 auto 44px; line-height: 1.7;
-      animation: fadeUp 0.8s 0.3s cubic-bezier(0.16,1,0.3,1) both;
-    }
-    .hero-actions {
-      display: flex; align-items: center; justify-content: center; gap: 16px;
-      flex-wrap: wrap;
-      animation: fadeUp 0.8s 0.4s cubic-bezier(0.16,1,0.3,1) both;
-    }
-    .btn-primary {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 16px 40px; border-radius: 14px;
-      background: linear-gradient(135deg, hsl(217,91%,58%), hsl(250,80%,58%));
-      background-size: 200% 200%;
-      animation: gradientShift 4s ease infinite;
-      color: #fff; font-size: 16px; font-weight: 700;
-      border: none; cursor: pointer;
-      box-shadow: 0 4px 25px hsla(217,91%,65%,0.4),
-                  0 0 0 1px hsla(217,91%,65%,0.15),
-                  inset 0 1px 0 hsla(0,0%,100%,0.2);
-      transition: all 0.35s cubic-bezier(0.16,1,0.3,1);
-      position: relative; overflow: hidden;
-    }
-    .btn-primary::before {
-      content: ''; position: absolute; top: 0; left: -100%;
-      width: 100%; height: 100%;
-      background: linear-gradient(90deg, transparent, hsla(0,0%,100%,0.25), transparent);
-      transition: left 0.6s ease;
-    }
-    .btn-primary:hover::before { left: 100%; }
-    .btn-primary:hover {
-      transform: translateY(-4px) scale(1.02); color: #fff;
-      box-shadow: 0 12px 40px hsla(217,91%,65%,0.5),
-                  0 0 0 1px hsla(217,91%,65%,0.2),
-                  0 0 80px hsla(217,91%,65%,0.15);
-    }
-    .btn-primary:active { transform: translateY(0) scale(0.98); }
-    .btn-primary svg { width: 20px; height: 20px; }
-    .btn-secondary {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 16px 34px; border-radius: 14px;
-      background: hsla(220,13%,11%,0.5);
-      backdrop-filter: blur(10px);
-      color: var(--text); font-size: 16px; font-weight: 600;
-      border: 1px solid var(--border); cursor: pointer;
-      transition: all 0.3s;
-    }
-    .btn-secondary:hover {
-      border-color: var(--primary); color: var(--primary);
-      background: var(--primary-dim);
-      transform: translateY(-3px);
-      box-shadow: 0 10px 30px hsla(217,91%,65%,0.1);
-    }
-    .btn-secondary svg { width: 18px; height: 18px; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
-    /* ═══════════════════════════════════════════
-       HERO MOCKUP
-       ═══════════════════════════════════════════ */
-    .hero-visual {
-      margin-top: 80px; perspective: 1200px; width: 100%; max-width: 960px;
-      animation: fadeUp 1s 0.6s cubic-bezier(0.16,1,0.3,1) both;
-      position: relative;
-    }
-    .hero-visual::before {
-      content: ''; position: absolute;
-      bottom: -40px; left: 50%; transform: translateX(-50%);
-      width: 80%; height: 60px;
-      background: radial-gradient(ellipse, hsla(217,91%,65%,0.2), transparent 70%);
-      filter: blur(30px);
-      pointer-events: none;
-    }
-    .hero-mockup {
-      width: 100%; margin: 0 auto;
-      background: hsla(220,13%,11%,0.8);
-      backdrop-filter: blur(10px);
-      border: 1px solid hsla(220,13%,25%,0.3);
-      border-radius: 20px; overflow: hidden;
-      box-shadow: 0 60px 120px -30px rgba(0,0,0,0.7),
-                  0 0 0 1px hsla(217,91%,65%,0.06),
-                  0 0 80px hsla(217,91%,65%,0.04);
-      transform: rotateX(4deg);
-      animation: float 8s ease-in-out infinite;
-    }
-    .mockup-bar {
-      height: 48px; background: hsla(220,13%,13%,0.8);
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; padding: 0 20px; gap: 14px;
-    }
-    .mockup-dots { display: flex; gap: 8px; }
-    .mockup-dots span {
-      width: 12px; height: 12px; border-radius: 50%;
-      transition: transform 0.2s;
-    }
-    .mockup-dots span:hover { transform: scale(1.3); }
-    .mockup-dots span:nth-child(1) { background: #ff5f56; box-shadow: 0 0 8px #ff5f56aa; }
-    .mockup-dots span:nth-child(2) { background: #ffbd2e; box-shadow: 0 0 8px #ffbd2eaa; }
-    .mockup-dots span:nth-child(3) { background: #27c93f; box-shadow: 0 0 8px #27c93faa; }
-    .mockup-url {
-      flex: 1; text-align: center; font-size: 12px;
-      font-family: var(--font-mono); color: var(--text-muted);
-      background: var(--bg); padding: 6px 20px;
-      border-radius: 8px; border: 1px solid var(--border);
-    }
-    .mockup-body {
-      display: flex; min-height: 340px;
-      background: var(--bg);
-    }
-    /* ── Sidebar ── */
-    .m-sidebar {
-      width: 52px; background: hsla(220,13%,10%,0.9);
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; align-items: center;
-      padding: 14px 0 14px; gap: 6px;
-    }
-    .m-sidebar .m-logo {
-      width: 28px; height: 28px; border-radius: 8px;
-      background: linear-gradient(135deg, var(--primary), var(--purple));
-      margin-bottom: 12px; opacity: 0.8;
-    }
-    .m-sidebar .m-nav-dot {
-      width: 30px; height: 30px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.2s;
-    }
-    .m-sidebar .m-nav-dot.active {
-      background: var(--primary-dim);
-    }
-    .m-sidebar .m-nav-dot svg {
-      width: 16px; height: 16px;
-      stroke: var(--text-muted); stroke-width: 1.8; fill: none;
-      stroke-linecap: round; stroke-linejoin: round;
-    }
-    .m-sidebar .m-nav-dot.active svg { stroke: var(--primary); }
-    .m-spacer { flex: 1; }
-    /* ── Main Panel ── */
-    .m-main {
-      flex: 1; display: flex; flex-direction: column; overflow: hidden;
-    }
-    .m-topbar {
-      height: 40px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; padding: 0 18px; gap: 16px;
-    }
-    .m-tab {
-      font-size: 11px; font-family: var(--font-sans); font-weight: 600;
-      color: var(--text-muted); padding: 9px 0;
-      border-bottom: 2px solid transparent;
-      opacity: 0.5;
-    }
-    .m-tab.active { color: var(--primary); border-color: var(--primary); opacity: 1; }
-    .m-content {
-      flex: 1; display: flex; overflow: hidden;
-    }
-    /* ── Chat / Left Panel ── */
-    .m-chat {
-      flex: 1; display: flex; flex-direction: column;
-      padding: 18px; gap: 14px;
-      border-right: 1px solid var(--border);
-    }
-    .m-bubble {
-      max-width: 82%; padding: 10px 14px; border-radius: 12px;
-      font-size: 10px; font-family: var(--font-sans); line-height: 1.5;
-    }
-    .m-bubble.question {
-      align-self: flex-end;
-      background: hsla(217,91%,65%,0.12);
-      border: 1px solid hsla(217,91%,65%,0.15);
-      color: var(--text-secondary);
-    }
-    .m-bubble.answer {
-      align-self: flex-start;
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-    }
-    .m-bubble .m-label {
-      font-size: 9px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.06em; margin-bottom: 4px; display: block;
-    }
-    .m-bubble.question .m-label { color: var(--primary); }
-    .m-bubble.answer .m-label { color: var(--green); }
-    .m-typing {
-      display: flex; gap: 4px; align-items: center; padding: 4px 0;
-    }
-    .m-typing span {
-      width: 5px; height: 5px; border-radius: 50%;
-      background: var(--green); opacity: 0.4;
-      animation: typingPulse 1.4s ease-in-out infinite;
-    }
-    .m-typing span:nth-child(2) { animation-delay: 0.2s; }
-    .m-typing span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes typingPulse {
-      0%, 60%, 100% { opacity: 0.2; transform: scale(0.8); }
-      30% { opacity: 0.8; transform: scale(1); }
-    }
-    .m-input-bar {
-      display: flex; gap: 8px; align-items: center;
-      padding: 8px 12px; border-radius: 10px;
-      border: 1px solid var(--border); background: var(--bg-surface);
-      margin-top: auto;
-    }
-    .m-input-bar .m-input-text {
-      flex: 1; height: 8px; border-radius: 4px;
-      background: var(--border-subtle); opacity: 0.2;
-    }
-    .m-input-bar .m-send-btn {
-      width: 24px; height: 24px; border-radius: 6px;
-      background: linear-gradient(135deg, var(--primary), var(--purple));
-      opacity: 0.6;
-    }
-    /* ── Score / Right Panel ── */
-    .m-score-panel {
-      width: 220px; padding: 18px; display: flex; flex-direction: column; gap: 14px;
-    }
-    .m-score-header {
-      font-size: 10px; font-weight: 700; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 0.06em;
-    }
-    .m-score-ring {
-      width: 80px; height: 80px; margin: 0 auto;
-    }
-    .m-metric-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 0;
-    }
-    .m-metric-row + .m-metric-row { border-top: 1px solid hsla(220,13%,18%,0.5); }
-    .m-metric-label {
-      font-size: 10px; color: var(--text-muted); font-family: var(--font-sans);
-    }
-    .m-metric-bar-wrap {
-      width: 80px; height: 4px; border-radius: 2px;
-      background: var(--border-subtle); overflow: hidden;
-    }
-    .m-metric-bar {
-      height: 100%; border-radius: 2px;
-    }
-    .m-tags-row {
-      display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto;
-    }
-    .m-tag {
-      font-size: 8px; font-weight: 600; padding: 3px 8px;
-      border-radius: 100px; border: 1px solid var(--border);
-      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;
-    }
+  /* Scroll reveal — 20px rise + fade, fires once. */
+  .rise { opacity: 0; transform: translateY(22px); transition: opacity var(--m-deliberate) var(--e-out), transform var(--m-deliberate) var(--e-out); }
+  .rise.in { opacity: 1; transform: none; }
+  .d1 { transition-delay: 60ms; } .d2 { transition-delay: 120ms; }
+  .d3 { transition-delay: 180ms; } .d4 { transition-delay: 240ms; }
+  .d5 { transition-delay: 300ms; } .d6 { transition-delay: 360ms; }
+  @media (prefers-reduced-motion: reduce) {
+    .rise { opacity: 1 !important; transform: none !important; }
+  }
 
-    /* ═══════════════════════════════════════════
-       MARQUEE / SOCIAL PROOF
-       ═══════════════════════════════════════════ */
-    .marquee-section {
-      position: relative; z-index: 1;
-      padding: 48px 0;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      background: hsla(220,13%,11%,0.5);
-      backdrop-filter: blur(10px);
-      overflow: hidden;
-    }
-    .marquee-label {
-      text-align: center; margin-bottom: 24px;
-      font-size: 13px; font-weight: 500; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 0.1em;
-    }
-    .marquee-track {
-      display: flex; width: max-content;
-      animation: slideRight 30s linear infinite;
-    }
-    .marquee-track:hover { animation-play-state: paused; }
-    .marquee-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 0 40px;
-      font-size: 16px; font-weight: 600;
-      color: var(--text-muted);
-      white-space: nowrap;
-      transition: color 0.3s;
-    }
-    .marquee-item:hover { color: var(--text); }
-    .marquee-item .dot {
-      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
-    }
+  /* ── Buttons ── */
+  .btn {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    gap: 9px; font-size: .94rem; font-weight: 600; letter-spacing: -0.01em;
+    padding: 15px 26px; border-radius: var(--r-md); min-height: 52px;
+    transition: transform var(--m-instant) var(--e-sharp), background var(--m-quick), border-color var(--m-quick), color var(--m-quick);
+    overflow: hidden; white-space: nowrap;
+  }
+  .btn:active { transform: scale(.985); }
+  .btn svg { width: 17px; height: 17px; flex-shrink: 0; }
 
-    /* ═══════════════════════════════════════════
-       STATS BAR
-       ═══════════════════════════════════════════ */
-    .stats-bar {
-      position: relative; z-index: 1;
-      padding: 64px 24px;
-    }
-    .stats-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr);
-      max-width: 1000px; margin: 0 auto; gap: 20px;
-    }
-    .stat-card {
-      text-align: center; padding: 32px 20px;
-      border-radius: 16px;
-      background: hsla(220,13%,11%,0.5);
-      border: 1px solid hsla(220,13%,25%,0.2);
-      backdrop-filter: blur(10px);
-      transition: all 0.3s;
-      position: relative; overflow: hidden;
-    }
-    .stat-card::before {
-      content: ''; position: absolute; inset: 0;
-      background: radial-gradient(circle at 50% 0%, hsla(217,91%,65%,0.06), transparent 70%);
-      pointer-events: none;
-    }
-    .stat-card:hover {
-      border-color: hsla(217,91%,65%,0.15);
-      transform: translateY(-4px);
-      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-    }
-    .stat-number {
-      font-size: 42px; font-weight: 900; letter-spacing: -0.03em;
-      font-family: var(--font-sans);
-      background: linear-gradient(135deg, var(--primary), var(--purple));
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent;
-      line-height: 1;
-    }
-    .stat-suffix {
-      font-size: 42px; font-weight: 900;
-      background: linear-gradient(135deg, var(--primary), var(--purple));
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .stat-label {
-      font-size: 13px; color: var(--text-muted); margin-top: 8px;
-      font-weight: 500; letter-spacing: 0.02em;
-    }
+  .btn-primary { background: var(--signal); color: #06101f; box-shadow: 0 1px 0 hsl(0 0% 100% / .25) inset, 0 8px 24px -10px var(--signal-glow); }
+  .btn-primary:hover { background: var(--signal-bright); color: #06101f; }
+  /* The signal sweep: the hero motif, miniaturised. 400ms, once, on hover. */
+  .btn-primary::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 8px; height: 2px;
+    background: linear-gradient(90deg, transparent, #06101f, transparent);
+    transform: scaleX(0); transform-origin: left; opacity: .5;
+    transition: transform 400ms var(--e-out);
+  }
+  .btn-primary:hover::after { transform: scaleX(1); }
 
-    /* ═══════════════════════════════════════════
-       FEATURES — BENTO GRID
-       ═══════════════════════════════════════════ */
-    .features {
-      position: relative; z-index: 1;
-      padding: 120px 24px;
-    }
-    .features-header {
-      text-align: center; margin-bottom: 72px;
-    }
-    .features-header h2 {
-      font-size: clamp(32px, 4.5vw, 52px);
-      font-weight: 800; letter-spacing: -0.03em; margin-top: 16px;
-      line-height: 1.1;
-    }
-    .features-header p {
-      color: var(--text-secondary); font-size: 18px;
-      max-width: 580px; margin: 18px auto 0; line-height: 1.7;
-    }
-    .bento-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      max-width: 1060px; margin: 0 auto;
-    }
-    .bento-card {
-      padding: 36px;
-      position: relative;
-    }
-    .bento-card .card-icon {
-      width: 52px; height: 52px; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 22px; font-size: 22px;
-      position: relative;
-    }
-    .bento-card .card-icon::after {
-      content: ''; position: absolute; inset: -4px;
-      border-radius: 18px; opacity: 0;
-      transition: opacity 0.4s;
-    }
-    .bento-card:hover .card-icon::after { opacity: 1; }
-    .card-icon.blue    { background: var(--primary-dim); color: var(--primary); }
-    .card-icon.blue::after { box-shadow: 0 0 20px hsla(217,91%,65%,0.3); }
-    .card-icon.green   { background: var(--green-dim); color: var(--green); }
-    .card-icon.green::after { box-shadow: 0 0 20px hsla(152,69%,45%,0.3); }
-    .card-icon.amber   { background: var(--amber-dim); color: var(--amber); }
-    .card-icon.amber::after { box-shadow: 0 0 20px hsla(38,92%,60%,0.3); }
-    .card-icon.purple  { background: hsla(250,80%,65%,0.1); color: var(--purple); }
-    .card-icon.purple::after { box-shadow: 0 0 20px hsla(250,80%,65%,0.3); }
-    .bento-card h3 {
-      font-size: 19px; font-weight: 700; margin-bottom: 10px;
-      letter-spacing: -0.01em;
-    }
-    .bento-card p {
-      font-size: 15px; color: var(--text-secondary); line-height: 1.65;
-    }
+  .btn-ghost { border: 1px solid var(--edge); color: var(--ink); background: hsl(220 13% 13% / .5); }
+  .btn-ghost:hover { border-color: var(--edge-lit); background: hsl(220 13% 16% / .7); color: var(--ink); }
 
-    /* ═══════════════════════════════════════════
-       MODULES SHOWCASE
-       ═══════════════════════════════════════════ */
-    .modules {
-      position: relative; z-index: 1;
-      padding: 120px 24px;
-      background: hsla(220,13%,11%,0.3);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-    .modules-header {
-      text-align: center; margin-bottom: 72px;
-    }
-    .modules-header h2 {
-      font-size: clamp(32px, 4.5vw, 52px);
-      font-weight: 800; letter-spacing: -0.03em; margin-top: 16px;
-      line-height: 1.1;
-    }
-    .modules-header p {
-      color: var(--text-secondary); font-size: 18px;
-      max-width: 600px; margin: 18px auto 0; line-height: 1.7;
-    }
-    .modules-grid {
-      display: grid; grid-template-columns: repeat(2, 1fr);
-      gap: 16px; max-width: 1060px; margin: 0 auto;
-    }
-    .module-card {
-      padding: 32px; display: flex; gap: 20px;
-      align-items: flex-start;
-    }
-    .module-icon {
-      width: 56px; height: 56px; min-width: 56px; border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      position: relative;
-      transition: transform 0.3s;
-    }
-    .module-icon svg { color: inherit; }
-    .module-icon.i-copilot svg   { stroke: var(--primary); }
-    .module-icon.i-practice svg  { stroke: var(--green); }
-    .module-icon.i-mock svg      { stroke: var(--amber); }
-    .module-icon.i-intel svg     { stroke: var(--purple); }
-    .module-icon.i-code svg      { stroke: var(--red); }
-    .module-icon.i-resume svg    { stroke: hsl(190,90%,50%); }
-    .module-icon.i-arch svg      { stroke: var(--purple); }
-    .module-icon.i-progress svg  { stroke: var(--amber); }
-    .module-card:hover .module-icon { transform: scale(1.1) rotate(-3deg); }
-    .module-icon.i-copilot   { background: var(--primary-dim); }
-    .module-icon.i-practice  { background: var(--green-dim); }
-    .module-icon.i-mock      { background: var(--amber-dim); }
-    .module-icon.i-intel     { background: hsla(250,80%,65%,0.1); }
-    .module-icon.i-code      { background: hsla(0,84%,60%,0.1); }
-    .module-icon.i-resume    { background: hsla(190,90%,50%,0.1); }
-    .module-icon.i-arch      { background: hsla(250,80%,65%,0.1); }
-    .module-icon.i-progress  { background: hsla(38,92%,60%,0.1); }
-    .module-body h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
-    .module-body p { font-size: 14px; color: var(--text-secondary); line-height: 1.65; }
-    .module-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-    .module-tag {
-      font-size: 11px; font-weight: 600; padding: 4px 12px;
-      border-radius: 100px;
-      background: hsla(217,91%,65%,0.06);
-      border: 1px solid hsla(217,91%,65%,0.1);
-      color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 0.04em;
-      transition: all 0.3s;
-    }
-    .module-card:hover .module-tag {
-      border-color: hsla(217,91%,65%,0.2);
-      color: var(--text-secondary);
-    }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 
-    /* ═══════════════════════════════════════════
-       HOW IT WORKS — VERTICAL TIMELINE
-       ═══════════════════════════════════════════ */
-    .how-it-works {
-      position: relative; z-index: 1;
-      padding: 120px 24px;
-    }
-    .hiw-header {
-      text-align: center; margin-bottom: 80px;
-    }
-    .hiw-header h2 {
-      font-size: clamp(32px, 4.5vw, 52px);
-      font-weight: 800; letter-spacing: -0.03em; margin-top: 16px;
-      line-height: 1.1;
-    }
-    .hiw-header p {
-      color: var(--text-secondary); font-size: 18px;
-      max-width: 560px; margin: 18px auto 0; line-height: 1.7;
-    }
-    .timeline {
-      max-width: 700px; margin: 0 auto;
-      position: relative;
-      padding-left: 60px;
-    }
-    .timeline::before {
-      content: ''; position: absolute;
-      top: 0; left: 27px; width: 2px; bottom: 0;
-      background: linear-gradient(180deg, var(--primary), var(--purple), var(--green), var(--amber));
-      opacity: 0.2; border-radius: 2px;
-    }
-    .timeline-progress {
-      position: absolute; top: 0; left: 27px;
-      width: 2px; height: 0;
-      background: linear-gradient(180deg, var(--primary), var(--purple), var(--green));
-      border-radius: 2px;
-      transition: height 0.5s ease-out;
-      box-shadow: 0 0 10px hsla(217,91%,65%,0.3);
-    }
-    .timeline-step {
-      position: relative; margin-bottom: 56px;
-    }
-    .timeline-step:last-child { margin-bottom: 0; }
-    .timeline-dot {
-      position: absolute; left: -60px; top: 4px;
-      width: 56px; height: 56px; border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; font-weight: 800;
-      background: var(--bg);
-      border: 2px solid hsla(217,91%,65%,0.2);
-      color: var(--primary);
-      transition: all 0.4s;
-      z-index: 1;
-    }
-    .timeline-step.active .timeline-dot {
-      background: var(--primary-dim);
-      border-color: var(--primary);
-      box-shadow: 0 0 25px hsla(217,91%,65%,0.3);
-    }
-    .timeline-step h3 {
-      font-size: 20px; font-weight: 700; margin-bottom: 8px;
-    }
-    .timeline-step p {
-      font-size: 15px; color: var(--text-secondary); line-height: 1.65;
-    }
+  /* ═══════════════  S4 — NAVIGATION  ═══════════════ */
+  .nav {
+    position: fixed; inset: 0 0 auto 0; z-index: 90; height: 76px;
+    display: flex; align-items: center;
+    transition: height var(--m-base) var(--e-out), background var(--m-base), border-color var(--m-base), backdrop-filter var(--m-base);
+    border-bottom: 1px solid transparent;
+  }
+  .nav.compressed {
+    height: 58px;
+    background: hsl(220 13% 9% / .82);
+    backdrop-filter: blur(18px) saturate(1.6);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
+    border-bottom-color: var(--edge-subtle);
+  }
+  .nav-in {
+    width: 100%; max-width: var(--content-max); margin-inline: auto;
+    padding-inline: var(--gutter);
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1rem; color: var(--ink); letter-spacing: -0.02em; }
+  .brand img { width: 28px; height: 28px; border-radius: 7px; }
+  .brand span { opacity: .5; font-weight: 400; }
 
-    /* ═══════════════════════════════════════════
-       DIFFERENTIATORS
-       ═══════════════════════════════════════════ */
-    .diff {
-      position: relative; z-index: 1;
-      padding: 120px 24px;
-      background: hsla(220,13%,11%,0.3);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-    .diff-header { text-align: center; margin-bottom: 72px; }
-    .diff-header h2 {
-      font-size: clamp(32px, 4.5vw, 52px);
-      font-weight: 800; letter-spacing: -0.03em; margin-top: 16px;
-      line-height: 1.1;
-    }
-    .diff-header p {
-      color: var(--text-secondary); font-size: 18px;
-      max-width: 560px; margin: 18px auto 0; line-height: 1.7;
-    }
-    .diff-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 16px; max-width: 1060px; margin: 0 auto;
-    }
-    .diff-card { padding: 32px; text-align: center; }
-    .diff-card .diff-icon {
-      margin-bottom: 18px; display: flex;
-      align-items: center; justify-content: center;
-      transition: transform 0.3s;
-    }
-    .diff-card:hover .diff-icon { transform: scale(1.2) rotate(-5deg); }
-    .diff-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
-    .diff-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+  .nav-links { display: flex; align-items: center; gap: 4px; list-style: none; }
+  .nav-links a {
+    display: block; font-size: .875rem; color: var(--ink-3); font-weight: 500;
+    padding: 8px 13px; border-radius: var(--r-sm);
+    transition: color var(--m-instant), background var(--m-instant);
+  }
+  .nav-links a:hover { color: var(--ink); background: hsl(220 13% 100% / .04); }
 
-    /* ═══════════════════════════════════════════
-       CTA SECTION
-       ═══════════════════════════════════════════ */
-    .cta-section {
-      position: relative; z-index: 1;
-      padding: 0 24px; text-align: center;
-      overflow: hidden;
-    }
-    .cta-wrap {
-      max-width: 1100px; margin: 0 auto;
-      padding: 100px 48px 80px;
-      position: relative;
-      border-radius: 32px;
-      background:
-        radial-gradient(ellipse at 30% 0%, hsla(217,91%,65%,0.12), transparent 50%),
-        radial-gradient(ellipse at 70% 100%, hsla(250,80%,65%,0.10), transparent 50%),
-        hsla(220,13%,10%,0.7);
-      border: 1px solid hsla(220,13%,25%,0.3);
-      backdrop-filter: blur(20px);
-      overflow: hidden;
-    }
-    /* Animated gradient border glow */
-    .cta-wrap::before {
-      content: ''; position: absolute; inset: 0;
-      border-radius: 32px; padding: 1px;
-      background: linear-gradient(135deg, hsla(217,91%,65%,0.35), transparent 40%, transparent 60%, hsla(250,80%,65%,0.25));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor; mask-composite: exclude;
-      pointer-events: none;
-    }
-    /* Floating decorative orbs */
-    .cta-orb {
-      position: absolute; border-radius: 50%;
-      pointer-events: none; filter: blur(60px);
-    }
-    .cta-orb-1 {
-      width: 300px; height: 300px; top: -80px; left: -60px;
-      background: hsla(217,91%,65%,0.12);
-      animation: auroraFloat 15s ease-in-out infinite;
-    }
-    .cta-orb-2 {
-      width: 250px; height: 250px; bottom: -60px; right: -40px;
-      background: hsla(250,80%,65%,0.10);
-      animation: auroraFloat 18s ease-in-out infinite reverse;
-    }
-    /* Top sparkle line */
-    .cta-wrap::after {
-      content: ''; position: absolute; top: 0; left: 10%; right: 10%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, hsla(217,91%,65%,0.5), hsla(250,80%,65%,0.4), transparent);
-    }
-    .cta-eyebrow {
-      display: inline-flex; align-items: center; gap: 8px;
-      font-size: 12px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.12em; color: var(--primary);
-      padding: 6px 16px; border-radius: 100px;
-      background: var(--primary-dim);
-      border: 1px solid hsla(217,91%,65%,0.15);
-      margin-bottom: 28px;
-    }
-    .cta-eyebrow svg { width: 14px; height: 14px; }
-    .cta-section h2 {
-      font-size: clamp(34px, 4.5vw, 54px);
-      font-weight: 900; letter-spacing: -0.04em;
-      margin-bottom: 18px; line-height: 1.1;
-    }
-    .cta-section .cta-gradient {
-      background: linear-gradient(135deg, var(--primary), var(--purple), #818cf8);
-      background-size: 200% 200%;
-      animation: gradientShift 6s ease infinite;
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .cta-section p {
-      font-size: 17px; color: var(--text-secondary);
-      max-width: 540px; margin: 0 auto 44px; line-height: 1.7;
-    }
-    .cta-stats {
-      display: flex; justify-content: center; gap: 48px;
-      margin-top: 56px; padding-top: 40px;
-      border-top: 1px solid hsla(220,13%,25%,0.3);
-    }
-    .cta-stat {
-      text-align: center;
-    }
-    .cta-stat-num {
-      font-size: 28px; font-weight: 900; letter-spacing: -0.03em;
-      background: linear-gradient(135deg, var(--primary), var(--purple));
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent;
-      line-height: 1;
-    }
-    .cta-stat-label {
-      font-size: 12px; color: var(--text-muted); margin-top: 6px;
-      font-weight: 500;
-    }
+  .nav-act { display: flex; align-items: center; gap: 10px; }
+  .nav-signin { font-size: .875rem; color: var(--ink-2); padding: 8px 12px; transition: color var(--m-instant); }
+  .nav-signin:hover { color: var(--ink); }
+  .nav-cta { padding: 9px 18px; min-height: 40px; font-size: .875rem; }
 
-    /* ═══════════════════════════════════════════
-       FOOTER
-       ═══════════════════════════════════════════ */
-    .footer {
-      position: relative; z-index: 1;
-      padding: 48px 24px 32px;
-      background: transparent;
-    }
-    .footer-glow {
-      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-      width: 60%; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border), transparent);
-    }
-    .footer-inner {
-      max-width: 1200px; margin: 0 auto;
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 20px;
-    }
-    .footer-left {
-      display: flex; align-items: center; gap: 10px;
-      font-weight: 700; font-size: 15px; color: var(--text);
-    }
-    .footer-left img { width: 28px; height: 28px; border-radius: 8px; }
-    .footer-center { font-size: 13px; color: var(--text-muted); }
-    .footer-links { display: flex; gap: 24px; }
-    .footer-links a {
-      font-size: 13px; color: var(--text-secondary);
-      transition: color 0.2s; position: relative;
-    }
-    .footer-links a::after {
-      content: ''; position: absolute; bottom: -2px; left: 0;
-      width: 0; height: 1px; background: var(--primary);
-      transition: width 0.3s;
-    }
-    .footer-links a:hover { color: var(--primary); }
-    .footer-links a:hover::after { width: 100%; }
+  .burger {
+    display: none; width: 44px; height: 44px; border: 1px solid var(--edge);
+    border-radius: var(--r-md); align-items: center; justify-content: center;
+    color: var(--ink); -webkit-tap-highlight-color: transparent;
+  }
+  .burger svg { width: 18px; height: 18px; }
 
-    /* ═══════════════════════════════════════════
-       RESPONSIVE
-       ═══════════════════════════════════════════ */
-    @media (max-width: 1024px) {
-      .bento-grid { grid-template-columns: repeat(2, 1fr); }
-      .diff-grid { grid-template-columns: repeat(2, 1fr); }
+  /* ═══════════════  DEPTH RAIL — position as depth through the argument  ═══════════════ */
+  .rail {
+    position: fixed; right: 22px; top: 50%; translate: 0 -50%;
+    z-index: 80; display: none; flex-direction: column; gap: 4px;
+  }
+  @media (min-width: 1280px) { .rail { display: flex; } }
+  .rail-act {
+    font-family: var(--font-mono); font-size: .55rem; letter-spacing: .18em;
+    color: var(--ink-4); text-transform: uppercase;
+    margin: 12px 0 4px; padding-left: 2px;
+  }
+  .rail-act:first-child { margin-top: 0; }
+  .rail a {
+    display: flex; align-items: center; gap: 9px; justify-content: flex-end;
+    height: 18px; color: var(--ink-4);
+    font-family: var(--font-mono); font-size: .62rem; letter-spacing: .07em;
+  }
+  .rail a i {
+    display: block; width: 14px; height: 1px; background: currentColor;
+    transition: width var(--m-base) var(--e-out), background var(--m-base);
+  }
+  .rail a b {
+    font-weight: 400; opacity: 0; translate: 6px 0;
+    transition: opacity var(--m-base) var(--e-out), translate var(--m-base) var(--e-out);
+  }
+  .rail a:hover { color: var(--ink-2); }
+  .rail a:hover b { opacity: 1; translate: 0; }
+  .rail a.here { color: var(--signal); }
+  .rail a.here i { width: 26px; background: var(--signal); box-shadow: 0 0 8px var(--signal-glow); }
+  .rail a.here b { opacity: 1; translate: 0; }
+
+  .progress { position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 95; pointer-events: none; }
+  .progress i {
+    display: block; height: 100%; width: 100%; transform-origin: left; transform: scaleX(0);
+    background: linear-gradient(90deg, var(--signal-deep), var(--signal), var(--signal-trace));
+    box-shadow: 0 0 10px hsl(213 96% 64% / .6);
+    transition: transform 110ms linear;
+  }
+  @media (min-width: 1280px) { .progress { display: none; } }
+
+  /* ═══════════════════════════════════════════════════════════
+     ACT I — HERO. Asymmetric 7:5. The instrument is deliberately
+     not centred and deliberately not a screenshot.
+     ═══════════════════════════════════════════════════════════ */
+  .hero { padding: 126px 0 84px; }
+  .hero-grid {
+    display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5.4fr);
+    gap: clamp(2rem, 4vw, 4.5rem); align-items: center;
+  }
+
+  .hero h1 {
+    font-size: var(--t-hero); line-height: 1.03; letter-spacing: -0.045em;
+    margin: 22px 0 26px;
+  }
+  .hero h1 .l1 { display: block; font-weight: 200; color: var(--ink-2); }
+  .hero h1 .l2 { display: block; font-weight: 600; color: var(--ink); }
+  /* The weight shift carries the emphasis, so colour doesn't have to. */
+  .underscore { position: relative; display: inline-block; }
+  .underscore::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -.06em; height: 2px;
+    background: var(--signal); box-shadow: 0 0 12px var(--signal-glow);
+    transform: scaleX(0); transform-origin: left;
+    animation: draw 900ms var(--e-out) 500ms forwards;
+  }
+  @keyframes draw { to { transform: scaleX(1); } }
+  @media (prefers-reduced-motion: reduce) {
+    .underscore::after { animation: none; transform: scaleX(1); }
+  }
+
+  .hero .lede { margin-bottom: 34px; }
+  .hero-note {
+    margin-top: 18px; font-family: var(--font-mono); font-size: .72rem;
+    letter-spacing: .06em; color: var(--ink-4);
+  }
+  .hero-spec {
+    margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--edge-subtle);
+    display: flex; flex-wrap: wrap; gap: 8px 22px;
+    font-family: var(--font-mono); font-size: .72rem; letter-spacing: .05em; color: var(--ink-3);
+  }
+  .hero-spec b { color: var(--ink); font-weight: 600; }
+
+  /* ── THE LIVE EVALUATION — S2 → S5 ──
+     The single most important component on the site. It runs a real
+     evaluation loop from fixture data, with zero network dependency.
+     Competitor heroes show a screenshot of a result. This shows the
+     derivation of a result. */
+  .inst {
+    position: relative; padding: 18px 18px 16px; overflow: hidden;
+    background: linear-gradient(180deg, hsl(220 13% 14% / .96), hsl(220 13% 10% / .98));
+    border: 1px solid var(--edge); border-top-color: var(--edge-lit);
+    border-radius: var(--r-xl);
+    box-shadow: inset 0 1px 0 hsl(220 40% 70% / .07), var(--elev-s5), 0 0 60px -30px var(--signal-glow);
+  }
+  /* Corner brackets — the instrument vocabulary the app itself uses. */
+  .inst::before, .inst::after {
+    content: ''; position: absolute; width: 13px; height: 13px;
+    border: 1px solid hsl(213 96% 64% / .45); pointer-events: none;
+  }
+  .inst::before { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
+  .inst::after  { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
+
+  .inst-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    font-family: var(--font-mono); font-size: .61rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--ink-4);
+  }
+  .inst-live { display: inline-flex; align-items: center; gap: 7px; color: var(--signal); }
+  .inst-live i {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--signal);
+    animation: ping 2.4s var(--e-out) infinite;
+  }
+  @keyframes ping {
+    0%   { box-shadow: 0 0 0 0 hsl(213 96% 64% / .55); }
+    70%  { box-shadow: 0 0 0 7px hsl(213 96% 64% / 0); }
+    100% { box-shadow: 0 0 0 0 hsl(213 96% 64% / 0); }
+  }
+
+  .inst-q {
+    margin: 16px 0 12px; font-size: .95rem; font-weight: 500; color: var(--ink);
+    line-height: 1.4; min-height: 2.6em;
+    opacity: 0; transform: translateY(6px);
+    transition: opacity var(--m-base) var(--e-out), transform var(--m-base) var(--e-out);
+  }
+  .inst[data-stage] .inst-q { opacity: 1; transform: none; }
+  .inst-q em { font-style: normal; color: var(--ink-4); font-family: var(--font-mono); font-size: .62rem; letter-spacing: .14em; display: block; margin-bottom: 7px; text-transform: uppercase; }
+
+  /* S2 — raw evidence lives deep: dimmer, mono, deliberately imperfect. */
+  .inst-tx {
+    font-family: var(--font-mono); font-size: .74rem; line-height: 1.75;
+    color: var(--ink-3); background: hsl(220 13% 7% / .6);
+    border: 1px solid var(--edge-subtle); border-radius: var(--r-md);
+    padding: 12px 13px; min-height: 84px; white-space: pre-wrap; word-break: break-word;
+  }
+  .inst-tx mark {
+    background: hsl(213 96% 64% / .13); color: var(--signal-trace);
+    border-radius: 2px; padding: 0 2px;
+    box-shadow: inset 0 -1px 0 hsl(213 96% 64% / .4);
+  }
+  .inst-caret {
+    display: inline-block; width: 7px; height: 1em; vertical-align: -2px;
+    background: var(--signal); animation: blink 1s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .inst-sig { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin: 12px 0; }
+  .sig {
+    border: 1px solid var(--edge-subtle); border-radius: var(--r-sm);
+    padding: 7px 8px; background: hsl(220 13% 8% / .5);
+    opacity: .32; transition: opacity var(--m-base) var(--e-out), border-color var(--m-base);
+  }
+  .inst[data-stage="signals"] .sig,
+  .inst[data-stage="verdict"] .sig,
+  .inst[data-stage="split"] .sig,
+  .inst[data-stage="receipt"] .sig { opacity: 1; border-color: hsl(213 96% 64% / .28); }
+  .sig-l { font-family: var(--font-mono); font-size: .53rem; letter-spacing: .12em; color: var(--ink-4); text-transform: uppercase; }
+  .sig-b { display: block; height: 3px; margin-top: 6px; border-radius: 2px; background: var(--sediment-2); overflow: hidden; }
+  .sig-b i {
+    display: block; height: 100%; width: 0; border-radius: 2px; background: var(--signal);
+    transition: width 900ms var(--e-out) var(--sd, 0ms);
+  }
+  .sig.off .sig-l { text-decoration: line-through; opacity: .6; }
+  .sig.off .sig-b i { background: var(--edge); width: 0 !important; }
+
+  .inst-foot {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
+    border-top: 1px solid var(--edge-subtle); padding-top: 13px; margin-top: 12px;
+  }
+  /* The rise: a conclusion emerging from evidence. Rationed to 5 uses page-wide. */
+  .inst-score { display: flex; align-items: baseline; gap: 4px; opacity: 0; transform: translateY(26px) scale(.94); filter: blur(6px); transition: opacity var(--m-rise) var(--e-rise), transform var(--m-rise) var(--e-rise), filter var(--m-rise) var(--e-rise); }
+  .inst[data-stage="verdict"] .inst-score,
+  .inst[data-stage="split"] .inst-score,
+  .inst[data-stage="receipt"] .inst-score { opacity: 1; transform: none; filter: none; }
+  .inst-score b { font-family: var(--font-mono); font-size: 2.7rem; font-weight: 700; line-height: 1; letter-spacing: -.04em; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .inst-score u { text-decoration: none; font-family: var(--font-mono); font-size: .8rem; color: var(--ink-4); }
+  .inst-band {
+    font-family: var(--font-mono); font-size: .58rem; letter-spacing: .16em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: var(--r-full); align-self: center; margin-left: 6px;
+    border: 1px solid currentColor;
+  }
+  .inst-band[data-b="strong"]   { color: var(--band-strong); }
+  .inst-band[data-b="mid"]      { color: var(--band-mid); }
+  .inst-band[data-b="low"]      { color: var(--band-low); }
+  /* A one-line status that tracks the stage, rather than a static legend that
+     wraps into three ragged lines and says nothing while the loop runs. */
+  .inst-weights {
+    font-family: var(--font-mono); font-size: .58rem; color: var(--ink-4);
+    letter-spacing: .1em; text-transform: uppercase; text-align: right;
+    white-space: nowrap; transition: color var(--m-base);
+  }
+  .inst[data-stage="signals"] .inst-weights,
+  .inst[data-stage="verdict"] .inst-weights { color: var(--signal); }
+
+  /* Decomposition — the 78 splits into its weighted bands. */
+  .inst-split {
+    display: grid; gap: 7px; margin-top: 13px;
+    max-height: 0; opacity: 0; overflow: hidden;
+    transition: max-height var(--m-deliberate) var(--e-out), opacity var(--m-deliberate) var(--e-out), margin var(--m-deliberate);
+  }
+  .inst[data-stage="split"] .inst-split,
+  .inst[data-stage="receipt"] .inst-split { max-height: 260px; opacity: 1; }
+  .crit {
+    display: grid; grid-template-columns: 84px 1fr auto; align-items: center; gap: 11px;
+    font-family: var(--font-mono); font-size: .65rem;
+  }
+  .crit-l { color: var(--ink-3); letter-spacing: .07em; text-transform: uppercase; }
+  .crit-w { position: relative; height: 4px; border-radius: 2px; background: var(--sediment-2); overflow: hidden; }
+  .crit-w i { display: block; height: 100%; width: 0; background: var(--signal); border-radius: 2px; transition: width 1s var(--e-out) var(--sd, 0ms); }
+  .crit-v { color: var(--ink); font-variant-numeric: tabular-nums; min-width: 62px; text-align: right; }
+  .crit-v small { color: var(--ink-4); }
+  .crit.off .crit-l { text-decoration: line-through; opacity: .55; }
+  .crit.off .crit-w i { background: var(--edge); width: 0 !important; }
+  .crit.off .crit-v { color: var(--ink-4); font-size: .58rem; letter-spacing: .1em; }
+
+  /* The receipt — the specific sentence that cost points. Its slot is never
+     empty: until the receipt resolves it holds the published weights, so the
+     card reserves its own height without ever reading as a hollow box. */
+  .inst-receipt {
+    margin-top: 12px; padding: 11px 12px; border-radius: var(--r-md);
+    min-height: 62px;
+    background: hsl(213 96% 64% / .05); border: 1px solid hsl(213 96% 64% / .18);
+    border-left: 2px solid var(--signal);
+    font-size: .78rem; line-height: 1.55; color: var(--ink-2);
+    transition: opacity var(--m-base) var(--e-out), background var(--m-base), border-color var(--m-base);
+  }
+  .inst-receipt.idle {
+    background: transparent; border-color: var(--edge-subtle);
+    border-left-color: var(--edge); color: var(--ink-4);
+    font-family: var(--font-mono); font-size: .64rem; line-height: 1.7;
+  }
+  .inst-receipt.idle b { color: var(--ink-3); }
+  .inst-receipt b { color: var(--signal); font-weight: 600; font-family: var(--font-mono); font-size: .68rem; letter-spacing: .06em; }
+
+  .inst-ctl {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-top: 12px; font-family: var(--font-mono); font-size: .58rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-4);
+  }
+  .inst-dots { display: flex; gap: 5px; }
+  .inst-dots i { width: 14px; height: 2px; background: var(--edge); border-radius: 1px; transition: background var(--m-base); }
+  .inst-dots i.on { background: var(--signal); }
+  .inst-replay { color: var(--ink-3); display: inline-flex; align-items: center; gap: 6px; transition: color var(--m-instant); }
+  .inst-replay:hover { color: var(--signal); }
+  .inst-replay svg { width: 12px; height: 12px; }
+
+  /* ═══════════════  SIGNAL BAR — receipted stats  ═══════════════ */
+  .signals { padding: 18px 0 8px; }
+  .signals-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--edge-subtle); border-bottom: 1px solid var(--edge-subtle);
+  }
+  .stat { border-left: 1px solid var(--edge-subtle); }
+  .stat:first-child { border-left: 0; }
+  .stat > summary {
+    list-style: none; cursor: pointer; padding: 26px 22px;
+    transition: background var(--m-quick);
+  }
+  .stat > summary::-webkit-details-marker { display: none; }
+  .stat > summary:hover { background: hsl(220 13% 100% / .022); }
+  .stat-n { font-family: var(--font-mono); font-size: clamp(1.9rem, 3.4vw, 2.7rem); font-weight: 700; color: var(--ink); line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+  .stat-l { font-size: .8rem; color: var(--ink-3); margin-top: 8px; }
+  .stat-r {
+    display: inline-flex; align-items: center; gap: 5px; margin-top: 12px;
+    font-family: var(--font-mono); font-size: .57rem; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-4); transition: color var(--m-instant);
+  }
+  .stat > summary:hover .stat-r { color: var(--signal); }
+  .stat-r svg { width: 10px; height: 10px; transition: rotate var(--m-quick) var(--e-sharp); }
+  .stat[open] .stat-r svg { rotate: 180deg; }
+  .stat-body {
+    padding: 0 22px 24px; font-size: .78rem; line-height: 1.7; color: var(--ink-3);
+  }
+  .stat-body code { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-2); }
+
+  /* ═══════════════════════════════════════════════════════════
+     ACT II — THE EVIDENCE COLUMN. The centrepiece.
+     Scroll progress excavates the column layer by layer, like
+     sectioning a core sample. Scroll-linked only: scrubbing back
+     re-buries the layers exactly, which is what makes it read as
+     an instrument rather than a video.
+     ═══════════════════════════════════════════════════════════ */
+  .band {
+    border-top: 1px solid var(--edge-subtle);
+    background: linear-gradient(180deg, hsl(220 13% 11% / .34), transparent 60%);
+  }
+  .head { max-width: 760px; }
+  .head h2 { font-size: var(--t-h2); margin: 18px 0 16px; }
+  .head .lede { color: var(--ink-3); }
+
+  .evidence { padding: 108px 0 0; }
+  .ev-track { height: 460vh; position: relative; }
+  /* Padded so the column always clears the fixed nav, whatever the viewport. */
+  .ev-stick { position: sticky; top: 0; height: 100vh; display: flex; align-items: center; padding: 74px 0 22px; }
+  .ev-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(2rem, 5vw, 5rem); width: 100%; align-items: center; }
+
+  .ev-copy { position: relative; min-height: 210px; }
+  .ev-beat {
+    position: absolute; inset: 0; opacity: 0; transform: translateY(14px);
+    transition: opacity var(--m-base) var(--e-out), transform var(--m-base) var(--e-out);
+    pointer-events: none;
+  }
+  .ev-beat.on { opacity: 1; transform: none; pointer-events: auto; }
+  .ev-beat h3 { font-size: clamp(1.5rem, 2.6vw, 2.1rem); margin: 14px 0 14px; font-weight: 500; }
+  .ev-beat p { font-size: 1.02rem; color: var(--ink-2); max-width: 44ch; line-height: 1.66; }
+  .ev-idx { font-family: var(--font-mono); font-size: .64rem; letter-spacing: .18em; color: var(--signal); }
+
+  .ev-col { display: grid; gap: 8px; }
+  .ev-layer {
+    padding: 12px 15px; border-radius: var(--r-md);
+    background: hsl(220 13% 12% / .5); border: 1px solid var(--edge-subtle);
+    opacity: .2; filter: blur(2px); transform: translateY(10px) scale(.985);
+    transition: opacity var(--m-deliberate) var(--e-out), filter var(--m-deliberate) var(--e-out),
+                transform var(--m-deliberate) var(--e-out), border-color var(--m-deliberate);
+  }
+  .ev-layer.lit {
+    opacity: 1; filter: none; transform: none;
+    border-color: var(--edge); border-top-color: var(--edge-lit);
+    background: linear-gradient(180deg, hsl(220 13% 14% / .92), hsl(220 13% 11% / .95));
+    box-shadow: inset 0 1px 0 hsl(220 40% 70% / .05), var(--elev-s2);
+  }
+  .ev-layer.now { border-top-color: var(--signal); box-shadow: inset 0 1px 0 hsl(213 96% 74% / .14), var(--elev-s3); }
+  .ev-cap {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-family: var(--font-mono); font-size: .56rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--ink-4); margin-bottom: 8px;
+  }
+  .ev-layer.now .ev-cap { color: var(--signal); }
+
+  .ev-score { display: flex; align-items: baseline; gap: 5px; }
+  .ev-score b { font-family: var(--font-mono); font-size: 2.4rem; font-weight: 700; color: var(--ink); line-height: 1; letter-spacing: -.04em; }
+  .ev-score u { text-decoration: none; font-family: var(--font-mono); font-size: .75rem; color: var(--ink-4); }
+
+  .ev-rows { display: grid; gap: 6px; }
+  .ev-row { display: grid; grid-template-columns: 78px 1fr auto; gap: 10px; align-items: center; font-family: var(--font-mono); font-size: .62rem; }
+  .ev-row span:first-child { color: var(--ink-3); text-transform: uppercase; letter-spacing: .07em; }
+  .ev-row i { display: block; height: 3px; border-radius: 2px; background: var(--signal); opacity: .85; }
+  .ev-row b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  .ev-quote { font-family: var(--font-mono); font-size: .68rem; line-height: 1.8; color: var(--ink-3); }
+  .ev-quote mark { background: hsl(213 96% 64% / .14); color: var(--signal-trace); border-radius: 2px; padding: 0 3px; }
+  .ev-quote em { font-style: normal; color: var(--ink-4); display: block; margin-top: 8px; font-size: .62rem; }
+
+  .ev-wave { width: 100%; height: 26px; display: block; }
+  .ev-wave path { fill: none; stroke: var(--signal); stroke-width: 1.4; stroke-linecap: round; opacity: .8; }
+  .ev-wave line { stroke: var(--edge); stroke-width: 1; }
+  .ev-metrics { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip {
+    font-family: var(--font-mono); font-size: .56rem; letter-spacing: .08em;
+    padding: 4px 9px; border-radius: var(--r-full);
+    border: 1px solid var(--edge); color: var(--ink-3);
+  }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  .ev-hist { display: flex; align-items: flex-end; gap: 4px; height: 34px; }
+  .ev-hist i { flex: 1; background: var(--edge); border-radius: 1px 1px 0 0; }
+  .ev-hist i:last-child { background: var(--signal); box-shadow: 0 0 10px var(--signal-glow); }
+
+  /* ═══════════════  MODULE CONSTELLATION  ═══════════════
+     Eight modules as one system, not a feature list. Hover a module and
+     its dependents light with it — the interaction teaches the architecture. */
+  .modules { padding: 112px 0; }
+  .const {
+    position: relative; width: min(760px, 100%); aspect-ratio: 1;
+    margin: 56px auto 0;
+  }
+  .const svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .const svg line {
+    stroke: var(--edge); stroke-width: 1;
+    transition: stroke var(--m-base), stroke-width var(--m-base), opacity var(--m-base);
+    opacity: .7;
+  }
+  .const svg line.hot { stroke: var(--signal); stroke-width: 1.5; opacity: 1; filter: drop-shadow(0 0 5px var(--signal-glow)); }
+  .const svg line.warm { stroke: hsl(213 96% 64% / .55); }
+
+  .const-core {
+    position: absolute; left: 50%; top: 50%; translate: -50% -50%;
+    width: 168px; height: 168px; border-radius: 50%;
+    display: grid; place-content: center; text-align: center; gap: 3px;
+    background: radial-gradient(circle at 50% 30%, hsl(220 13% 16%), hsl(220 13% 10%));
+    border: 1px solid var(--edge-lit);
+    box-shadow: var(--elev-s4), 0 0 50px -18px var(--signal-glow);
+  }
+  .const-core b { font-family: var(--font-mono); font-size: .62rem; letter-spacing: .16em; color: var(--signal); text-transform: uppercase; }
+  .const-core span { font-size: 1.05rem; color: var(--ink); font-weight: 500; line-height: 1.25; letter-spacing: -.02em; }
+  .const-core em { font-style: normal; font-family: var(--font-mono); font-size: .55rem; color: var(--ink-4); letter-spacing: .1em; }
+
+  .node {
+    position: absolute; width: 158px; translate: -50% -50%; text-align: left;
+    padding: 12px 13px; border-radius: var(--r-md);
+    background: linear-gradient(180deg, hsl(220 13% 14% / .96), hsl(220 13% 11% / .97));
+    border: 1px solid var(--edge); border-top-color: var(--edge-lit);
+    box-shadow: var(--elev-s2);
+    transition: border-color var(--m-base), box-shadow var(--m-base), background var(--m-base);
+  }
+  .node:hover, .node:focus-visible { border-top-color: var(--signal); box-shadow: var(--elev-s4); }
+  .node.rel { border-color: hsl(213 96% 64% / .35); }
+  .node h3 { font-size: .84rem; font-weight: 600; letter-spacing: -.01em; }
+  .node p { font-size: .68rem; color: var(--ink-3); line-height: 1.5; margin-top: 4px; }
+  .node small { display: block; margin-top: 7px; font-family: var(--font-mono); font-size: .53rem; letter-spacing: .1em; color: var(--ink-4); text-transform: uppercase; }
+
+  .const-hint {
+    text-align: center; margin-top: 26px;
+    font-family: var(--font-mono); font-size: .6rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-4);
+  }
+
+  /* Mobile spine — the system metaphor survives the reflow. */
+  .spine { display: none; margin-top: 44px; position: relative; padding-left: 26px; }
+  .spine::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 1px; background: linear-gradient(180deg, transparent, var(--edge), transparent); }
+  .spine .node { position: static; width: auto; translate: none; margin-bottom: 10px; }
+  .spine .node::before {
+    content: ''; position: absolute; left: 2px; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--bedrock); border: 1px solid var(--signal); translate: 0 14px;
+  }
+
+  /* ═══════════════  AGENT PIPELINE  ═══════════════ */
+  .agents { padding: 108px 0; }
+  .pipe { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 48px; }
+  .agent { padding: 20px; position: relative; }
+  .agent-i { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .16em; color: var(--signal); }
+  .agent h3 { font-size: .98rem; margin: 9px 0 8px; font-weight: 600; }
+  .agent p { font-size: .82rem; color: var(--ink-3); line-height: 1.6; }
+  .agent dl { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--edge-subtle); display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-family: var(--font-mono); font-size: .6rem; }
+  .agent dt { color: var(--ink-4); letter-spacing: .1em; text-transform: uppercase; }
+  .agent dd { color: var(--ink-2); }
+  .agents-claim {
+    margin-top: 34px; padding: 20px 24px; border-left: 2px solid var(--signal);
+    background: hsl(213 96% 64% / .04); border-radius: 0 var(--r-md) var(--r-md) 0;
+    font-size: 1.02rem; color: var(--ink); max-width: 66ch; line-height: 1.6;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     ACT III — THE WEAKNESS MIRROR.
+     Every rival section shows the product praising the user.
+     This one shows it finding a flaw. It is the strongest trust
+     signal on the page precisely because it is unflattering.
+     ═══════════════════════════════════════════════════════════ */
+  .mirror { padding: 112px 0; }
+  .mirror-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin-top: 48px; background: var(--edge-subtle); border: 1px solid var(--edge-subtle); border-radius: var(--r-lg); overflow: hidden; }
+  .mirror-side { padding: 30px clamp(20px, 3vw, 34px); background: hsl(220 13% 10% / .8); }
+  .mirror-side + .mirror-side { background: linear-gradient(180deg, hsl(220 13% 13% / .92), hsl(220 13% 10% / .96)); }
+  .mirror-h { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 18px; }
+  .mirror-side + .mirror-side .mirror-h { color: var(--signal); }
+  .mirror-said { font-family: var(--font-mono); font-size: .84rem; line-height: 1.8; color: var(--ink-2); }
+  .mirror-said mark { background: hsl(14 88% 60% / .12); color: hsl(14 88% 72%); padding: 0 3px; border-radius: 2px; }
+  .mirror-saw { display: grid; gap: 11px; }
+  .mirror-saw li { list-style: none; display: grid; grid-template-columns: 14px 1fr; gap: 10px; font-size: .86rem; color: var(--ink-2); line-height: 1.55; }
+  .mirror-saw li::before { content: '◆'; color: var(--signal); font-size: .6rem; line-height: 1.9; }
+  .mirror-cost {
+    margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--edge-subtle);
+    font-size: .92rem; color: var(--ink); line-height: 1.6;
+  }
+  .mirror-cost b { color: hsl(14 88% 68%); font-weight: 600; }
+
+  /* ═══════════════  THE DIFFERENCE  ═══════════════ */
+  .diff { padding: 108px 0; }
+  .table-scroll { overflow-x: auto; margin-top: 48px; border-radius: var(--r-lg); border: 1px solid var(--edge-subtle); }
+  table { width: 100%; border-collapse: collapse; min-width: 660px; }
+  thead th {
+    text-align: left; padding: 18px 20px; font-family: var(--font-mono);
+    font-size: .58rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-4); font-weight: 500; background: hsl(220 13% 11% / .7);
+    border-bottom: 1px solid var(--edge-subtle);
+  }
+  thead th:last-child { color: var(--signal); }
+  tbody td { padding: 15px 20px; font-size: .84rem; color: var(--ink-3); border-bottom: 1px solid var(--edge-subtle); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody th {
+    text-align: left; padding: 15px 20px; font-size: .84rem; color: var(--ink-2);
+    font-weight: 500; border-bottom: 1px solid var(--edge-subtle); white-space: nowrap;
+  }
+  tbody tr:last-child th { border-bottom: 0; }
+  td.us { color: var(--ink); background: hsl(213 96% 64% / .035); font-weight: 500; }
+  .no { color: var(--ink-4); font-family: var(--font-mono); }
+
+  /* ═══════════════  ACT IV — ARCHITECTURE + PRIVACY  ═══════════════ */
+  .arch { padding: 112px 0; }
+  .flow { display: grid; gap: 10px; margin-top: 48px; }
+  .flow-row { display: grid; grid-template-columns: 132px 1fr; gap: 16px; align-items: start; }
+  .flow-k { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-4); padding-top: 15px; }
+  .flow-nodes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fnode {
+    padding: 11px 15px; border-radius: var(--r-md);
+    background: hsl(220 13% 13% / .8); border: 1px solid var(--edge); border-top-color: var(--edge-lit);
+    font-size: .8rem; color: var(--ink-2);
+    transition: border-color var(--m-quick), color var(--m-quick);
+  }
+  .fnode:hover { border-top-color: var(--signal); color: var(--ink); }
+  .fnode b { font-family: var(--font-mono); font-size: .6rem; color: var(--ink-4); display: block; letter-spacing: .1em; margin-top: 3px; text-transform: uppercase; }
+
+  .privacy { padding: 0 0 112px; }
+  .priv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 44px; }
+  .priv { padding: 26px 24px; }
+  .priv h3 { font-size: .98rem; margin-bottom: 10px; }
+  .priv p { font-size: .84rem; color: var(--ink-3); line-height: 1.62; }
+  .priv-tag { display: inline-block; margin-bottom: 14px; font-family: var(--font-mono); font-size: .56rem; letter-spacing: .15em; text-transform: uppercase; color: var(--signal); }
+
+  /* ═══════════════  ACT V — FAQ + CLOSE  ═══════════════ */
+  .faq { padding: 108px 0; }
+  .faq-list { margin-top: 44px; border-top: 1px solid var(--edge-subtle); }
+  .qa { border-bottom: 1px solid var(--edge-subtle); }
+  .qa > summary {
+    list-style: none; cursor: pointer; padding: 22px 40px 22px 0; position: relative;
+    font-size: 1.02rem; color: var(--ink); font-weight: 500; letter-spacing: -.01em;
+    transition: color var(--m-instant);
+  }
+  .qa > summary::-webkit-details-marker { display: none; }
+  .qa > summary:hover { color: var(--signal); }
+  .qa > summary::after {
+    content: ''; position: absolute; right: 8px; top: 50%; width: 11px; height: 11px;
+    translate: 0 -50%; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+    rotate: 45deg; opacity: .5; transition: rotate var(--m-quick) var(--e-sharp);
+  }
+  .qa[open] > summary::after { rotate: -135deg; }
+  .qa-a { padding: 0 60px 24px 0; font-size: .92rem; color: var(--ink-3); line-height: 1.72; max-width: var(--measure); }
+  .qa-a a { color: var(--signal); text-decoration: underline; text-underline-offset: 3px; }
+
+  .close { padding: 128px 0 120px; text-align: center; position: relative; overflow: hidden; }
+  .close::before {
+    content: ''; position: absolute; left: 50%; top: -30%; translate: -50% 0;
+    width: min(1000px, 130vw); height: 620px; border-radius: 50%;
+    background: radial-gradient(circle, hsl(213 96% 60% / .16), transparent 68%);
+    filter: blur(90px); pointer-events: none;
+  }
+  .close h2 { font-size: clamp(2.1rem, 5vw, 3.7rem); line-height: 1.06; position: relative; }
+  .close h2 .a { display: block; font-weight: 200; color: var(--ink-2); }
+  .close h2 .b { display: block; font-weight: 600; color: var(--ink); }
+  .close .btn-row { justify-content: center; margin-top: 40px; position: relative; }
+  .close-fine { margin-top: 20px; font-family: var(--font-mono); font-size: .66rem; letter-spacing: .1em; color: var(--ink-4); position: relative; }
+
+  /* ═══════════════  FOOTER  ═══════════════ */
+  .foot { border-top: 1px solid var(--edge-subtle); padding: 48px 0 40px; }
+  .foot-in { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; }
+  .foot-links { display: flex; flex-wrap: wrap; gap: 22px; }
+  .foot-links a { font-size: .82rem; color: var(--ink-3); transition: color var(--m-instant); }
+  .foot-links a:hover { color: var(--signal); }
+  .foot-c { font-size: .78rem; color: var(--ink-4); }
+
+  /* ═══════════════  RESPONSIVE  ═══════════════ */
+  @media (max-width: 1100px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .hero { padding-top: 128px; }
+    .ev-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .pipe { grid-template-columns: repeat(2, 1fr); }
+    .priv-grid { grid-template-columns: 1fr; }
+    .const { display: none; }
+    .spine { display: block; }
+    .const-hint { display: none; }
+  }
+  @media (max-width: 860px) {
+    .nav-links { display: none; }
+    .nav-signin { display: none; }
+    .burger { display: inline-flex; }
+    .nav.open {
+      height: 100dvh; align-items: flex-start; background: var(--bedrock);
+      backdrop-filter: none; -webkit-backdrop-filter: none; overflow-y: auto;
     }
-    @media (max-width: 768px) {
-      .nav { padding: 0 16px; }
-      .nav-links { display: none !important; }
-      /* ── Modern full-screen mobile menu ── */
-      .nav {
-        transition: height 0.4s cubic-bezier(0.4,0,0.2,1),
-                    background 0.4s cubic-bezier(0.4,0,0.2,1),
-                    backdrop-filter 0.3s ease;
-      }
-      .nav.menu-open {
-        height: 100vh; height: 100dvh;
-        background: hsl(220, 13%, 7%);
-        backdrop-filter: none;
-        align-items: flex-start;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        border-bottom: none;
-      }
-      .nav.menu-open .nav-inner {
-        flex-wrap: wrap; align-content: flex-start;
-        height: 100%; padding-top: 4px;
-      }
-      .nav.menu-open .nav-links {
-        display: flex !important; flex-direction: column;
-        width: 100%; order: 3;
-        gap: 0; padding: 20px 0 24px;
-        animation: menuSlideIn 0.35s cubic-bezier(0.16,1,0.3,1) forwards;
-      }
-      @keyframes menuSlideIn {
-        from { opacity: 0; transform: translateY(-12px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-      .nav.menu-open .nav-links li {
-        opacity: 0;
-        animation: menuItemFade 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
-      }
-      .nav.menu-open .nav-links li:nth-child(1) { animation-delay: 0.06s; }
-      .nav.menu-open .nav-links li:nth-child(2) { animation-delay: 0.12s; }
-      .nav.menu-open .nav-links li:nth-child(3) { animation-delay: 0.18s; }
-      .nav.menu-open .nav-links li:nth-child(4) { animation-delay: 0.24s; }
-      .nav.menu-open .nav-links li:nth-child(5) { animation-delay: 0.30s; }
-      @keyframes menuItemFade {
-        from { opacity: 0; transform: translateX(-16px); }
-        to   { opacity: 1; transform: translateX(0); }
-      }
-      .nav.menu-open .nav-links a {
-        font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
-        padding: 18px 4px;
-        color: var(--text-secondary);
-        border-bottom: 1px solid hsla(220,13%,25%,0.12);
-        transition: color 0.2s, padding-left 0.2s;
-        display: flex; align-items: center; gap: 12px;
-      }
-      .nav.menu-open .nav-links li:last-child a { border-bottom: none; }
-      .nav.menu-open .nav-links a::after { display: none; }
-      .nav.menu-open .nav-links a:hover,
-      .nav.menu-open .nav-links a:active {
-        color: var(--text); padding-left: 8px;
-      }
-      /* Show CTA buttons in mobile menu */
-      .nav.menu-open .nav-right {
-        order: 4; width: 100%;
-        flex-direction: column; gap: 12px;
-        padding-top: 16px;
-        border-top: 1px solid hsla(220,13%,25%,0.15);
-        animation: menuSlideIn 0.4s cubic-bezier(0.16,1,0.3,1) 0.25s forwards;
-        opacity: 0;
-      }
-      .nav.menu-open .nav-login {
-        display: flex !important;
-        width: 100%; justify-content: center;
-        padding: 14px 24px; border-radius: 12px;
-        font-size: 16px; font-weight: 600;
-        color: var(--text); background: hsla(220,13%,18%,0.6);
-        border: 1px solid hsla(220,13%,30%,0.3);
-        text-align: center; text-decoration: none;
-        transition: all 0.2s;
-      }
-      .nav.menu-open .nav-login:hover {
-        background: hsla(220,13%,22%,0.8);
-        border-color: hsla(220,13%,40%,0.4);
-      }
-      .nav.menu-open .nav-cta {
-        display: flex !important;
-        width: 100%; justify-content: center;
-        padding: 14px 24px; border-radius: 12px;
-        font-size: 16px; font-weight: 700;
-        text-decoration: none;
-      }
-      .mobile-toggle { display: flex; }
-      .nav-login { display: none !important; }
-      .nav-cta { display: none !important; }
-      .hero { padding: 130px 16px 60px; min-height: auto; }
-      .hero h1 { font-size: 38px; }
-      .hero-sub { font-size: 15px; }
-      .hero-actions { flex-direction: column; }
-      .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
-      .hero-ring, .hero-ring-glow { display: none; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-      .stat-number, .stat-suffix { font-size: 32px; }
-      .bento-grid { grid-template-columns: 1fr; }
-      .modules-grid { grid-template-columns: 1fr; }
-      .diff-grid { grid-template-columns: 1fr; }
-      .m-sidebar { display: none; }
-      .m-score-panel { display: none; }
-      .hero-mockup { max-width: 100%; }
-      .footer-inner { flex-direction: column; text-align: center; }
-      .footer-links { flex-wrap: wrap; justify-content: center; }
-      .cta-wrap { padding: 64px 24px 56px; border-radius: 24px; }
-      .cta-stats { gap: 24px; flex-wrap: wrap; }
-      .cta-section h2 { font-size: 30px; }
-      .cursor-glow { display: none; }
-      .marquee-item { padding: 0 24px; font-size: 14px; }
-      .timeline { padding-left: 50px; }
-      .timeline-dot { left: -50px; width: 44px; height: 44px; font-size: 16px; }
-      .timeline::before, .timeline-progress { left: 21px; }
+    .nav.open .nav-in { flex-wrap: wrap; padding-top: 16px; }
+    .nav.open .nav-links {
+      display: flex; order: 3; width: 100%; flex-direction: column;
+      align-items: stretch; gap: 0; padding: 24px 0 20px;
     }
-    @media (max-width: 480px) {
-      .hero h1 { font-size: 32px; }
-      .bento-card, .module-card, .diff-card { padding: 24px; }
+    .nav.open .nav-links a {
+      font-size: 1.4rem; font-weight: 500; color: var(--ink-2); padding: 17px 2px;
+      border-bottom: 1px solid var(--edge-subtle); border-radius: 0;
     }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-      .reveal, .reveal-scale, .reveal-left, .reveal-right {
-        opacity: 1 !important; transform: none !important;
-      }
-    }
+    .nav.open .nav-act { order: 4; width: 100%; flex-direction: column; gap: 10px; padding-top: 10px; }
+    .nav.open .nav-signin { display: flex; width: 100%; justify-content: center; min-height: 50px; align-items: center; border: 1px solid var(--edge); border-radius: var(--r-md); }
+    .nav.open .nav-cta { width: 100%; min-height: 52px; font-size: .95rem; }
+    .nav.open .burger { position: absolute; right: var(--gutter); top: 8px; }
+
+    /* All scroll-pinning disabled below 1024px. Non-negotiable. */
+    .ev-track { height: auto; }
+    .ev-stick { position: static; height: auto; display: block; }
+    .ev-copy { min-height: 0; display: grid; gap: 26px; margin-bottom: 34px; }
+    .ev-beat { position: static; opacity: 1; transform: none; pointer-events: auto; }
+    .ev-layer { opacity: 1; filter: none; transform: none; }
+
+    .signals-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(3), .stat:nth-child(4) { border-top: 1px solid var(--edge-subtle); }
+    .stat:nth-child(3) { border-left: 0; }
+    .pipe { grid-template-columns: 1fr; }
+    .mirror-grid { grid-template-columns: 1fr; }
+    .flow-row { grid-template-columns: 1fr; gap: 8px; }
+    .flow-k { padding-top: 0; }
+    .btn { width: 100%; }
+    .btn-row { flex-direction: column; align-items: stretch; }
+    .inst-sig { grid-template-columns: repeat(2, 1fr); }
+    .inst-foot { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .inst-weights { text-align: left; max-width: none; }
+    .qa-a { padding-right: 8px; }
+  }
+  @media (max-width: 520px) {
+    .hero-spec { gap: 6px 16px; font-size: .66rem; }
+    .stat > summary { padding: 20px 16px; }
+    .stat-body { padding: 0 16px 20px; }
+    .crit { grid-template-columns: 70px 1fr auto; }
+  }
   </style>
 </head>
 <body>
 
-  <!-- ═══════ BACKGROUND LAYERS ═══════ -->
-  <canvas id="particles" aria-hidden="true"></canvas>
-  <div class="aurora" aria-hidden="true">
-    <div class="aurora-orb"></div>
-    <div class="aurora-orb"></div>
-    <div class="aurora-orb"></div>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- ═══════════════ S0 — THE STRATA FIELD ═══════════════ -->
+<div class="field" id="field" aria-hidden="true">
+  <div class="field-bloom"></div>
+  <div class="field-bloom-2"></div>
+  <div class="field-strata"></div>
+  <div class="field-grid"></div>
+  <div class="field-trace"></div>
+  <div class="field-trace t2"></div>
+  <div class="field-grain"></div>
+</div>
+
+<div class="progress" aria-hidden="true"><i id="progressFill"></i></div>
+
+<!-- ═══════════════ S4 — NAVIGATION ═══════════════ -->
+<nav class="nav" id="nav" aria-label="Primary">
+  <div class="nav-in">
+    <a href="/" class="brand" aria-label="Stratax AI, home">
+      <img src="/icons/stratax-ai-192.png" alt="" width="28" height="28">
+      Stratax <span>AI</span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#evidence">Evidence</a></li>
+      <li><a href="#modules">Platform</a></li>
+      <li><a href="#mirror">The Difference</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="/docs">Docs</a></li>
+    </ul>
+    <div class="nav-act">
+      <a href="/login" class="nav-signin">Sign in</a>
+      <a href="/app" class="btn btn-primary nav-cta">Start free</a>
+      <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
   </div>
-  <div class="dot-grid" aria-hidden="true"></div>
-  <div class="noise" aria-hidden="true"></div>
-  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+</nav>
 
-  <!-- ═══════ NAVIGATION ═══════ -->
-  <nav class="nav" id="nav">
-    <div class="nav-inner">
-      <a href="/" class="nav-logo" aria-label="Stratax AI Home">
-        <img src="/icons/stratax-ai-192.png" alt="Stratax AI" width="32" height="32">
-        Stratax AI
-      </a>
-      <ul class="nav-links" id="navLinks">
-        <li><a href="#features">Features</a></li>
-        <li><a href="#modules">Modules</a></li>
-        <li><a href="#how-it-works">How It Works</a></li>
-        <li><a href="/docs">Documentation</a></li>
-      </ul>
-      <div class="nav-right">
-        <a href="/login" class="nav-login">Sign In</a>
-        <a href="/app" class="nav-cta">Launch App</a>
-        <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu">&#9776;</button>
-      </div>
-    </div>
-  </nav>
+<!-- ═══════════════ DEPTH RAIL ═══════════════ -->
+<nav class="rail" id="rail" aria-label="Section navigation">
+  <div class="rail-act">Act I · Proof</div>
+  <a href="#top" data-t="top"><b>Live evaluation</b><i></i></a>
+  <a href="#scale" data-t="scale"><b>Scale</b><i></i></a>
+  <div class="rail-act">Act II · Mechanism</div>
+  <a href="#evidence" data-t="evidence"><b>Evidence column</b><i></i></a>
+  <a href="#modules" data-t="modules"><b>Modules</b><i></i></a>
+  <a href="#agents" data-t="agents"><b>Agents</b><i></i></a>
+  <div class="rail-act">Act III · Difference</div>
+  <a href="#mirror" data-t="mirror"><b>Weakness mirror</b><i></i></a>
+  <a href="#difference" data-t="difference"><b>Comparison</b><i></i></a>
+  <div class="rail-act">Act IV · Trust</div>
+  <a href="#architecture" data-t="architecture"><b>Architecture</b><i></i></a>
+  <a href="#privacy" data-t="privacy"><b>Privacy</b><i></i></a>
+  <div class="rail-act">Act V · Action</div>
+  <a href="#faq" data-t="faq"><b>Questions</b><i></i></a>
+  <a href="#close" data-t="close"><b>Start</b><i></i></a>
+</nav>
 
-  <!-- ═══════ HERO ═══════ -->
-  <section class="hero">
-    <div class="hero-ring" aria-hidden="true"></div>
-    <div class="hero-ring-glow" aria-hidden="true"></div>
+<main id="main">
 
-    <div class="hero-badge">
-      <span class="badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-        Interview Intelligence Platform
-      </span>
-    </div>
+<!-- ═══════════════════════════════════════════════════════════════
+     ACT I — HERO. The highest-stakes 100vh on the internet for this
+     brand. Two sentences: one uncomfortable fact the visitor already
+     knows, one statement of what changes.
+     ═══════════════════════════════════════════════════════════════ -->
+<section class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Interview Intelligence Platform</p>
 
-    <h1>
-      <span class="hero-line"><span class="hero-line-inner">Ace Every Interview</span></span>
-      <span class="hero-line"><span class="hero-line-inner">with <span class="gradient-text" data-text="Stratax AI">Stratax AI</span></span></span>
-    </h1>
+      <h1>
+        <span class="l1">Interviews are scored.</span>
+        <span class="l2">Now the scoring <span class="underscore">shows its work</span>.</span>
+      </h1>
 
-    <p class="hero-sub">
-      The AI-powered platform that combines real-time answer generation, adaptive mock interviews,
-      proctored practice sessions, and explainable scoring — everything you need to land your dream role.
-    </p>
+      <p class="lede">
+        Eight AI modules evaluate every answer you give — spoken, written or executed —
+        and every score decomposes into the evidence that produced it.
+      </p>
 
-    <div class="hero-actions">
-      <a href="/app" class="btn-primary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        Launch Application
-      </a>
-      <a href="/docs" class="btn-secondary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        Read Documentation
-      </a>
-    </div>
-
-    <!-- Hero Mockup -->
-    <div class="hero-visual">
-      <div class="hero-mockup">
-        <div class="mockup-bar">
-          <div class="mockup-dots"><span></span><span></span><span></span></div>
-          <div class="mockup-url">strataxai.in/app</div>
-        </div>
-        <div class="mockup-body">
-          <!-- Icon Sidebar -->
-          <div class="m-sidebar">
-            <div class="m-logo"></div>
-            <div class="m-nav-dot active"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-            <div class="m-nav-dot"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
-            <div class="m-nav-dot"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
-            <div class="m-nav-dot"><svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-            <div class="m-nav-dot"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-            <div class="m-spacer"></div>
-            <div class="m-nav-dot"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m-7-7H1m22 0h-4m-1.5-6.5L15 7m-6 6-2.5 2.5M19.5 17.5 17 15M7 7 4.5 4.5"/></svg></div>
-          </div>
-          <!-- Main Area -->
-          <div class="m-main">
-            <div class="m-topbar">
-              <div class="m-tab active">AI Copilot</div>
-              <div class="m-tab">Practice</div>
-              <div class="m-tab">Mock Interview</div>
-              <div class="m-tab">Intelligence</div>
-            </div>
-            <div class="m-content">
-              <!-- Chat Panel -->
-              <div class="m-chat">
-                <div class="m-bubble question">
-                  <span class="m-label">You</span>
-                  Explain how you would design a rate limiter for a distributed API gateway.
-                </div>
-                <div class="m-bubble answer">
-                  <span class="m-label">Stratax AI</span>
-                  A distributed rate limiter needs a shared counter store like Redis with atomic INCR operations. The key design is a sliding window approach &mdash; combine a fixed window counter with weighted overlap from the previous window...
-                  <div class="m-typing"><span></span><span></span><span></span></div>
-                </div>
-                <div class="m-input-bar">
-                  <div class="m-input-text"></div>
-                  <div class="m-send-btn"></div>
-                </div>
-              </div>
-              <!-- Score Panel -->
-              <div class="m-score-panel">
-                <div class="m-score-header">Session Score</div>
-                <svg class="m-score-ring" viewBox="0 0 80 80">
-                  <circle cx="40" cy="40" r="32" fill="none" stroke="var(--border)" stroke-width="5" opacity="0.2"/>
-                  <circle cx="40" cy="40" r="32" fill="none" stroke="url(#scoreGrad)" stroke-width="5" stroke-dasharray="155 46" stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:center;"/>
-                  <defs><linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="var(--primary)"/><stop offset="100%" stop-color="var(--green)"/></linearGradient></defs>
-                  <text x="40" y="38" text-anchor="middle" fill="var(--text)" font-size="16" font-weight="800" font-family="var(--font-sans)">87</text>
-                  <text x="40" y="50" text-anchor="middle" fill="var(--text-muted)" font-size="7" font-weight="500" font-family="var(--font-sans)">out of 100</text>
-                </svg>
-                <div>
-                  <div class="m-metric-row">
-                    <span class="m-metric-label">Correctness</span>
-                    <div class="m-metric-bar-wrap"><div class="m-metric-bar" style="width:92%;background:var(--green);"></div></div>
-                  </div>
-                  <div class="m-metric-row">
-                    <span class="m-metric-label">Clarity</span>
-                    <div class="m-metric-bar-wrap"><div class="m-metric-bar" style="width:85%;background:var(--primary);"></div></div>
-                  </div>
-                  <div class="m-metric-row">
-                    <span class="m-metric-label">Depth</span>
-                    <div class="m-metric-bar-wrap"><div class="m-metric-bar" style="width:78%;background:var(--purple);"></div></div>
-                  </div>
-                  <div class="m-metric-row">
-                    <span class="m-metric-label">Communication</span>
-                    <div class="m-metric-bar-wrap"><div class="m-metric-bar" style="width:90%;background:var(--amber);"></div></div>
-                  </div>
-                </div>
-                <div class="m-tags-row">
-                  <span class="m-tag">System Design</span>
-                  <span class="m-tag">Distributed</span>
-                  <span class="m-tag">Redis</span>
-                  <span class="m-tag">API Gateway</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ MARQUEE / SOCIAL PROOF ═══════ -->
-  <section class="marquee-section">
-    <div class="marquee-label">Powered by cutting-edge AI infrastructure</div>
-    <div class="marquee-track" id="marquee">
-      <div class="marquee-item"><span class="dot" style="background:var(--primary)"></span>Groq LLM Engine</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--purple)"></span>Google Gemini</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--green)"></span>Judge0 Sandbox</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--amber)"></span>BM25 + Vector Search</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--primary)"></span>Real-Time STT</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--purple)"></span>6 AI Agents</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--green)"></span>SSE Streaming</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--amber)"></span>50+ Company Profiles</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--primary)"></span>Mirror Ontology</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--purple)"></span>ATS Scoring</div>
-      <!-- Duplicate for seamless loop -->
-      <div class="marquee-item"><span class="dot" style="background:var(--primary)"></span>Groq LLM Engine</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--purple)"></span>Google Gemini</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--green)"></span>Judge0 Sandbox</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--amber)"></span>BM25 + Vector Search</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--primary)"></span>Real-Time STT</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--purple)"></span>6 AI Agents</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--green)"></span>SSE Streaming</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--amber)"></span>50+ Company Profiles</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--primary)"></span>Mirror Ontology</div>
-      <div class="marquee-item"><span class="dot" style="background:var(--purple)"></span>ATS Scoring</div>
-    </div>
-  </section>
-
-  <!-- ═══════ STATS ═══════ -->
-  <section class="stats-bar">
-    <div class="stats-grid">
-      <div class="stat-card reveal rd1">
-        <div><span class="stat-number" data-target="8">0</span></div>
-        <div class="stat-label">AI-Powered Modules</div>
-      </div>
-      <div class="stat-card reveal rd2">
-        <div><span class="stat-number" data-target="6">0</span></div>
-        <div class="stat-label">Specialized AI Agents</div>
-      </div>
-      <div class="stat-card reveal rd3">
-        <div><span class="stat-number" data-target="100">0</span><span class="stat-suffix">%</span></div>
-        <div class="stat-label">Explainable Scores</div>
-      </div>
-      <div class="stat-card reveal rd4">
-        <div><span class="stat-number" data-target="50">0</span><span class="stat-suffix">+</span></div>
-        <div class="stat-label">Company Profiles</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ FEATURES — BENTO GRID ═══════ -->
-  <section class="features" id="features">
-    <div class="features-header reveal">
-      <div class="section-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
-        Core Capabilities
-      </div>
-      <h2>Built for Real<br>Interview Success</h2>
-      <p>Everything is designed to mirror how interviews actually work — from adaptive questioning to explainable evaluation.</p>
-    </div>
-    <div class="bento-grid">
-      <div class="bento-card glass-card reveal-scale rd1">
-        <div class="card-icon blue">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        </div>
-        <h3>Real-Time AI Copilot</h3>
-        <p>Context-aware conversational assistant with session persistence, dual-provider LLM routing, and SSE streaming for instant responses.</p>
-      </div>
-      <div class="bento-card glass-card reveal-scale rd2">
-        <div class="card-icon green">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-        </div>
-        <h3>Explainable Scoring</h3>
-        <p>Every evaluation maps strengths, gaps, and red flags to a transparent rubric — no opaque numbers, just actionable insights.</p>
-      </div>
-      <div class="bento-card glass-card reveal-scale rd3">
-        <div class="card-icon amber">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-        </div>
-        <h3>Voice &amp; Speech Analysis</h3>
-        <p>Local STT engine tracks pace, filler words, pauses, and communication clarity — the signals interviewers notice most.</p>
-      </div>
-      <div class="bento-card glass-card reveal-scale rd4">
-        <div class="card-icon purple">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-        </div>
-        <h3>Resume-Aware Probing</h3>
-        <p>Upload your resume and get claim-based questions that probe your actual projects, skills, and experience with surgical precision.</p>
-      </div>
-      <div class="bento-card glass-card reveal-scale rd5">
-        <div class="card-icon blue">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-        </div>
-        <h3>Adaptive Follow-Ups</h3>
-        <p>Like a real interviewer, the AI probes deeper based on your answers — exploring constraints, trade-offs, and edge cases dynamically.</p>
-      </div>
-      <div class="bento-card glass-card reveal-scale rd6">
-        <div class="card-icon green">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        </div>
-        <h3>Proctored Sessions</h3>
-        <p>Backend-authoritative proctoring with camera, screen share, and integrity monitoring simulates real interview conditions.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ MODULES ═══════ -->
-  <section class="modules" id="modules">
-    <div class="modules-header reveal">
-      <div class="section-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Platform Modules
-      </div>
-      <h2>Eight Modules.<br>One Scoring Standard.</h2>
-      <p>A comprehensive suite of AI-powered tools covering every aspect of interview preparation and evaluation.</p>
-    </div>
-    <div class="modules-grid">
-      <div class="module-card glass-card reveal rd1">
-        <div class="module-icon i-copilot">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
-        </div>
-        <div class="module-body">
-          <h3>AI Copilot</h3>
-          <p>Context-aware conversational assistant with dual-LLM routing (Groq + Gemini), session persistence, and identity-safe streaming.</p>
-          <div class="module-tags">
-            <span class="module-tag">SSE Streaming</span>
-            <span class="module-tag">Multi-turn</span>
-            <span class="module-tag">Dual LLM</span>
-          </div>
-        </div>
-      </div>
-      <div class="module-card glass-card reveal rd2">
-        <div class="module-icon i-practice">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-        </div>
-        <div class="module-body">
-          <h3>Practice Mode</h3>
-          <p>Session-based practice with 6 AI agents, local STT, adaptive interviewing, deterministic scoring, and backend-authoritative proctoring.</p>
-          <div class="module-tags">
-            <span class="module-tag">6 AI Agents</span>
-            <span class="module-tag">3 Round Types</span>
-            <span class="module-tag">Proctored</span>
-          </div>
-        </div>
-      </div>
-      <div class="module-card glass-card reveal rd1">
-        <div class="module-icon i-mock">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-        </div>
-        <div class="module-body">
-          <h3>Mock Interview</h3>
-          <p>Multi-question session simulator with progressive hints (3 levels), 5-criteria LLM evaluation, and exportable HTML reports.</p>
-          <div class="module-tags">
-            <span class="module-tag">4 Interview Types</span>
-            <span class="module-tag">Progressive Hints</span>
-            <span class="module-tag">HTML Export</span>
-          </div>
-        </div>
-      </div>
-      <div class="module-card glass-card reveal rd2">
-        <div class="module-icon i-intel">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
-        </div>
-        <div class="module-body">
-          <h3>Interview Intelligence</h3>
-          <p>Hybrid retrieval (BM25 + vector) with grounded question generation for 50+ companies including FAANG, Stripe, Airbnb, and more.</p>
-          <div class="module-tags">
-            <span class="module-tag">Hybrid Search</span>
-            <span class="module-tag">50+ Companies</span>
-            <span class="module-tag">Web Grounding</span>
-          </div>
-        </div>
-      </div>
-      <div class="module-card glass-card reveal rd1">
-        <div class="module-icon i-code">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/></svg>
-        </div>
-        <div class="module-body">
-          <h3>Code Evaluation</h3>
-          <p>Execute code in a Judge0 sandbox with static analysis + LLM critique. Supports 10+ languages with complexity checking and detailed feedback.</p>
-          <div class="module-tags">
-            <span class="module-tag">Judge0 Sandbox</span>
-            <span class="module-tag">10+ Languages</span>
-            <span class="module-tag">LLM Critique</span>
-          </div>
-        </div>
-      </div>
-      <div class="module-card glass-card reveal rd2">
-        <div class="module-icon i-resume">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
-        </div>
-        <div class="module-body">
-          <h3>Resume Intelligence</h3>
-          <p>LLM-based resume parsing with claim extraction, ATS scoring, skills gap analysis, and tailored interview probing — all processed in-memory.</p>
-          <div class="module-tags">
-            <span class="module-tag">ATS Scoring</span>
-            <span class="module-tag">Claim Extraction</span>
-            <span class="module-tag">Zero Storage</span>
-          </div>
-        </div>
-      </div>
-      <div class="module-card glass-card reveal rd1">
-        <div class="module-icon i-arch">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4"/><path d="M6.5 10v4"/><path d="M17.5 10v4"/></svg>
-        </div>
-        <div class="module-body">
-          <h3>Architecture Generator</h3>
-          <p>Takes any system design question and generates structured Mermaid diagrams with component breakdown, data flow, and scaling annotations.</p>
-          <div class="module-tags">
-            <span class="module-tag">Mermaid Diagrams</span>
-            <span class="module-tag">Auto Layout</span>
-            <span class="module-tag">LLM Powered</span>
-          </div>
-        </div>
-      </div>
-      <div class="module-card glass-card reveal rd2">
-        <div class="module-icon i-progress">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        </div>
-        <div class="module-body">
-          <h3>Progress Intelligence</h3>
-          <p>Cross-session semantic deduplication, heatmaps, trend analysis, and AI-generated study plans via the Mirror Ontology engine.</p>
-          <div class="module-tags">
-            <span class="module-tag">Mirror Ontology</span>
-            <span class="module-tag">Trend Analysis</span>
-            <span class="module-tag">Study Plans</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ HOW IT WORKS — TIMELINE ═══════ -->
-  <section class="how-it-works" id="how-it-works">
-    <div class="hiw-header reveal">
-      <div class="section-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        How It Works
-      </div>
-      <h2>From Setup to<br>Actionable Insight</h2>
-      <p>Four stages that mirror a real interview loop — configure, practice, evaluate, improve.</p>
-    </div>
-    <div class="timeline" id="timeline">
-      <div class="timeline-progress" id="timelineProgress"></div>
-      <div class="timeline-step reveal-left rd1">
-        <div class="timeline-dot">1</div>
-        <h3>Configure</h3>
-        <p>Choose your round type, topic, difficulty, and upload your resume for personalized preparation.</p>
-      </div>
-      <div class="timeline-step reveal-left rd2">
-        <div class="timeline-dot">2</div>
-        <h3>Practice</h3>
-        <p>Engage with adaptive AI interviewers that probe deeper based on your responses — just like a real interview.</p>
-      </div>
-      <div class="timeline-step reveal-left rd3">
-        <div class="timeline-dot">3</div>
-        <h3>Evaluate</h3>
-        <p>Get transparent, rubric-based scores across correctness, delivery, clarity, and structure with specific feedback.</p>
-      </div>
-      <div class="timeline-step reveal-left rd4">
-        <div class="timeline-dot">4</div>
-        <h3>Improve</h3>
-        <p>Track progress across sessions with intelligent guidance on what to focus next for maximum improvement.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ DIFFERENTIATORS ═══════ -->
-  <section class="diff">
-    <div class="diff-header reveal">
-      <div class="section-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
-        Why Stratax AI
-      </div>
-      <h2>What Makes Us<br>Different</h2>
-      <p>Not just another prep tool — a platform that evaluates like a real interviewer thinks.</p>
-    </div>
-    <div class="diff-grid">
-      <div class="diff-card glass-card reveal-scale rd1">
-        <span class="diff-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><path d="M12 2a7 7 0 0 0-7 7c0 3 2 5.5 4 7l1 2h4l1-2c2-1.5 4-4 4-7a7 7 0 0 0-7-7z"/><path d="M9.5 18h5"/><path d="M10 21h4"/></svg></span>
-        <h3>Session-Level Evaluation</h3>
-        <p>We don't score answers in isolation. We evaluate consistency, depth evolution, and reasoning patterns across your entire session.</p>
-      </div>
-      <div class="diff-card glass-card reveal-scale rd2">
-        <span class="diff-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span>
-        <h3>Communication Signals</h3>
-        <p>Voice mode tracks pace, filler words, pauses, and articulation — the non-verbal signals interviewers unconsciously evaluate.</p>
-      </div>
-      <div class="diff-card glass-card reveal-scale rd3">
-        <span class="diff-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-        <h3>Privacy-First Design</h3>
-        <p>No raw audio stored for training. Resumes processed in-memory. Provider keys encrypted. Your data stays yours.</p>
-      </div>
-      <div class="diff-card glass-card reveal-scale rd4">
-        <span class="diff-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
-        <h3>Multi-Agent Architecture</h3>
-        <p>Six specialized AI agents work in parallel — STT, speech analytics, adaptive interviewing, evaluation, proctoring, and coaching.</p>
-      </div>
-      <div class="diff-card glass-card reveal-scale rd5">
-        <span class="diff-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 6-6"/><path d="M17 10h4v4"/></svg></span>
-        <h3>Progress Intelligence</h3>
-        <p>Track improvement over time with heatmaps, trend analysis, and AI-generated study plans tailored to your gaps.</p>
-      </div>
-      <div class="diff-card glass-card reveal-scale rd6">
-        <span class="diff-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
-        <h3>Unified Scoring Engine</h3>
-        <p>One consistent rubric across all modules — practice, mock interviews, coding, and resume analysis. No fragmented evaluation.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ FINAL CTA ═══════ -->
-  <section class="cta-section">
-    <div class="cta-wrap reveal-scale">
-      <div class="cta-orb cta-orb-1" aria-hidden="true"></div>
-      <div class="cta-orb cta-orb-2" aria-hidden="true"></div>
-
-      <div class="cta-eyebrow">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        Start For Free
-      </div>
-
-      <h2>Your Next Interview<br>Could Be <span class="cta-gradient">Your Best One</span></h2>
-      <p>Join thousands of candidates using AI-powered preparation to turn interviews from stressful to strategic.</p>
-
-      <div class="hero-actions" style="margin-top: 0;">
-        <a href="/app" class="btn-primary">
+      <div class="btn-row" style="margin-top:34px">
+        <a href="/app" class="btn btn-primary">
+          Start free — no card
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-          Launch Stratax AI
         </a>
-        <a href="/docs" class="btn-secondary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-          Explore Docs
-        </a>
+        <button class="btn btn-ghost" id="watchIt" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+          Watch it score
+        </button>
       </div>
 
-      <div class="cta-stats">
-        <div class="cta-stat">
-          <div class="cta-stat-num">8+</div>
-          <div class="cta-stat-label">AI Modules</div>
+      <p class="hero-note">Free tier · Bring your own key · No card required</p>
+
+      <div class="hero-spec">
+        <span><b>8</b> modules</span>
+        <span><b>6</b> agents</span>
+        <span><b>13</b> round types</span>
+        <span><b>10</b> language runtimes</span>
+        <span><b>15</b> company profiles</span>
+      </div>
+    </div>
+
+    <!-- ── THE LIVE EVALUATION ── -->
+    <div>
+      <figure class="inst" id="inst" aria-label="Live evaluation demonstration">
+        <figcaption class="sr-only" id="instText" aria-live="polite"></figcaption>
+
+        <header class="inst-head">
+          <span class="inst-live"><i></i>Live evaluation</span>
+          <span class="mono" data-kind>—</span>
+        </header>
+
+        <div class="inst-q"><em>Question</em><span data-question>&nbsp;</span></div>
+
+        <div class="inst-tx" data-transcript aria-hidden="true"></div>
+
+        <div class="inst-sig" data-signals aria-hidden="true"></div>
+
+        <footer class="inst-foot">
+          <div class="inst-score">
+            <b data-score>0</b><u>/100</u>
+            <span class="inst-band" data-band="" data-b="strong">—</span>
+          </div>
+          <p class="inst-weights" data-weights>Awaiting answer</p>
+        </footer>
+
+        <div class="inst-split" data-split aria-hidden="true"></div>
+
+        <p class="inst-receipt idle" data-receipt><b>Published weights</b> — correctness &#183;45 &#183; delivery &#183;25 &#183; clarity &#183;15 &#183; structure &#183;15</p>
+
+        <div class="inst-ctl">
+          <span class="inst-dots" data-dots aria-hidden="true"></span>
+          <button type="button" class="inst-replay" id="replay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+            Replay
+          </button>
+          <!-- The instrument above is a 14-second condensation. This is the
+               uncondensed thing: full captured output from all four modules, no
+               API key required. Shares `inst-replay` purely for the control's
+               look — it is a link, not a replay. -->
+          <a href="/showcase" class="inst-replay">
+            See a full evaluation
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
         </div>
-        <div class="cta-stat">
-          <div class="cta-stat-num">6</div>
-          <div class="cta-stat-label">Parallel Agents</div>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SIGNAL BAR — every number is checkable ═══════════════ -->
+<section class="signals" id="scale" aria-label="Platform scale">
+  <div class="wrap">
+    <div class="signals-grid">
+      <details class="stat">
+        <summary>
+          <div class="stat-n" data-count="8">0</div>
+          <div class="stat-l">AI-powered modules</div>
+          <span class="stat-r">Receipt
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+        </summary>
+        <div class="stat-body">
+          AI Copilot · Practice Mode · Mock Interview · Interview Intelligence ·
+          Code Evaluation · Résumé Intelligence · Architecture Generator · Progress Intelligence.
+          All eight write into the same scoring substrate — which is why a coding round
+          can be compared against a behavioural round from three weeks earlier.
         </div>
-        <div class="cta-stat">
-          <div class="cta-stat-num">50+</div>
-          <div class="cta-stat-label">Company Profiles</div>
+      </details>
+
+      <details class="stat">
+        <summary>
+          <div class="stat-n" data-count="6">0</div>
+          <div class="stat-l">Specialised agents</div>
+          <span class="stat-r">Receipt
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+        </summary>
+        <div class="stat-body">
+          Conversational Setup · Interviewer · Adaptive Interviewer · Speech Analytics ·
+          Evaluation · Session Strategy. Each has one job, and each names its input and
+          its output. Alongside them: local speech-to-text and on-device proctoring.
         </div>
-        <div class="cta-stat">
-          <div class="cta-stat-num">100%</div>
-          <div class="cta-stat-label">Free Tier</div>
+      </details>
+
+      <details class="stat">
+        <summary>
+          <div class="stat-n" data-count="13">0</div>
+          <div class="stat-l">Interview round types</div>
+          <span class="stat-r">Receipt
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+        </summary>
+        <div class="stat-body">
+          Behavioural, system design, DSA, coding, low-level design, API design,
+          database, debugging, domain deep-dive, résumé probe, culture fit,
+          case study and rapid fire — each with its own question policy and rubric weighting.
+        </div>
+      </details>
+
+      <details class="stat">
+        <summary>
+          <div class="stat-n" data-count="10">0</div>
+          <div class="stat-l">Language runtimes</div>
+          <span class="stat-r">Receipt
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+        </summary>
+        <div class="stat-body">
+          <code>Python · JavaScript · TypeScript · Java · C · C++ · C# · Go · Rust · SQL</code>
+          — executed in a Judge0 sandbox on runtimes resolved live, so the editor
+          shows the exact version your code will run on.
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ACT II — THE EVIDENCE COLUMN. If a visitor reads one section,
+     this is it. The differentiator, taught rather than claimed.
+     ═══════════════════════════════════════════════════════════════ -->
+<section class="evidence band" id="evidence" aria-labelledby="evidence-h">
+  <div class="wrap">
+    <div class="head rise">
+      <p class="eyebrow">The Evidence Column</p>
+      <h2 id="evidence-h">A score is the top of a column, not the whole of it.</h2>
+      <p class="lede">Scroll to section the column. Every layer beneath the number is
+        something that actually happened — and every one of them is visible to you.</p>
+    </div>
+  </div>
+
+  <div class="ev-track" id="evTrack">
+    <div class="ev-stick">
+      <div class="wrap ev-grid">
+
+        <div class="ev-copy" id="evCopy">
+          <div class="ev-beat on">
+            <p class="ev-idx">01 / 06 — THE SCORE</p>
+            <h3>Most tools stop here.</h3>
+            <p>A number, and a shrug. You learn that you scored 80. You do not learn
+              what an 80 is made of, so you cannot do anything differently tomorrow.</p>
+          </div>
+          <div class="ev-beat">
+            <p class="ev-idx">02 / 06 — THE CRITERIA</p>
+            <h3>Every score is a weighted sum.</h3>
+            <p>Four criteria, fixed weights, applied identically to everyone:
+              correctness ·45, delivery ·25, clarity ·15, structure ·15. The weights are
+              published, not inferred.</p>
+          </div>
+          <div class="ev-beat">
+            <p class="ev-idx">03 / 06 — THE EVIDENCE</p>
+            <h3>Each criterion points at words.</h3>
+            <p>Not a paraphrase of your answer — the exact span that earned or cost you
+              points, quoted back with the reason attached.</p>
+          </div>
+          <div class="ev-beat">
+            <p class="ev-idx">04 / 06 — THE SIGNALS</p>
+            <h3>Underneath: what you actually did.</h3>
+            <p>What your voice did, what your code did, and what you left unsaid.
+              Pace, filler density, pause length, test results, static analysis findings.</p>
+          </div>
+          <div class="ev-beat">
+            <p class="ev-idx">05 / 06 — THE HISTORY</p>
+            <h3>One column joins the others.</h3>
+            <p>Semantic deduplication across sessions means the same weakness twice is
+              a pattern, not a coincidence. "Vague about scale" in a design round and
+              "no metrics" in a behavioural round resolve to one tracked gap.</p>
+          </div>
+          <div class="ev-beat">
+            <p class="ev-idx">06 / 06 — THE STACK</p>
+            <h3>That's the whole column.</h3>
+            <p>Nothing hidden, nothing inferred, nothing you cannot trace back to
+              something you said, wrote or ran.</p>
+          </div>
+        </div>
+
+        <div class="ev-col" id="evCol">
+          <!-- L1 — the conclusion, at the surface -->
+          <div class="ev-layer" data-l="0">
+            <div class="ev-cap"><span>S5 · Verdict</span><span>Behavioural round</span></div>
+            <div class="ev-score"><b>80</b><u>/100</u></div>
+          </div>
+          <!-- L2 — criteria -->
+          <div class="ev-layer" data-l="1">
+            <div class="ev-cap"><span>S4 · Weighted criteria</span><span>4 dimensions</span></div>
+            <div class="ev-rows">
+              <div class="ev-row"><span>Correctness</span><i style="width:71%"></i><b>71 ·45</b></div>
+              <div class="ev-row"><span>Delivery</span><i style="width:88%"></i><b>88 ·25</b></div>
+              <div class="ev-row"><span>Clarity</span><i style="width:90%"></i><b>90 ·15</b></div>
+              <div class="ev-row"><span>Structure</span><i style="width:84%"></i><b>84 ·15</b></div>
+            </div>
+          </div>
+          <!-- L3 — evidence spans -->
+          <div class="ev-layer" data-l="2">
+            <div class="ev-cap"><span>S3 · Evidence spans</span><span>correctness 71</span></div>
+            <p class="ev-quote">"We rolled out the new pipeline, it broke on a Friday, and
+              <mark>I owned the rollback and the postmortem</mark>."
+              <em>Ownership is stated. The outcome you prevented is never quantified — that is the 29.</em></p>
+          </div>
+          <!-- S2 — raw signal lives deep -->
+          <div class="ev-layer" data-l="3">
+            <div class="ev-cap"><span>S2 · Raw signals</span><span>local STT</span></div>
+            <svg class="ev-wave" viewBox="0 0 320 34" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="0" y1="17" x2="320" y2="17"></line>
+              <path d="M0,17 L14,13 L28,21 L42,9 L56,24 L70,12 L84,19 L98,7 L112,26 L126,14 L140,20 L154,11 L168,23 L182,15 L196,18 L210,10 L224,25 L238,13 L252,19 L266,16 L280,21 L294,15 L308,18 L320,17"></path>
+            </svg>
+            <div class="ev-metrics">
+              <span class="chip">pace <b>148 wpm</b></span>
+              <span class="chip">fillers <b>2</b></span>
+              <span class="chip">longest pause <b>1.4s</b></span>
+            </div>
+          </div>
+          <!-- S1 — history -->
+          <div class="ev-layer" data-l="4">
+            <div class="ev-cap"><span>S1 · Session history</span><span>12 sessions</span></div>
+            <div class="ev-hist" aria-hidden="true">
+              <i style="height:42%"></i><i style="height:38%"></i><i style="height:55%"></i>
+              <i style="height:49%"></i><i style="height:61%"></i><i style="height:58%"></i>
+              <i style="height:66%"></i><i style="height:72%"></i><i style="height:64%"></i>
+              <i style="height:78%"></i><i style="height:74%"></i><i style="height:88%"></i>
+            </div>
+            <div class="ev-metrics">
+              <span class="chip">recurring gap <b>impact never quantified</b></span>
+              <span class="chip">seen in <b>4 of 12</b></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" style="padding-bottom:104px">
+    <div class="btn-row rise" style="justify-content:center">
+      <a href="/app" class="btn btn-primary">
+        Score my answer
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ MODULE CONSTELLATION ═══════════════ -->
+<section class="modules" id="modules" aria-labelledby="modules-h">
+  <div class="wrap">
+    <div class="head rise">
+      <p class="eyebrow">Platform</p>
+      <h2 id="modules-h">Eight modules. One scoring standard.</h2>
+      <p class="lede">Stratax is not eight tools. It is one evaluation standard with eight
+        entry points. Hover a module to see which others consume its output.</p>
+    </div>
+
+    <div class="const" id="const">
+      <svg id="constLines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <div class="const-core">
+        <b>Core</b>
+        <span>Scoring<br>Standard</span>
+        <em>one rubric</em>
+      </div>
+    </div>
+
+    <div class="spine" id="spine"></div>
+    <p class="const-hint">Hover a module — its dependents light with it</p>
+  </div>
+</section>
+
+<!-- ═══════════════ AGENT PIPELINE ═══════════════ -->
+<section class="agents band" id="agents" aria-labelledby="agents-h">
+  <div class="wrap">
+    <div class="head rise">
+      <p class="eyebrow">Architecture · Agents</p>
+      <h2 id="agents-h">Six agents, each with one job.</h2>
+      <p class="lede">Because a single prompt asked to do six things does all six badly.
+        An answer flows through the pipeline left to right, and every stage names what it
+        takes in and what it hands on.</p>
+    </div>
+
+    <div class="pipe">
+      <article class="sed sed-i agent rise d1">
+        <p class="agent-i">01</p>
+        <h3>Conversational Setup</h3>
+        <p>Turns a free-form "I have a Google backend interview Thursday" into a configured
+          session: round type, topic, difficulty, company profile.</p>
+        <dl><dt>In</dt><dd>Natural language</dd><dt>Out</dt><dd>Session config</dd></dl>
+      </article>
+      <article class="sed sed-i agent rise d2">
+        <p class="agent-i">02</p>
+        <h3>Interviewer</h3>
+        <p>Generates the question for the configured round, grounded in retrieved company
+          and role context rather than a static bank.</p>
+        <dl><dt>In</dt><dd>Config + retrieval</dd><dt>Out</dt><dd>Question</dd></dl>
+      </article>
+      <article class="sed sed-i agent rise d3">
+        <p class="agent-i">03</p>
+        <h3>Adaptive Interviewer</h3>
+        <p>Reads your answer and decides the next question from it — probing the constraint
+          you skipped, not the next item on a list.</p>
+        <dl><dt>In</dt><dd>Answer + history</dd><dt>Out</dt><dd>Follow-up</dd></dl>
+      </article>
+      <article class="sed sed-i agent rise d4">
+        <p class="agent-i">04</p>
+        <h3>Speech Analytics</h3>
+        <p>Consumes the local transcript and timing to produce pace, filler density, pause
+          distribution and articulation signals.</p>
+        <dl><dt>In</dt><dd>Local STT stream</dd><dt>Out</dt><dd>Delivery signals</dd></dl>
+      </article>
+      <article class="sed sed-i agent rise d5">
+        <p class="agent-i">05</p>
+        <h3>Evaluation</h3>
+        <p>Applies the weighted rubric, attaches each criterion to the span that produced
+          it, and excludes any dimension it had no input for.</p>
+        <dl><dt>In</dt><dd>Answer + signals</dd><dt>Out</dt><dd>Scored column</dd></dl>
+      </article>
+      <article class="sed sed-i agent rise d6">
+        <p class="agent-i">06</p>
+        <h3>Session Strategy</h3>
+        <p>Looks across the whole session — consistency, depth evolution, reasoning pattern —
+          and decides what you should do next.</p>
+        <dl><dt>In</dt><dd>All columns</dd><dt>Out</dt><dd>Study plan</dd></dl>
+      </article>
+    </div>
+
+    <p class="agents-claim rise">Dual-LLM routing sits under all six: Groq for latency-critical
+      streaming, Gemini for depth-critical evaluation. Routed per task, not per user.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ACT III — THE WEAKNESS MIRROR. The bold one.
+     ═══════════════════════════════════════════════════════════════ -->
+<section class="mirror" id="mirror" aria-labelledby="mirror-h">
+  <div class="wrap">
+    <div class="head rise">
+      <p class="eyebrow">The Difference</p>
+      <h2 id="mirror-h">A tool that only flatters you is a tool that cannot help you.</h2>
+      <p class="lede">This is what an evaluation actually looks like when nothing is
+        softened. It is unflattering on purpose — that is the entire value.</p>
+    </div>
+
+    <div class="mirror-grid rise">
+      <div class="mirror-side">
+        <p class="mirror-h">You said</p>
+        <p class="mirror-said">"…and then we scaled it out across the fleet and
+          <mark>it worked really well</mark>, so we shipped it to everyone the week after."</p>
+      </div>
+      <div class="mirror-side">
+        <p class="mirror-h">Stratax saw</p>
+        <ul class="mirror-saw">
+          <li>Unbounded claim — "scaled" with no metric, no ceiling, no load figure.</li>
+          <li>Third unquantified assertion this session.</li>
+          <li>Pattern across 4 sessions: impact stated, never measured.</li>
+        </ul>
+        <p class="mirror-cost">This costs you the senior band. Interviewers read an
+          unmeasured claim as <b>inability to measure your own work</b> — and it is the
+          cheapest thing on this page to fix.</p>
+      </div>
+    </div>
+
+    <div class="btn-row rise" style="margin-top:36px">
+      <a href="/app" class="btn btn-primary">
+        See your blind spots
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ THE COMPARISON ═══════════════ -->
+<section class="diff band" id="difference" aria-labelledby="diff-h">
+  <div class="wrap">
+    <div class="head rise">
+      <p class="eyebrow">Honest contrast</p>
+      <h2 id="diff-h">Measured against what you'd otherwise use.</h2>
+      <p class="lede">No strawman competitor. The real alternatives are a general-purpose
+        chat model and a question bank, so those are what this compares against.</p>
+    </div>
+
+    <div class="table-scroll rise">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Capability</th>
+            <th scope="col">Generic LLM chat</th>
+            <th scope="col">Question banks</th>
+            <th scope="col">Stratax AI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Evaluates delivery</th>
+            <td class="no">—</td><td class="no">—</td>
+            <td class="us">Voice, pace, filler density, pauses</td>
+          </tr>
+          <tr>
+            <th scope="row">Explains the score</th>
+            <td>Prose only</td><td class="no">—</td>
+            <td class="us">Weighted criteria, traced to spans</td>
+          </tr>
+          <tr>
+            <th scope="row">Runs your code</th>
+            <td class="no">—</td><td class="no">—</td>
+            <td class="us">Judge0 sandbox, 10 languages</td>
+          </tr>
+          <tr>
+            <th scope="row">Remembers you</th>
+            <td>Per thread</td><td class="no">—</td>
+            <td class="us">Cross-session semantic dedup</td>
+          </tr>
+          <tr>
+            <th scope="row">Company-grounded</th>
+            <td>Hallucination risk</td><td>Static, ages fast</td>
+            <td class="us">Hybrid retrieval, 15 profiles</td>
+          </tr>
+          <tr>
+            <th scope="row">Handles a missing signal</th>
+            <td class="no">—</td><td class="no">—</td>
+            <td class="us">Excluded and renormalised, never zeroed</td>
+          </tr>
+          <tr>
+            <th scope="row">Your keys, your data</th>
+            <td class="no">—</td><td class="no">—</td>
+            <td class="us">BYOK, résumé parsed in memory</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ACT IV — ARCHITECTURE ═══════════════ -->
+<section class="arch" id="architecture" aria-labelledby="arch-h">
+  <div class="wrap">
+    <div class="head rise">
+      <p class="eyebrow">Act IV · Trust</p>
+      <h2 id="arch-h">What is actually under it.</h2>
+      <p class="lede">Stated in engineering register, because the question behind
+        "is this a GPT wrapper?" deserves a real answer.</p>
+    </div>
+
+    <div class="flow">
+      <div class="flow-row rise d1">
+        <div class="flow-k">Client</div>
+        <div class="flow-nodes">
+          <div class="fnode">React + Vite PWA<b>installable, offline shell</b></div>
+          <div class="fnode">Local STT<b>transcript never leaves the tab</b></div>
+          <div class="fnode">On-device proctoring<b>TensorFlow.js + face detection</b></div>
+        </div>
+      </div>
+      <div class="flow-row rise d2">
+        <div class="flow-k">Agent pipeline</div>
+        <div class="flow-nodes">
+          <div class="fnode">6 agents<b>one job each</b></div>
+          <div class="fnode">SSE streaming<b>token-level delivery</b></div>
+          <div class="fnode">Session store<b>multi-turn persistence</b></div>
+        </div>
+      </div>
+      <div class="flow-row rise d3">
+        <div class="flow-k">Inference</div>
+        <div class="flow-nodes">
+          <div class="fnode">Groq<b>latency-critical streaming</b></div>
+          <div class="fnode">Google Gemini<b>depth-critical evaluation</b></div>
+          <div class="fnode">BYOK routing<b>your key, your spend</b></div>
+        </div>
+      </div>
+      <div class="flow-row rise d4">
+        <div class="flow-k">Retrieval</div>
+        <div class="flow-nodes">
+          <div class="fnode">BM25 lexical<b>exact company and role terms</b></div>
+          <div class="fnode">Dense vector<b>paraphrase recall</b></div>
+          <div class="fnode">Reciprocal rank fusion<b>one ranked set</b></div>
+        </div>
+      </div>
+      <div class="flow-row rise d5">
+        <div class="flow-k">Execution</div>
+        <div class="flow-nodes">
+          <div class="fnode">Judge0 sandbox<b>isolated, 10 runtimes</b></div>
+          <div class="fnode">Static analysis<b>pre-execution findings</b></div>
+          <div class="fnode">LLM critique<b>reviewed like a diff</b></div>
+        </div>
+      </div>
+      <div class="flow-row rise d6">
+        <div class="flow-k">Memory</div>
+        <div class="flow-nodes">
+          <div class="fnode">Mirror Ontology<b>weakness normalisation across sessions</b></div>
+          <div class="fnode">Trend + heatmap store<b>progress over time</b></div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- ═══════ FOOTER ═══════ -->
-  <footer class="footer">
-    <div class="footer-glow" aria-hidden="true"></div>
-    <div class="footer-inner">
-      <div class="footer-left">
-        <img src="/icons/stratax-ai-192.png" alt="Stratax AI" width="28" height="28">
-        Stratax AI
-      </div>
-      <div class="footer-center">&copy; 2026 Stratax AI &middot; Developed by Varun Bikkumalla</div>
-      <div class="footer-links">
-        <a href="/app">Application</a>
-        <a href="/docs">Documentation</a>
-        <a href="/login">Sign In</a>
-        <a href="/docs#api">API Reference</a>
-        <a href="/docs#security">Security</a>
-      </div>
+<!-- ═══════════════ PRIVACY ═══════════════ -->
+<section class="privacy" id="privacy" aria-labelledby="priv-h">
+  <div class="wrap">
+    <h2 id="priv-h" class="rise" style="font-size:var(--t-h3); font-weight:500; color:var(--ink-2)">
+      Three structural choices, not policy promises.
+    </h2>
+    <div class="priv-grid">
+      <article class="sed sed-i priv rise d1">
+        <span class="priv-tag">Bring your own key</span>
+        <h3>Your provider, your spend</h3>
+        <p>Provider keys are yours and are never proxied through a shared pool. It is also
+          why the free tier can stay genuinely usable rather than a three-question trial.</p>
+      </article>
+      <article class="sed sed-i priv rise d2">
+        <span class="priv-tag">In-memory résumé</span>
+        <h3>Parsed, not persisted</h3>
+        <p>Résumés are parsed for claim extraction and ATS scoring in memory. Claims drive
+          the questions you get asked; the document itself is not kept.</p>
+      </article>
+      <article class="sed sed-i priv rise d3">
+        <span class="priv-tag">On-device proctoring</span>
+        <h3>Video never leaves the tab</h3>
+        <p>Optional camera and screen monitoring runs in your browser. A phone or a second
+          person in frame is detected locally — only the signal is sent, never the frames.</p>
+      </article>
     </div>
-  </footer>
+  </div>
+</section>
 
-  <script>
-    /* ═══════════════════════════════════════════
-       PARTICLE NETWORK (Canvas)
-       Renders connected dots that form a neural
-       network / constellation pattern. Mouse
-       proximity draws additional connections.
-       ═══════════════════════════════════════════ */
-    (function() {
-      const canvas = document.getElementById('particles');
-      const ctx = canvas.getContext('2d');
-      let W, H, particles = [], mouse = { x: -1000, y: -1000 };
-      const PARTICLE_COUNT = 60;
-      const CONNECT_DIST = 140;
+<!-- ═══════════════ ACT V — FAQ ═══════════════ -->
+<section class="faq band" id="faq" aria-labelledby="faq-h">
+  <div class="wrap">
+    <div class="head rise">
+      <p class="eyebrow">Act V · Before you start</p>
+      <h2 id="faq-h">The questions worth answering directly.</h2>
+    </div>
 
-      function resize() {
-        W = canvas.width = window.innerWidth;
-        H = canvas.height = window.innerHeight;
-      }
-      resize();
-      window.addEventListener('resize', resize);
+    <div class="faq-list">
+      <details class="qa">
+        <summary>Is this cheating?</summary>
+        <div class="qa-a">
+          <p>Practice Mode and Mock Interview are preparation tools — you are answering
+            questions and being scored on them, which is the opposite of being fed answers.
+            The AI Copilot is a study aid for working through problems you do not yet
+            understand. Using any real-time assistant during a live interview you have been
+            asked to complete unaided is not something we will help you do, and it is not
+            what the scoring engine is built for. The product's whole value is telling you
+            what you actually cannot do yet.</p>
+        </div>
+      </details>
+      <details class="qa">
+        <summary>How is a score calculated, exactly?</summary>
+        <div class="qa-a">
+          <p>Four weighted criteria — correctness ·45, delivery ·25, clarity ·15,
+            structure ·15 — summed and normalised to 100. If a dimension had no input,
+            it is <em>excluded</em> and the remaining weights are renormalised. A typed
+            coding answer has no delivery signal, so delivery is not scored zero; it is
+            not scored at all. Zeroing an unmeasured dimension is the single most common
+            way scoring engines lie to you.</p>
+        </div>
+      </details>
+      <details class="qa">
+        <summary>Do I need to turn my camera on?</summary>
+        <div class="qa-a">
+          <p>No. Proctoring is opt-in per session. With it off, the session is scored
+            identically on everything that does not require video. With it on, detection
+            runs on-device and only the signal — not the frames — is transmitted.</p>
+        </div>
+      </details>
+      <details class="qa">
+        <summary>Which companies are covered?</summary>
+        <div class="qa-a">
+          <p>Fifteen profiles, including Google, Amazon, Meta, Microsoft, Apple, Netflix,
+            Airbnb and Uber. Questions are generated against retrieved context for the
+            company and role rather than pulled from a static bank, which is why they do
+            not go stale the way a bank does.</p>
+        </div>
+      </details>
+      <details class="qa">
+        <summary>What does the free tier actually include?</summary>
+        <div class="qa-a">
+          <p>The modules, the scoring engine and the explanations — not a watered-down
+            preview of them. Bring your own provider key and the economics work, which is
+            why there is no card field in the way. See the
+            <a href="/docs">documentation</a> for current limits.</p>
+        </div>
+      </details>
+      <details class="qa">
+        <summary>Can I export a session?</summary>
+        <div class="qa-a">
+          <p>Yes — Mock Interview produces an exportable HTML report with the full
+            question set, your answers, the per-criterion breakdown and the evidence spans
+            behind each score.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
 
-      class Particle {
-        constructor() {
-          this.x = Math.random() * W;
-          this.y = Math.random() * H;
-          this.vx = (Math.random() - 0.5) * 0.4;
-          this.vy = (Math.random() - 0.5) * 0.4;
-          this.r = Math.random() * 1.5 + 0.5;
-        }
-        update() {
-          this.x += this.vx; this.y += this.vy;
-          if (this.x < 0 || this.x > W) this.vx *= -1;
-          if (this.y < 0 || this.y > H) this.vy *= -1;
-        }
-        draw() {
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-          ctx.fillStyle = 'hsla(217,91%,65%,0.35)';
-          ctx.fill();
-        }
-      }
+<!-- ═══════════════ CLOSE ═══════════════ -->
+<section class="close" id="close">
+  <div class="wrap">
+    <h2 class="rise">
+      <span class="a">You already know the answer.</span>
+      <span class="b">Find out whether you can show it.</span>
+    </h2>
+    <div class="btn-row rise d2">
+      <a href="/app" class="btn btn-primary">
+        Start free
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </div>
+    <p class="close-fine rise d3">No card · Free tier · Bring your own key</p>
+  </div>
+</section>
 
-      for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
+</main>
 
-      function animate() {
-        ctx.clearRect(0, 0, W, H);
-        for (let i = 0; i < particles.length; i++) {
-          particles[i].update();
-          particles[i].draw();
-          for (let j = i + 1; j < particles.length; j++) {
-            const dx = particles[i].x - particles[j].x;
-            const dy = particles[i].y - particles[j].y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < CONNECT_DIST) {
-              ctx.beginPath();
-              ctx.moveTo(particles[i].x, particles[i].y);
-              ctx.lineTo(particles[j].x, particles[j].y);
-              ctx.strokeStyle = 'hsla(217,91%,65%,' + (0.08 * (1 - dist / CONNECT_DIST)) + ')';
-              ctx.lineWidth = 0.5;
-              ctx.stroke();
-            }
-          }
-          // Mouse interaction — draw lines to nearby particles
-          const mdx = particles[i].x - mouse.x;
-          const mdy = particles[i].y - mouse.y;
-          const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-          if (mdist < 200) {
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(mouse.x, mouse.y);
-            ctx.strokeStyle = 'hsla(217,91%,65%,' + (0.12 * (1 - mdist / 200)) + ')';
-            ctx.lineWidth = 0.6;
-            ctx.stroke();
-          }
-        }
-        requestAnimationFrame(animate);
-      }
-      animate();
+<footer class="foot">
+  <div class="wrap foot-in">
+    <a href="/" class="brand">
+      <img src="/icons/stratax-ai-192.png" alt="" width="28" height="28">
+      Stratax <span>AI</span>
+    </a>
+    <div class="foot-links">
+      <a href="/app">Application</a>
+      <a href="/docs">Documentation</a>
+      <a href="/login">Sign in</a>
+      <a href="/docs#api">API reference</a>
+      <a href="/docs#security">Security</a>
+    </div>
+    <p class="foot-c">&copy; 2026 Stratax AI · Developed by Varun Bikkumalla</p>
+  </div>
+</footer>
 
-      document.addEventListener('mousemove', function(e) {
-        mouse.x = e.clientX; mouse.y = e.clientY;
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   Law 5 — the page must survive its own JavaScript.
+   Everything below is progressive enhancement. With JS disabled the page
+   still renders complete content, correct hierarchy and working CTAs:
+   the evidence column shows every layer, the FAQ opens natively, the
+   stats read their real values from the DOM.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var fine    = matchMedia('(pointer: fine)').matches;
+
+  /* ─────────────────────────────────────────────────────────────
+     THE LIVE EVALUATION
+     Fixtures mirror the real engine: weights are correctness .45 /
+     delivery .25 / clarity .15 / structure .15, and an unmeasured
+     dimension is EXCLUDED with the remaining weights renormalised —
+     not scored as zero. The overall score is computed here from
+     those weights rather than hardcoded, so the number on screen is
+     always consistent with the model it is describing.
+     ───────────────────────────────────────────────────────────── */
+  var W = { correctness: .45, delivery: .25, clarity: .15, structure: .15 };
+  var ORDER = ['correctness', 'delivery', 'clarity', 'structure'];
+  var SHORT = { correctness: 'correct', delivery: 'delivery', clarity: 'clarity', structure: 'structure' };
+
+  var FIXTURES = [
+    {
+      kind: 'SPOKEN · SYSTEM DESIGN',
+      question: 'Design a rate limiter for a multi-tenant API.',
+      words: ['So', '—', "I'd", 'use', 'a', 'token', 'bucket', 'per', 'tenant,', 'um,',
+              'keyed', 'in', 'Redis,', 'and', 'then', 'shard', 'by', 'tenant', 'ID',
+              'so', '<mark>it scales</mark>.'],
+      scores: { correctness: 82, delivery: 74, clarity: 79, structure: 71 },
+      receipt: ['structure 71', '"it scales" is an unbounded claim — no ceiling, no request rate, no shard count. Every unquantified assertion is a probe the interviewer will take, and you handed them one.']
+    },
+    {
+      kind: 'TYPED · CODING',
+      question: 'Implement an LRU cache with O(1) get and put.',
+      words: ['class', 'LRUCache:', '\n    ', 'def', '__init__(self,', 'cap):', '\n        ',
+              'self.d', '=', 'OrderedDict()', '\n        ', 'self.cap', '=', 'cap'],
+      scores: { correctness: 96, delivery: null, clarity: null, structure: null },
+      receipt: ['3 dimensions excluded', 'No audio and no prose, so delivery, clarity and structure have no input. They are excluded — not scored zero — and the remaining weight is renormalised to 100%.']
+    },
+    {
+      kind: 'SPOKEN · BEHAVIOURAL',
+      question: 'Tell me about a time you shipped something that failed.',
+      words: ['We', 'rolled', 'out', 'the', 'new', 'pipeline,', 'it', 'broke', 'on', 'a',
+              'Friday,', 'and', '<mark>I owned the rollback</mark>', 'and', 'the', 'postmortem.'],
+      scores: { correctness: 71, delivery: 88, clarity: 90, structure: 84 },
+      receipt: ['correctness 71', 'The outcome is missing. You named the incident and the fix, never the impact you prevented — so the story reads as activity rather than result.']
+    }
+  ];
+
+  var inst = document.getElementById('inst');
+  if (inst) initInstrument(inst);
+
+  function initInstrument(root) {
+    var elKind    = root.querySelector('[data-kind]');
+    var elQ       = root.querySelector('[data-question]');
+    var elTx      = root.querySelector('[data-transcript]');
+    var elSig     = root.querySelector('[data-signals]');
+    var elScore   = root.querySelector('[data-score]');
+    var elBand    = root.querySelector('[data-band]');
+    var elSplit   = root.querySelector('[data-split]');
+    var elReceipt = root.querySelector('[data-receipt]');
+    var elDots    = root.querySelector('[data-dots]');
+    var elStatus  = root.querySelector('[data-weights]');
+    var elText    = document.getElementById('instText');
+
+    FIXTURES.forEach(function () {
+      var d = document.createElement('i');
+      elDots.appendChild(d);
+    });
+
+    var timers = [];
+    var idx = 0;
+    var running = false;
+
+    function clear() { timers.forEach(clearTimeout); timers = []; }
+    function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
+
+    function overall(s) {
+      var num = 0, den = 0;
+      ORDER.forEach(function (k) {
+        if (s[k] == null) return;          // excluded, not zero
+        num += W[k] * s[k]; den += W[k];
       });
-    })();
+      return den ? Math.round(num / den) : 0;
+    }
+    function bandOf(v) { return v >= 80 ? 'strong' : v >= 62 ? 'mid' : 'low'; }
+    function bandName(v) { return v >= 80 ? 'Strong' : v >= 62 ? 'Competent' : 'Developing'; }
 
-    /* ═══════════════════════════════════════════
-       CURSOR GLOW — follows mouse for ambient light
-       ═══════════════════════════════════════════ */
-    var glow = document.getElementById('cursorGlow');
-    if (window.matchMedia('(pointer: fine)').matches) {
-      document.addEventListener('mousemove', function(e) {
-        glow.style.left = e.clientX + 'px';
-        glow.style.top = e.clientY + 'px';
+    function paintDots() {
+      Array.prototype.forEach.call(elDots.children, function (d, i) {
+        d.classList.toggle('on', i === idx);
       });
     }
 
-    /* ═══════════════════════════════════════════
-       SCROLL REVEALS — IntersectionObserver
-       ═══════════════════════════════════════════ */
-    var obs = new IntersectionObserver(function(entries) {
-      entries.forEach(function(e) {
-        if (e.isIntersecting) {
-          e.target.classList.add('visible');
-          obs.unobserve(e.target);
-        }
+    /* Bars start at width 0 so they transition, but the commit must not depend
+       on rAF alone: rAF is suspended outright in a background or occluded tab,
+       which would leave every meter reading zero. setTimeout is throttled there
+       rather than suspended, so it is the guarantee and rAF is the polish. */
+    function commitWidth(bar, pct) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { bar.style.width = pct + '%'; });
       });
-    }, { threshold: 0.05 });
-    document.querySelectorAll('.reveal, .reveal-scale, .reveal-left, .reveal-right').forEach(function(el) {
-      obs.observe(el);
-    });
+      at(140, function () { bar.style.width = pct + '%'; });
+    }
 
-    /* ═══════════════════════════════════════════
-       ANIMATED COUNTERS — count up when visible
-       ═══════════════════════════════════════════ */
-    var counterObs = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          var el = entry.target;
-          var target = parseInt(el.getAttribute('data-target'));
-          var current = 0;
-          var step = Math.max(1, Math.floor(target / 40));
-          var timer = setInterval(function() {
-            current += step;
-            if (current >= target) {
-              current = target;
-              clearInterval(timer);
-            }
-            el.textContent = current;
-          }, 30);
-          counterObs.unobserve(el);
-        }
+    function buildSignals(s) {
+      elSig.innerHTML = '';
+      ORDER.forEach(function (k, i) {
+        var v = s[k], off = v == null;
+        var box = document.createElement('div');
+        box.className = 'sig' + (off ? ' off' : '');
+        box.innerHTML = '<span class="sig-l">' + SHORT[k] + '</span>' +
+                        '<span class="sig-b"><i style="--sd:' + (i * 90) + 'ms"></i></span>';
+        elSig.appendChild(box);
+        if (!off) commitWidth(box.querySelector('i'), v);
       });
-    }, { threshold: 0.3 });
-    document.querySelectorAll('.stat-number[data-target]').forEach(function(el) {
-      counterObs.observe(el);
-    });
+    }
 
-    /* ═══════════════════════════════════════════
-       TIMELINE PROGRESS — animated line
-       ═══════════════════════════════════════════ */
-    var tl = document.getElementById('timeline');
-    var tlProg = document.getElementById('timelineProgress');
-    var steps = tl ? tl.querySelectorAll('.timeline-step') : [];
-    var timelineObs = new IntersectionObserver(function(entries) {
-      entries.forEach(function(e) {
-        if (e.isIntersecting) {
-          e.target.classList.add('active');
-          var tlRect = tl.getBoundingClientRect();
-          var stepRect = e.target.getBoundingClientRect();
-          var progress = ((stepRect.top - tlRect.top + stepRect.height / 2) / tl.offsetHeight) * 100;
-          tlProg.style.height = Math.min(progress, 100) + '%';
-        }
+    function buildSplit(s) {
+      elSplit.innerHTML = '';
+      ORDER.forEach(function (k, i) {
+        var v = s[k], off = v == null;
+        var row = document.createElement('div');
+        row.className = 'crit' + (off ? ' off' : '');
+        row.innerHTML =
+          '<span class="crit-l">' + k + '</span>' +
+          '<span class="crit-w"><i style="--sd:' + (i * 110) + 'ms"></i></span>' +
+          '<span class="crit-v">' + (off ? 'excluded' : v + ' <small>&times;&#183;' + String(W[k]).slice(2) + '</small>') + '</span>';
+        elSplit.appendChild(row);
+        if (!off) commitWidth(row.querySelector('i'), v);
       });
-    }, { threshold: 0.5 });
-    steps.forEach(function(s) { timelineObs.observe(s); });
+    }
 
-    /* ═══════════════════════════════════════════
-       NAV SCROLL — add .scrolled class
-       ═══════════════════════════════════════════ */
-    var ticking = false;
-    window.addEventListener('scroll', function() {
-      if (!ticking) {
-        requestAnimationFrame(function() {
-          document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 30);
-          ticking = false;
-        });
-        ticking = true;
+    function countTo(target, ms) {
+      if (reduced) { elScore.textContent = String(target); return; }
+      var start = performance.now();
+      var from = parseInt(elScore.textContent, 10) || 0;
+      (function step(now) {
+        var p = Math.min(1, (now - start) / ms);
+        var e = 1 - Math.pow(1 - p, 3);
+        elScore.textContent = String(Math.round(from + (target - from) * e));
+        if (p < 1) requestAnimationFrame(step);
+      })(performance.now());
+      /* rAF is throttled to zero in a background or occluded tab, which would
+         otherwise leave the verdict frozen at 0 — the one number on the page
+         that must never be wrong. Pin the final value on a timer regardless. */
+      at(ms + 80, function () { elScore.textContent = String(target); });
+    }
+
+    /* Reduced motion is a first-class variant, not a degraded one: it renders
+       the final decomposed state immediately and communicates 100% of the
+       argument without a single tween. */
+    function play(fx) {
+      clear();
+      var total = overall(fx.scores);
+      var excluded = ORDER.filter(function (k) { return fx.scores[k] == null; }).length;
+      var settled = excluded
+        ? excluded + ' of 4 excluded · renormalised'
+        : 'weighted across 4 dimensions';
+
+      elKind.textContent = fx.kind;
+      elQ.textContent = fx.question;
+      elTx.innerHTML = '';
+      var IDLE = '<b>Published weights</b> — correctness &#183;45 &#183; delivery &#183;25 &#183; clarity &#183;15 &#183; structure &#183;15';
+      var RECEIPT = '<b>' + fx.receipt[0] + '</b> — ' + fx.receipt[1];
+      elReceipt.className = 'inst-receipt idle';
+      elReceipt.innerHTML = IDLE;
+      elBand.textContent = bandName(total);
+      elBand.setAttribute('data-b', bandOf(total));
+      elText.textContent = fx.kind + '. ' + fx.question + ' Scored ' + total +
+        ' out of 100, band ' + bandName(total) + '. ' + fx.receipt[1];
+      paintDots();
+
+      if (reduced) {
+        elTx.innerHTML = fx.words.join(' ');
+        buildSignals(fx.scores); buildSplit(fx.scores);
+        elScore.textContent = String(total);
+        elStatus.textContent = settled;
+        elReceipt.className = 'inst-receipt';
+        elReceipt.innerHTML = RECEIPT;
+        root.setAttribute('data-stage', 'receipt');
+        at(9000, next);
+        return;
       }
+
+      root.setAttribute('data-stage', 'question');
+      elStatus.textContent = 'Awaiting answer';
+
+      /* Transcript streams at natural speech cadence, ~2.8 words/sec. */
+      at(900, function () {
+        root.setAttribute('data-stage', 'answer');
+        elStatus.textContent = fx.kind.indexOf('TYPED') === 0 ? 'Reading editor buffer' : 'Transcribing · local STT';
+        var i = 0;
+        (function tick() {
+          if (i >= fx.words.length) {
+            elTx.innerHTML = fx.words.join(' ');
+            return;
+          }
+          elTx.innerHTML = fx.words.slice(0, ++i).join(' ') + '<span class="inst-caret"></span>';
+          timers.push(setTimeout(tick, 118 + Math.random() * 95));
+        })();
+      });
+
+      var answerEnd = 900 + fx.words.length * 175;
+
+      at(answerEnd + 300,  function () {
+        /* Evaluation must never begin against a half-written answer, so the
+           transcript is settled here whatever the typing chain managed. */
+        elTx.innerHTML = fx.words.join(' ');
+        root.setAttribute('data-stage', 'signals'); buildSignals(fx.scores);
+        elStatus.textContent = (4 - excluded) + ' signal' + (excluded === 3 ? '' : 's') + ' captured';
+      });
+      at(answerEnd + 1700, function () {
+        root.setAttribute('data-stage', 'verdict'); countTo(total, 800);
+        elStatus.textContent = settled;
+      });
+      at(answerEnd + 2800, function () { root.setAttribute('data-stage', 'split'); buildSplit(fx.scores); });
+      at(answerEnd + 4200, function () {
+        root.setAttribute('data-stage', 'receipt');
+        elReceipt.className = 'inst-receipt';
+        elReceipt.innerHTML = RECEIPT;
+      });
+      at(answerEnd + 8200, next);
+    }
+
+    function next() { idx = (idx + 1) % FIXTURES.length; play(FIXTURES[idx]); }
+    function restart() { idx = 0; play(FIXTURES[0]); }
+
+    document.getElementById('replay').addEventListener('click', restart);
+
+    var watch = document.getElementById('watchIt');
+    if (watch) {
+      watch.addEventListener('click', function () {
+        root.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+        restart();
+      });
+    }
+
+    /* Hover pauses the loop — the visitor is reading, not waiting. Leaving
+       resumes it: a fixture interrupted mid-run replays from its own start,
+       because clear() cancelled the timers that would have finished it and a
+       half-rendered evaluation is worse than no evaluation. */
+    if (fine) {
+      root.addEventListener('pointerenter', clear);
+      root.addEventListener('pointerleave', function () {
+        if (!running) return;
+        if (root.getAttribute('data-stage') === 'receipt') at(1800, next);
+        else play(FIXTURES[idx]);
+      });
+    }
+
+    /* Only runs while on screen. No timer burning in a background tab. */
+    new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          /* Resume the fixture the visitor was on, rather than snapping back to
+             the first one every time they scroll past and return. */
+          if (!running) { running = true; play(FIXTURES[idx]); }
+        } else if (running) { running = false; clear(); }
+      });
+    }, { threshold: .25 }).observe(root);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     SCROLL REVEAL — 22px rise + fade, fires once then unobserves.
+     ───────────────────────────────────────────────────────────── */
+  var revealObs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('in');
+      revealObs.unobserve(e.target);
+    });
+  }, { threshold: .08, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.rise').forEach(function (el) { revealObs.observe(el); });
+
+  /* ─────────────────────────────────────────────────────────────
+     RECEIPTED STATS — count up once, on first intersection.
+     The final value lives in data-count so a no-JS render is correct.
+     ───────────────────────────────────────────────────────────── */
+  var countObs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var el = e.target, target = parseInt(el.getAttribute('data-count'), 10);
+      countObs.unobserve(el);
+      if (reduced) { el.textContent = target; return; }
+      var start = performance.now();
+      (function step(now) {
+        var p = Math.min(1, (now - start) / 1100);
+        var eased = 1 - Math.pow(2, -10 * p);           // easeOutExpo
+        el.textContent = Math.round(target * eased);
+        if (p < 1) requestAnimationFrame(step); else el.textContent = target;
+      })(performance.now());
+    });
+  }, { threshold: .4 });
+  document.querySelectorAll('[data-count]').forEach(function (el) {
+    el.textContent = el.getAttribute('data-count');    // correct before JS runs
+    countObs.observe(el);
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     THE EVIDENCE COLUMN — scroll-linked only, no time-based tweens.
+     Scrubbing back re-buries the layers exactly; that reversibility
+     is what makes it read as an instrument rather than a video.
+     Pinning is disabled below 860px in CSS, so this is a no-op there.
+     ───────────────────────────────────────────────────────────── */
+  var track = document.getElementById('evTrack');
+  if (track) {
+    var beats  = document.querySelectorAll('#evCopy .ev-beat');
+    var layers = document.querySelectorAll('#evCol .ev-layer');
+    var pinned = matchMedia('(min-width: 861px)');
+    var evFrame = 0, lastBeat = -1;
+
+    function paintEvidence() {
+      evFrame = 0;
+      if (!pinned.matches) return;
+      var r = track.getBoundingClientRect();
+      var span = track.offsetHeight - window.innerHeight;
+      var p = span > 0 ? Math.min(1, Math.max(0, -r.top / span)) : 0;
+      var beat = Math.min(beats.length - 1, Math.floor(p * beats.length));
+      if (beat === lastBeat) return;
+      lastBeat = beat;
+
+      beats.forEach(function (b, i) { b.classList.toggle('on', i === beat); });
+      layers.forEach(function (l, i) {
+        l.classList.toggle('lit', i <= beat);
+        l.classList.toggle('now', i === beat && beat < layers.length);
+      });
+    }
+    function onEvScroll() { if (!evFrame) evFrame = requestAnimationFrame(paintEvidence); }
+
+    addEventListener('scroll', onEvScroll, { passive: true });
+    addEventListener('resize', function () { lastBeat = -1; onEvScroll(); }, { passive: true });
+    paintEvidence();
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     MODULE CONSTELLATION — eight modules orbiting one standard.
+     Hovering a module brightens its own line AND the lines of the
+     modules that consume its output, so the interaction teaches the
+     dependency graph rather than merely decorating it.
+     ───────────────────────────────────────────────────────────── */
+  var MODULES = [
+    { id: 'copilot',  t: 'AI Copilot',              d: 'Context-aware assistant, dual-LLM routing, identity-safe streaming.', tag: 'SSE · Multi-turn',      rel: ['intel'] },
+    { id: 'practice', t: 'Practice Mode',           d: 'Session practice with 6 agents, local STT, optional proctoring.',     tag: '13 rounds · Proctored', rel: ['progress', 'code', 'resume'] },
+    { id: 'mock',     t: 'Mock Interview',          d: 'Multi-question simulator, 3-level hints, exportable reports.',        tag: '4 types · HTML export', rel: ['progress', 'code'] },
+    { id: 'intel',    t: 'Interview Intelligence',  d: 'Hybrid BM25 + vector retrieval, grounded per company and role.',      tag: '15 companies',          rel: ['mock', 'arch'] },
+    { id: 'code',     t: 'Code Evaluation',         d: 'Judge0 execution, static analysis and LLM critique.',                 tag: '10 languages',          rel: ['practice', 'mock'] },
+    { id: 'resume',   t: 'Résumé Intelligence',     d: 'Claim extraction, ATS scoring, targeted probing. In memory only.',    tag: 'Zero storage',          rel: ['practice', 'intel'] },
+    { id: 'arch',     t: 'Architecture Generator',  d: 'System-design answers become structured Mermaid diagrams.',           tag: 'Auto layout',           rel: ['mock'] },
+    { id: 'progress', t: 'Progress Intelligence',   d: 'Cross-session semantic dedup, heatmaps, trends, study plans.',        tag: 'Mirror Ontology',       rel: ['practice', 'mock'] }
+  ];
+
+  var host = document.getElementById('const');
+  var spine = document.getElementById('spine');
+
+  function nodeMarkup(m) {
+    return '<h3>' + m.t + '</h3><p>' + m.d + '</p><small>' + m.tag + '</small>';
+  }
+
+  if (spine) {
+    MODULES.forEach(function (m) {
+      var el = document.createElement('article');
+      el.className = 'node';
+      el.innerHTML = nodeMarkup(m);
+      spine.appendChild(el);
+    });
+  }
+
+  if (host) {
+    var svg = document.getElementById('constLines');
+    var nodes = {};
+    var lines = {};
+
+    MODULES.forEach(function (m, i) {
+      var a = (i / MODULES.length) * Math.PI * 2 - Math.PI / 2;
+      var rx = 38, ry = 38;                               // percent of the square
+      var x = 50 + Math.cos(a) * rx;
+      var y = 50 + Math.sin(a) * ry;
+
+      var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '50'); line.setAttribute('y1', '50');
+      line.setAttribute('x2', x.toFixed(2)); line.setAttribute('y2', y.toFixed(2));
+      line.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(line);
+      lines[m.id] = line;
+
+      var el = document.createElement('article');
+      el.className = 'node';
+      el.tabIndex = 0;
+      el.style.left = x + '%';
+      el.style.top  = y + '%';
+      el.innerHTML = nodeMarkup(m);
+      host.appendChild(el);
+      nodes[m.id] = el;
+
+      function lightUp() {
+        lines[m.id].classList.add('hot');
+        m.rel.forEach(function (r) {
+          if (lines[r]) lines[r].classList.add('warm');
+          if (nodes[r]) nodes[r].classList.add('rel');
+        });
+      }
+      function lightDown() {
+        Object.keys(lines).forEach(function (k) { lines[k].classList.remove('hot', 'warm'); });
+        Object.keys(nodes).forEach(function (k) { nodes[k].classList.remove('rel'); });
+      }
+      el.addEventListener('pointerenter', lightUp);
+      el.addEventListener('pointerleave', lightDown);
+      el.addEventListener('focus', lightUp);
+      el.addEventListener('blur', lightDown);
+    });
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     NAV — compress on scroll. No hide-on-scroll: reclaiming 18px by
+     hiding navigation is a false economy that costs orientation.
+     ───────────────────────────────────────────────────────────── */
+  var nav = document.getElementById('nav');
+  var fill = document.getElementById('progressFill');
+  var navFrame = 0;
+  function onScroll() {
+    navFrame = 0;
+    nav.classList.toggle('compressed', scrollY > 24);
+    if (fill) {
+      var max = document.documentElement.scrollHeight - innerHeight;
+      fill.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, scrollY / max) : 0).toFixed(4) + ')';
+    }
+  }
+  addEventListener('scroll', function () { if (!navFrame) navFrame = requestAnimationFrame(onScroll); }, { passive: true });
+  onScroll();
+
+  /* ── Mobile menu ── */
+  var burger = document.getElementById('burger');
+  burger.addEventListener('click', function () {
+    var open = nav.classList.toggle('open');
+    burger.setAttribute('aria-expanded', String(open));
+    burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+  document.querySelectorAll('#navLinks a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      nav.classList.remove('open');
+      burger.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    });
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     DEPTH RAIL — position is depth through the argument.
+     ───────────────────────────────────────────────────────────── */
+  var railLinks = {};
+  document.querySelectorAll('#rail a').forEach(function (a) { railLinks[a.getAttribute('data-t')] = a; });
+  var railObs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      Object.keys(railLinks).forEach(function (k) { railLinks[k].classList.remove('here'); });
+      var a = railLinks[e.target.id];
+      if (a) a.classList.add('here');
+    });
+  }, { rootMargin: '-45% 0px -45% 0px' });
+  Object.keys(railLinks).forEach(function (id) {
+    var s = document.getElementById(id);
+    if (s) railObs.observe(s);
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     POINTER PARALLAX on the field. Desktop, fine pointer, and only
+     when the device can afford it. One style write per frame —
+     pointermove outruns paint.
+     ───────────────────────────────────────────────────────────── */
+  var canAfford = !reduced && fine &&
+    !(navigator.connection && navigator.connection.saveData) &&
+    !(typeof navigator.deviceMemory === 'number' && navigator.deviceMemory < 4);
+
+  if (canAfford) {
+    var field = document.getElementById('field');
+    var pFrame = 0, px = .5, py = .5;
+    addEventListener('pointermove', function (e) {
+      px = e.clientX / innerWidth; py = e.clientY / innerHeight;
+      if (pFrame) return;
+      pFrame = requestAnimationFrame(function () {
+        pFrame = 0;
+        field.style.setProperty('--mx', px.toFixed(4));
+        field.style.setProperty('--my', py.toFixed(4));
+      });
     }, { passive: true });
+  }
+})();
+</script>
 
-    /* ═══════════════════════════════════════════
-       MOBILE MENU
-       ═══════════════════════════════════════════ */
-    document.getElementById('mobileToggle').addEventListener('click', function() {
-      var nav = document.getElementById('nav');
-      var navLinks = document.getElementById('navLinks');
-      var btn = document.getElementById('mobileToggle');
-      var isOpen = nav.classList.toggle('menu-open');
-      navLinks.classList.toggle('open', isOpen);
-      btn.innerHTML = isOpen ? '&#10005;' : '&#9776;';
-      btn.setAttribute('aria-expanded', String(isOpen));
-      // Prevent body scroll when menu is open
-      document.body.style.overflow = isOpen ? 'hidden' : '';
-    });
-    document.querySelectorAll('#navLinks a').forEach(function(a) {
-      a.addEventListener('click', function() {
-        document.getElementById('nav').classList.remove('menu-open');
-        document.getElementById('navLinks').classList.remove('open');
-        document.getElementById('mobileToggle').innerHTML = '&#9776;';
-        document.getElementById('mobileToggle').setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
-      });
-    });
-
-    /* ═══════════════════════════════════════════
-       SMOOTH SCROLL for anchor links
-       ═══════════════════════════════════════════ */
-    document.querySelectorAll('a[href^="#"]').forEach(function(a) {
-      a.addEventListener('click', function(e) {
-        var target = document.querySelector(a.getAttribute('href'));
-        if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
-      });
-    });
-
-    /* ═══════════════════════════════════════════
-       3D TILT ON GLASS CARDS — mouse-tracked
-       ═══════════════════════════════════════════ */
-    if (window.matchMedia('(pointer: fine)').matches) {
-      document.querySelectorAll('.glass-card').forEach(function(card) {
-        card.addEventListener('mousemove', function(e) {
-          var rect = card.getBoundingClientRect();
-          var x = e.clientX - rect.left;
-          var y = e.clientY - rect.top;
-          var centerX = rect.width / 2;
-          var centerY = rect.height / 2;
-          var rotateX = ((y - centerY) / centerY) * -4;
-          var rotateY = ((x - centerX) / centerX) * 4;
-          card.style.transform = 'perspective(1000px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) translateY(-6px)';
-        });
-        card.addEventListener('mouseleave', function() {
-          card.style.transform = '';
-        });
-      });
-    }
-
-    /* ═══════════════════════════════════════════
-       HERO SAFETY — Force visible after timeout
-       ═══════════════════════════════════════════ */
-    window.addEventListener('load', function() {
-      setTimeout(function() {
-        document.querySelectorAll('.hero-badge, .hero h1, .hero-sub, .hero-actions, .hero-visual').forEach(function(el) {
-          if (parseFloat(getComputedStyle(el).opacity) < 0.5) {
-            el.style.animation = 'none';
-            el.style.opacity = '1';
-            el.style.transform = 'translateY(0)';
-          }
-        });
-      }, 1500);
-    });
-  </script>
 </body>
 </html>

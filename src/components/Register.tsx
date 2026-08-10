@@ -64,11 +64,21 @@ export function Register({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) 
   return (
     <div className="w-full">
       <div className="mb-6">
-        <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-          Create Account
+        <p
+          className="text-muted-foreground uppercase mb-3"
+          style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: '0.62rem', letterSpacing: '0.16em' }}
+        >
+          Create account
+        </p>
+        {/* Solid, not a gradient fill: one accent, and type carries the weight. */}
+        <h2
+          className="text-3xl font-semibold text-foreground mb-2"
+          style={{ letterSpacing: '-0.035em' }}
+        >
+          Start your first session
         </h2>
         <p className="text-muted-foreground">
-          Start your journey to interview success
+          Free tier · bring your own key · no card required.
         </p>
       </div>
 
@@ -100,7 +110,7 @@ export function Register({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) 
                 onChange={(e) => setFullName(e.target.value)}
                 required
                 disabled={loading}
-                className="pl-2 h-11 bg-transparent border-white/10 backdrop-blur-sm focus:border-purple-500/50 focus:ring-purple-500/20 transition-all"
+                className="pl-2 h-11 bg-transparent border-border backdrop-blur-sm focus:border-primary/60 focus:ring-primary/20 transition-all"
               />
             </div>
           </div>
@@ -119,7 +129,7 @@ export function Register({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) 
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                className="pl-2 h-11 bg-transparent border-white/10 backdrop-blur-sm focus:border-purple-500/50 focus:ring-purple-500/20 transition-all"
+                className="pl-2 h-11 bg-transparent border-border backdrop-blur-sm focus:border-primary/60 focus:ring-primary/20 transition-all"
               />
             </div>
           </div>
@@ -139,7 +149,7 @@ export function Register({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) 
                 required
                 disabled={loading}
                 minLength={8}
-                className="pl-2 h-11 bg-transparent border-white/10 backdrop-blur-sm focus:border-purple-500/50 focus:ring-purple-500/20 transition-all"
+                className="pl-2 h-11 bg-transparent border-border backdrop-blur-sm focus:border-primary/60 focus:ring-primary/20 transition-all"
               />
             </div>
             <div className="flex items-center gap-2 mt-1.5">
@@ -179,7 +189,7 @@ export function Register({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) 
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={loading}
-                className="pl-2 h-11 bg-transparent border-white/10 backdrop-blur-sm focus:border-purple-500/50 focus:ring-purple-500/20 transition-all"
+                className="pl-2 h-11 bg-transparent border-border backdrop-blur-sm focus:border-primary/60 focus:ring-primary/20 transition-all"
               />
             </div>
           </div>
@@ -188,7 +198,7 @@ export function Register({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) 
         <div className="space-y-3 pt-2">
           <Button
             type="submit"
-            className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg shadow-purple-500/25 transition-all duration-300 group relative overflow-hidden"
+            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 group relative overflow-hidden"
             disabled={loading || googleLoading}
           >
             <span className="relative z-10 flex items-center justify-center gap-2">
@@ -204,12 +214,12 @@ export function Register({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) 
                 </>
               )}
             </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-700 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+            
           </Button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-white/10" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
@@ -219,7 +229,7 @@ export function Register({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) 
           <Button
             type="button"
             variant="outline"
-            className="w-full h-12 bg-white/5 border-white/10 hover:bg-white/10 transition-all"
+            className="w-full h-12 bg-card/60 border-border hover:bg-accent/10 transition-all"
             onClick={handleGoogleLogin}
             disabled={loading || googleLoading}
           >
@@ -263,7 +273,7 @@ export function Register({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) 
                   type="button"
                   onClick={onSwitchToLogin}
                   disabled={loading}
-                  className="text-purple-500 hover:text-purple-400 font-medium transition-colors inline-flex items-center gap-1 group py-2 min-h-[44px]"
+                  className="text-primary hover:text-primary/80 font-medium transition-colors inline-flex items-center gap-1 group py-2 min-h-[44px]"
                 >
                   Sign in
                   <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
@@ -274,7 +284,7 @@ export function Register({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) 
         </div>
       </form>
 
-      <div className="mt-8 pt-6 border-t border-white/5">
+      <div className="mt-8 pt-6 border-t border-border/60">
         <p className="text-xs text-center text-muted-foreground">
           By creating an account, you agree to our Terms of Service and Privacy Policy
         </p>

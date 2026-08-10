@@ -180,6 +180,29 @@ export const MockInterviewMode = ({ selectedHistorySession, onHistoryUpdate }: M
   // Timer
   const timerRef = useRef<number | null>(null);
 
+  /**
+   * Once the interview is actually running, the app chrome steps aside: the
+   * session owns the screen until the user reaches the summary. Setup and
+   * history are browsing states and keep the sidebar.
+   */
+  useEffect(() => {
+    const immersive = phase === "interview" || phase === "feedback";
+    try {
+      window.dispatchEvent(new CustomEvent("app:immersive-mode", { detail: { active: immersive } }));
+    } catch {
+      // ignore
+    }
+  }, [phase]);
+
+  // Leaving the tab entirely must release the chrome, whatever phase we were in.
+  useEffect(() => () => {
+    try {
+      window.dispatchEvent(new CustomEvent("app:immersive-mode", { detail: { active: false } }));
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Save session state to localStorage
   useEffect(() => {
     // Only persist resumable in-progress states. History view depends on external selection

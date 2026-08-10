@@ -7,6 +7,7 @@ import {
   type PracticeProctoringSnapshot,
   type PracticeSessionProctoringEventType,
 } from '@/lib/practiceModeApi';
+import { createObjectDetector, type ObjectDetectorHandle } from '@/lib/objectDetection';
 
 type PracticeProctoringSnapshotSource = 'event' | 'heartbeat' | 'status';
 
@@ -79,6 +80,9 @@ export async function startPracticeProctoring(
   let statusTimerId: ReturnType<typeof setInterval> | null = null;
   let faceDetectionTimerId: ReturnType<typeof setInterval> | null = null;
   let faceDetectionVideo: HTMLVideoElement | null = null;
+  // Outer scope so teardown can terminate the worker; leaving it inside the
+  // start function would strand a worker (and its WebGL context) per session.
+  let objectDetector: ObjectDetectorHandle | null = null;
   let detectionActive = false;
   let tabActive = !document.hidden;
   let windowFocused = !document.hidden;
@@ -121,6 +125,10 @@ export async function startPracticeProctoring(
       faceDetectionVideo.srcObject = null;
       faceDetectionVideo.remove();
       faceDetectionVideo = null;
+    }
+    if (objectDetector) {
+      objectDetector.dispose();
+      objectDetector = null;
     }
   };
 
@@ -490,8 +498,23 @@ export async function startPracticeProctoring(
       setTimeout(resolve, 3000);
     });
 
+    // Object detection runs alongside face detection, in a worker. It is what
+    // catches a phone -- face-api only ever reported how many faces it saw, so
+    // a candidate reading from a handset was invisible to proctoring.
+    void (async () => {
+      try {
+        objectDetector = await createObjectDetector({
+          onError: (message) => console.debug('[Proctoring] Object detection unavailable:', message),
+        });
+      } catch (err) {
+        console.debug('[Proctoring] Object detector failed to start:', err);
+      }
+    })();
+
     const intervalMs = 2000;
     let detecting = false;
+    let emptyFrames = 0;
+    let phoneStreak = 0;
     let consecutiveErrors = 0;
     detectionActive = true;
 
@@ -518,7 +541,58 @@ export async function startPracticeProctoring(
 
         if (count > 1) {
           options.onMultipleFaces?.(count);
-          void enqueueEvent('MULTIPLE_FACES_DETECTED', { face_count: count });
+          // `MULTIPLE_FACES`, not `MULTIPLE_FACES_DETECTED`: the latter is not
+          // in the server's enum and was rejected 422 every time, so a second
+          // person in frame was detected and then silently discarded.
+          void enqueueEvent('MULTIPLE_FACES', { face_count: count });
+          emptyFrames = 0;
+        } else if (count === 0) {
+          // FACE_MISSING exists server-side and was never once sent. Requires
+          // two consecutive empty frames so a blink, a turn of the head or a
+          // single dropped frame does not raise a violation.
+          emptyFrames += 1;
+          if (emptyFrames === 2) {
+            void enqueueEvent('FACE_MISSING', { consecutive_checks: emptyFrames });
+          }
+        } else {
+          emptyFrames = 0;
+        }
+
+        // Objects, from the worker. Null means unavailable or still busy, which
+        // must never be read as "nothing in frame".
+        const objectSignals = objectDetector?.ready ? await objectDetector.detect(video) : null;
+        if (objectSignals) {
+          // Two consecutive sightings before flagging: a phone face-down on the
+          // desk drifts in and out of a single frame's confidence threshold, and
+          // one false positive should not cost a candidate a violation.
+          if (objectSignals.phones.length > 0) {
+            phoneStreak += 1;
+            if (phoneStreak === 2) {
+              const best = Math.max(...objectSignals.phones.map((p) => p.score));
+              void enqueueEvent('PHONE_DETECTED', {
+                confidence: Number(best.toFixed(3)),
+                count: objectSignals.phones.length,
+              });
+            }
+          } else {
+            phoneStreak = 0;
+          }
+
+          if (objectSignals.objects.length > 0) {
+            void enqueueEvent('OBJECT_DETECTED', {
+              objects: objectSignals.objects.map((o) => o.label),
+            });
+          }
+
+          // People, not faces. A second person turned away has no detectable
+          // face but is still a second person in the room.
+          if (objectSignals.people > 1 && count <= 1) {
+            options.onMultipleFaces?.(objectSignals.people);
+            void enqueueEvent('MULTIPLE_FACES', {
+              face_count: objectSignals.people,
+              detector: 'object',
+            });
+          }
         }
       } catch (err) {
         consecutiveErrors += 1;

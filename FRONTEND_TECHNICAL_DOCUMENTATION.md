@@ -100,9 +100,15 @@ The current frontend no longer uses `/` as the React landing page.
 
 Current behavior:
 
-- `/` redirects to the static docs entry at `/docs/index.html`
-- `/docs/*` also redirects to the static docs entry
-- `/landing` is the React marketing and landing page in `src/pages/Index.tsx`
+- `/` serves the **static landing page** at `/landing.html`. This is the
+  production entry point: `firebase.json` rewrites `/` → `/landing.html` before
+  the SPA ever loads, and `LandingRedirect` does the same locally. (This section
+  previously claimed `/` went to the docs entry, which was never true of
+  production.)
+- `/docs/*` redirects to the static docs entry at `/docs/index.html`
+- `/landing` is a legacy alias that now redirects to `/landing.html`.
+  `src/pages/Index.tsx` remains in the tree but is no longer routed — it was a
+  second landing page that nothing linked to.
 
 This split is intentional and should be preserved when editing routes or hosting rewrites.
 
@@ -114,8 +120,8 @@ Routes are defined in `src/App.tsx`.
 
 | Route | Component | Access | Notes |
 | --- | --- | --- | --- |
-| `/` | `DocsRedirect` | public | Forces static docs HTML |
-| `/landing` | `src/pages/Index.tsx` | public | React marketing and feature page |
+| `/` | `LandingRedirect` | public | Forces the static landing page (`/landing.html`) |
+| `/landing` | `LandingHtmlRedirect` | public | Legacy alias → `/landing.html` |
 | `/login` | `src/pages/Auth.tsx` | guest-only | Wrapped with `ProtectedRoute requireAuth={false}` |
 | `/auth/google/callback` | `src/pages/GoogleCallback.tsx` | public | OAuth popup callback bridge |
 | `/auth/verify-email` | `src/pages/VerifyEmail.tsx` | public | Email verification flow |
@@ -238,7 +244,7 @@ These files provide auth-specific helpers outside the unified client.
 | `src/lib/api.ts` | Main product API layer for assistant Q and A, history, intelligence search, code execution, profile upload, and Mermaid rendering |
 | `src/lib/mockInterviewApi.ts` | Mock interview session lifecycle, hints, progress, summaries, and history |
 | `src/lib/practiceModeApi.ts` | Practice sessions, code and voice responses, proctoring events, proctoring snapshots, and live session helpers |
-| `src/lib/practiceProctoring.ts` | Client-side proctoring controller with heartbeat, status polling, face detection, and event posting |
+| `src/lib/practiceProctoring.ts` | Client-side proctoring controller with heartbeat, status polling, face + object detection, and event posting |
 | `src/lib/progressApi.ts` | Progress summary, heatmap, and next-session recommendation normalization |
 | `src/lib/architectureApi.ts` | Architecture generation, recommended views, available views, Mermaid rendering, and markdown download |
 | `src/lib/resumeContextStorage.ts` | Persisted `ResumeContext` helpers |
@@ -246,6 +252,8 @@ These files provide auth-specific helpers outside the unified client.
 | `src/lib/utils.ts` | Shared class utility plus PDF export pipeline and Mermaid export helpers |
 | `src/lib/runner.ts` | Deprecated browser-side Judge0-style runner stub |
 | `src/lib/pyodideRunner.ts` | Deprecated browser-side Pyodide runner stub |
+| `src/lib/objectDetection.ts` | Worker-backed COCO-SSD object/person detection for proctoring |
+| `src/workers/objectDetector.worker.ts` | Off-main-thread inference; loads the model from this origin |
 
 ### 6.4 Global Browser Events
 
@@ -275,6 +283,20 @@ Responsibilities:
 - Renders the marketing-style feature overview.
 - Shows `UserProfile` in the fixed header when authenticated.
 - Clears stale body scroll-lock styles on mount to recover from modal or overlay crashes.
+
+The feature list is a local `features` array (title, description, icon,
+gradient). It currently advertises: AI Assistant, Mirror Mode, Interview
+Intelligence, Real-time Practice, Mock Interviews, Advanced Code Studio,
+Progress & Analytics, and System Architecture AI.
+
+> Keep these descriptions honest about behaviour, because they are product
+> claims. Two in particular are load-bearing and easy to get wrong:
+> **Practice** advertises proctoring as optional and states that camera
+> analysis happens in the browser — true of *detection*, which posts signals
+> only, but note that session **recording** does upload camera and screen to
+> `/api/practice/session/{id}/media` when enabled, so "no video leaves your
+> machine" would be false. **Code Studio** names the supported languages, which
+> must stay in step with `GET /api/code/languages`.
 
 ### 7.2 `src/pages/Auth.tsx`
 
@@ -423,6 +445,23 @@ Current execution model:
 Capabilities:
 
 - Multi-language editing and execution.
+- **The language list is served by the backend** (`apiListCodeLanguages()` →
+  `GET /api/code/languages`), not hardcoded. `RUNNER_LANGUAGES` remains only as
+  the pre-flight placeholder and offline fallback, surfaced in the toolbar as
+  an "offline list" hint. A hardcoded dropdown maintained separately from the
+  server is how the UI came to offer C# and SQL that the backend did not
+  support — picking either ran the source through a Python interpreter and
+  returned a `SyntaxError`. Anything the server adds now appears without a
+  frontend release.
+- Each entry shows its **resolved runtime** (`Python · 3.14.0`) and a `step`
+  badge where line-tracing exists, so a candidate can see which runtime will
+  judge them before typing.
+- Runs are **cancellable**. `apiExecuteCode()` accepts an `AbortSignal`; the Run
+  button becomes `Stop · 3.4s` while executing. A second click aborts the
+  in-flight request rather than racing it, and an abort reports "Run stopped."
+  instead of surfacing `AbortError` as if the code had crashed. The backend
+  independently caps a request at 45 seconds (`504`).
+- Run is disabled when the server reports `enabled: false`.
 - Saved code, stdin, language, and result state in local storage.
 - Python trace visualization with step timeline and locals inspection.
 - Separate runner session id stored in local storage.
@@ -476,17 +515,67 @@ Primary files:
 Capabilities:
 
 - Session-based practice for voice and coding questions.
-- Required live media gate for camera and screen capture.
 - Explicit Live Practice consent before start.
-- Optional proctoring on top of required media capture.
+- **Proctoring is the candidate's choice.** No start endpoint refuses over it;
+  the answer is recorded (`SESSION_STARTED_WITH_PROCTORING` /
+  `SESSION_STARTED_WITHOUT_PROCTORING`) and persisted to
+  `PracticeAttemptRecord.proctored` so Progress can tell a supervised score
+  from an unsupervised one. These endpoints used to answer **403** unless the
+  browser confirmed both permissions, which made practising impossible without
+  a webcam or on a locked-down machine.
 - Per-question voice recording, code execution, and completion summaries.
 - Next-session handoff from the Progress page.
+
+Camera preview:
+
+- Draggable by its header (pointer events, so touch works) and collapsible;
+  both persist in local storage. Position is clamped on drag *and* on window
+  resize so the panel can never end up somewhere it cannot be grabbed back.
+- Collapsing **hides** the `<video>` rather than unmounting it — unmounting
+  detaches the stream and forces a restart on every expand.
+- `getUserMedia` asks for 640x480 at an ideal 30fps
+  (`PRACTICE_CAMERA_CONSTRAINTS`). A bare `{ video: true }` lets the browser
+  pick a resolution and a possibly variable frame rate, which reads as a choppy
+  feed.
+- The `srcObject` effect depends on the stream alone. It previously also
+  depended on `sessionId` and `phase` and reassigned the *same* MediaStream,
+  tearing down the element's pipeline and visibly stuttering the preview at
+  every phase transition.
 
 Proctoring model:
 
 - Backend snapshots are authoritative through `PracticeProctoringSnapshot`.
 - The client controller posts events, heartbeats, and status checks.
 - The UI surfaces three escalation levels.
+
+Detection (all on-device; frames are never uploaded for analysis):
+
+- **Faces** — `@vladmandic/face-api` `tinyFaceDetector`, or the native
+  `FaceDetector` where available. Emits `MULTIPLE_FACES` and `FACE_MISSING`
+  (the latter after two consecutive empty frames, so a blink is not a
+  violation).
+- **Objects and people** — COCO-SSD in a Web Worker
+  (`src/workers/objectDetector.worker.ts`, driven by `src/lib/objectDetection.ts`),
+  with the model served from this origin at `/models/coco-ssd`. Emits
+  `PHONE_DETECTED` (serious, after two consecutive sightings),
+  `OBJECT_DETECTED` for laptops/books/screens (low), and `MULTIPLE_FACES` from
+  the `person` class — which catches a second person turned away from the
+  camera, something face detection structurally cannot do.
+- Inference runs in a worker so it cannot stall the UI; frames are transferred
+  as `ImageBitmap`s and tensors are disposed per frame (tfjs does not GC GPU
+  memory). Object detection degrades to unavailable — never to a blocked
+  interview — if the worker, WebGL, or the model cannot load.
+
+> **Event names must match `PracticeProctoringEventType` exactly.** A name on
+> only one side is silently discarded: the client sent `MULTIPLE_FACES_DETECTED`
+> for the life of the feature and no server enum contained it, so every
+> detection of a second person was rejected `422`. Detection ran every two
+> seconds and every result was thrown away.
+
+Note that *session recording* is separate from detection: when enabled, camera
+and screen are recorded via `MediaRecorder` and uploaded to
+`POST /api/practice/session/{id}/media`. Detection never uploads frames; the
+recording feature does.
 
 Escalation levels:
 

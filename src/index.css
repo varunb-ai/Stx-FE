@@ -2341,3 +2341,43 @@ textarea:focus-visible {
 .rounded-xl {
   transition: box-shadow 0.25s ease, transform 0.2s ease, background-color 0.2s ease;
 }
+/* ── Showcase markdown ──────────────────────────────────────────────────────
+   Scoped styles for the captured demo output on /showcase.
+
+   `@tailwindcss/typography` is a dependency but is NOT registered in
+   tailwind.config.ts, so the `prose` classes used elsewhere are inert. Rather
+   than registering it here — which would silently restyle every surface that
+   already carries a `prose` class — these rules are scoped to .showcase-prose
+   and affect nothing else. */
+.showcase-prose > :first-child { margin-top: 0; }
+.showcase-prose > :last-child { margin-bottom: 0; }
+.showcase-prose p { margin: 0 0 0.7em; }
+.showcase-prose h1,
+.showcase-prose h2,
+.showcase-prose h3,
+.showcase-prose h4 {
+  margin: 1.15em 0 0.5em;
+  font-weight: 600;
+  line-height: 1.3;
+  color: hsl(var(--foreground));
+}
+.showcase-prose h1 { font-size: 1.05rem; }
+.showcase-prose h2 { font-size: 1rem; }
+.showcase-prose h3,
+.showcase-prose h4 { font-size: 0.925rem; }
+.showcase-prose strong { font-weight: 600; color: hsl(var(--foreground)); }
+.showcase-prose ul,
+.showcase-prose ol { margin: 0 0 0.7em; padding-left: 1.25rem; }
+.showcase-prose ul { list-style: disc; }
+.showcase-prose ol { list-style: decimal; }
+.showcase-prose li { margin: 0.2em 0; }
+.showcase-prose code {
+  font-size: 0.85em;
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+/* Fenced blocks arrive pre-styled from formatAnswerMarkdown; don't double up. */
+.showcase-prose pre code { padding: 0; background: none; }
+.showcase-prose pre { max-width: 100%; overflow-x: auto; }

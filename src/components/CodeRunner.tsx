@@ -13,14 +13,43 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import OutputExplanation from "@/components/OutputExplanation";
-import { apiCreateSession, apiExecuteCode, type CodeExecuteTraceEvent } from "@/lib/api";
+import { apiCreateSession, apiExecuteCode, apiListCodeLanguages, type CodeExecuteTraceEvent } from "@/lib/api";
 import { useSearchParams } from "react-router-dom";
 import { MonacoEditor } from "./MonacoEditor";
 
+type SampleKind = 'python' | 'node' | 'java' | 'cpp' | 'c' | 'go' | 'sql';
+
 type RunnerLanguage = {
-  id: 'python' | 'javascript' | 'java' | 'cpp' | 'c' | 'csharp' | 'go' | 'sql';
+  /** Free-form: the server owns the list, so new languages appear without a redeploy. */
+  id: string;
   name: string;
-  sampleKind: 'python' | 'node' | 'java' | 'cpp' | 'c' | 'go' | 'sql';
+  sampleKind: SampleKind;
+  /** Resolved runtime, e.g. "Python (3.14.0)". Absent until the server answers. */
+  runtime?: string | null;
+  supportsTrace?: boolean;
+};
+
+/**
+ * "Python (3.14.0)" -> "3.14.0", "JavaScript (Node.js 22.08.0)" -> "Node.js 22.08.0".
+ * The language name is already the label beside it; repeating it is noise.
+ */
+function formatRuntime(runtime: string): string {
+  const match = runtime.match(/\(([^)]*)\)\s*$/);
+  return (match ? match[1] : runtime).trim();
+}
+
+/** Starter snippet per language id. Purely client-side knowledge. */
+const SAMPLE_KIND_BY_ID: Record<string, SampleKind> = {
+  python: 'python',
+  javascript: 'node',
+  typescript: 'node',
+  java: 'java',
+  cpp: 'cpp',
+  c: 'c',
+  csharp: 'c',
+  go: 'go',
+  rust: 'c',
+  sql: 'sql',
 };
 
 const RUNNER_LANGUAGES: RunnerLanguage[] = [
@@ -122,6 +151,64 @@ export const CodeRunner = () => {
   useEffect(() => {
     if (traceEvents && traceEvents.length > 0) setSelectedTraceIndex(0);
   }, [traceEvents]);
+
+  // Which languages this deployment can actually run, and on which runtime.
+  //
+  // The dropdown used to be a hardcoded constant maintained separately from the
+  // backend, which is how it came to offer C# and SQL that the server did not
+  // support: picking either ran the source through a Python interpreter and
+  // returned a SyntaxError. The static list is now only the pre-flight
+  // placeholder and the offline fallback.
+  const [languagesError, setLanguagesError] = useState<string | null>(null);
+  const [executionEnabled, setExecutionEnabled] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await apiListCodeLanguages();
+        if (cancelled) return;
+
+        const fromServer: RunnerLanguage[] = (data.languages || []).map((l) => ({
+          id: l.id,
+          name: l.label,
+          sampleKind: SAMPLE_KIND_BY_ID[l.id] ?? 'python',
+          runtime: l.runtime ?? null,
+          supportsTrace: Boolean(l.supports_trace),
+        }));
+
+        if (fromServer.length > 0) setLanguages(fromServer);
+        setExecutionEnabled(Boolean(data.enabled));
+        setLanguagesError(null);
+      } catch (e: any) {
+        if (cancelled) return;
+        // Keep the built-in list so the editor still works; only the runtime
+        // labels are lost.
+        setLanguagesError(String(e?.message || 'Could not load the language list'));
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, []);
+
+  // Lets a run be cancelled. The backend caps a request at 45s, but a user who
+  // has already spotted their infinite loop should not have to wait for it.
+  const runAbortRef = useRef<AbortController | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
+
+  useEffect(() => {
+    if (!isRunning) return;
+    const startedAt = performance.now();
+    setElapsedMs(0);
+    const id = window.setInterval(() => setElapsedMs(performance.now() - startedAt), 100);
+    return () => window.clearInterval(id);
+  }, [isRunning]);
+
+  const onStop = useCallback(() => {
+    runAbortRef.current?.abort();
+    runAbortRef.current = null;
+  }, []);
 
   // Professional features state
   const [panelWidth, setPanelWidth] = useState(50); // Percentage
@@ -282,6 +369,12 @@ export const CodeRunner = () => {
 
       const doTrace = (opts?.forceTrace ?? traceEnabled) && languageId === 'python';
 
+      // Replace any in-flight run, so a double-click cannot leave two requests
+      // racing to write the same output pane.
+      runAbortRef.current?.abort();
+      const controller = new AbortController();
+      runAbortRef.current = controller;
+
       const r = await apiExecuteCode({
         language: languageId,
         code: sendSource,
@@ -291,7 +384,7 @@ export const CodeRunner = () => {
         trace_max_events: doTrace ? traceMaxEvents : undefined,
         explain_trace: doTrace,
         explain_max_lines: doTrace ? 200 : undefined,
-      });
+      }, { signal: controller.signal });
 
       if (!r || r.success === false) {
         const msg = (r as any)?.stderr || (r as any)?.status || 'Execution failed';
@@ -318,9 +411,17 @@ export const CodeRunner = () => {
       if (r.stdout) setActiveTab('output');
       else if (r.stderr) setActiveTab('errors');
     } catch (e: any) {
+      // Cancelling is a deliberate act, not a failure. Reporting "AbortError"
+      // in the errors pane reads like the code crashed.
+      if (e?.name === 'AbortError') {
+        setResult({ stderr: 'Run stopped.' });
+        setActiveTab('errors');
+        return;
+      }
       setResult({ stderr: String(e?.message || e) });
       setActiveTab('errors');
     } finally {
+      runAbortRef.current = null;
       setIsRunning(false);
     }
   }, [languageId, source, stdin, languages, traceEnabled, traceMaxEvents]);
@@ -863,6 +964,18 @@ export const CodeRunner = () => {
             <span className="hidden sm:inline">Shortcuts</span>
           </Button>
           
+          {/* The list fell back to the built-in one. Execution still works for
+              the core languages; only the server-confirmed list and runtime
+              versions are missing, so this is a note, not an error banner. */}
+          {languagesError && (
+            <span
+              className="hidden lg:inline text-[10px] text-muted-foreground"
+              title={`Using the built-in language list: ${languagesError}`}
+            >
+              offline list
+            </span>
+          )}
+
           {/* Language Selector - Compact on mobile */}
           <Select value={languageId ? String(languageId) : undefined} onValueChange={(v) => {
             const id = v as RunnerLanguage['id'];
@@ -872,21 +985,59 @@ export const CodeRunner = () => {
             const lang = RUNNER_LANGUAGES.find(l => l.id === id);
             if (lang) setSource(sampleCode(lang.sampleKind));
           }}>
-            <SelectTrigger className="w-[120px] md:w-[260px] text-xs md:text-sm">
+            <SelectTrigger className="w-[130px] md:w-[260px] text-xs md:text-sm">
               <SelectValue placeholder="Language" />
             </SelectTrigger>
             <SelectContent>
               {languages.map(l => (
-                <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
+                <SelectItem key={l.id} value={String(l.id)}>
+                  <span className="flex items-center gap-2">
+                    <span>{l.name}</span>
+                    {/* The runtime you will actually be judged on. Worth knowing
+                        before you type: the backend used to pin Python 3.8. */}
+                    {l.runtime && (
+                      <span className="font-mono text-[10px] text-muted-foreground">
+                        {formatRuntime(l.runtime)}
+                      </span>
+                    )}
+                    {l.supportsTrace && (
+                      <span className="rounded bg-primary/10 px-1 text-[9px] font-medium uppercase tracking-wide text-primary">
+                        step
+                      </span>
+                    )}
+                  </span>
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          
-          {/* Run Button */}
-          <Button onClick={() => onRun()} disabled={isRunning} size="sm" className="shadow-sm gap-1 px-2 md:px-3">
-            <Zap className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{isRunning ? 'Running…' : 'Run'}</span>
-          </Button>
+
+          {/* Run / Stop. A run can now be abandoned instead of waiting out the
+              backend's 45s ceiling. */}
+          {isRunning ? (
+            <Button
+              onClick={onStop}
+              size="sm"
+              variant="destructive"
+              className="shadow-sm gap-1.5 px-2 md:px-3"
+              title="Stop the running program"
+            >
+              <StopCircle className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline tabular-nums">
+                Stop · {(elapsedMs / 1000).toFixed(1)}s
+              </span>
+            </Button>
+          ) : (
+            <Button
+              onClick={() => onRun()}
+              disabled={!executionEnabled}
+              size="sm"
+              className="shadow-sm gap-1 px-2 md:px-3"
+              title={executionEnabled ? 'Run (Ctrl+Enter)' : 'Code execution is disabled on this deployment'}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Run</span>
+            </Button>
+          )}
         </div>
       </div>
 

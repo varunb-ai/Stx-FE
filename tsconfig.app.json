@@ -11,6 +11,10 @@
     "skipLibCheck": true,
     /* Bundler mode */
     "moduleResolution": "bundler",
+    /* src/fixtures/showcase.json is imported as a module so the captured demo
+       needs no network call. Vite already handles this at build time; TS needs
+       telling. */
+    "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",

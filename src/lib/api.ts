@@ -266,10 +266,14 @@ export interface CodeExecuteResponse {
   line_explanations?: Record<string, string> | null;
 }
 
-export async function apiExecuteCode(body: CodeExecuteRequest): Promise<CodeExecuteResponse> {
+export async function apiExecuteCode(
+  body: CodeExecuteRequest,
+  opts: { signal?: AbortSignal } = {},
+): Promise<CodeExecuteResponse> {
   const res = await strataxFetch(`${BASE_URL}/api/code/execute`, {
     method: "POST",
     headers: buildHeaders(),
+    signal: opts.signal,
     body: JSON.stringify({
       language: body.language,
       code: body.code,
@@ -281,6 +285,35 @@ export async function apiExecuteCode(body: CodeExecuteRequest): Promise<CodeExec
       explain_trace: body.explain_trace,
       explain_max_lines: body.explain_max_lines,
     }),
+  });
+  return res.json();
+}
+
+export interface CodeLanguage {
+  id: string;
+  label: string;
+  supports_trace: boolean;
+  /** Resolved runtime, e.g. "Python (3.14.0)". Null when Judge0 is unreachable. */
+  runtime?: string | null;
+}
+
+export interface CodeLanguagesResponse {
+  enabled: boolean;
+  languages: CodeLanguage[];
+}
+
+/**
+ * The languages this deployment can actually run.
+ *
+ * The dropdown used to be hardcoded here, independently of the backend, which
+ * is how it came to offer C# and SQL that the server did not support -- picking
+ * either ran the source through a Python interpreter. Reading the list from the
+ * server means the two cannot drift.
+ */
+export async function apiListCodeLanguages(): Promise<CodeLanguagesResponse> {
+  const res = await strataxFetch(`${BASE_URL}/api/code/languages`, {
+    method: "GET",
+    headers: buildHeaders(),
   });
   return res.json();
 }

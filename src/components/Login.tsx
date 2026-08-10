@@ -80,11 +80,21 @@ export function Login({ onSwitchToRegister }: { onSwitchToRegister?: () => void 
   return (
     <div className="w-full">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-          Welcome Back
+        <p
+          className="text-muted-foreground uppercase mb-3"
+          style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: '0.62rem', letterSpacing: '0.16em' }}
+        >
+          Sign in
+        </p>
+        {/* Solid, not a gradient fill: one accent, and type carries the weight. */}
+        <h2
+          className="text-3xl font-semibold text-foreground mb-2"
+          style={{ letterSpacing: '-0.035em' }}
+        >
+          Welcome back
         </h2>
         <p className="text-muted-foreground">
-          Sign in to continue your interview preparation
+          Pick up where your last session left off.
         </p>
       </div>
 
@@ -116,7 +126,7 @@ export function Login({ onSwitchToRegister }: { onSwitchToRegister?: () => void 
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                className="pl-2 h-12 bg-transparent border-white/10 backdrop-blur-sm focus:border-purple-500/50 focus:ring-purple-500/20 transition-all"
+                className="pl-2 h-12 bg-transparent border-border backdrop-blur-sm focus:border-primary/60 focus:ring-primary/20 transition-all"
               />
             </div>
           </div>
@@ -135,7 +145,7 @@ export function Login({ onSwitchToRegister }: { onSwitchToRegister?: () => void 
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
-                className="pl-2 h-12 bg-transparent border-white/10 backdrop-blur-sm focus:border-purple-500/50 focus:ring-purple-500/20 transition-all"
+                className="pl-2 h-12 bg-transparent border-border backdrop-blur-sm focus:border-primary/60 focus:ring-primary/20 transition-all"
               />
             </div>
             <div className="flex justify-end">
@@ -154,7 +164,7 @@ export function Login({ onSwitchToRegister }: { onSwitchToRegister?: () => void 
         <div className="space-y-4">
           <Button
             type="submit"
-            className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg shadow-purple-500/25 transition-all duration-300 group relative overflow-hidden"
+            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 group relative overflow-hidden"
             disabled={loading || googleLoading}
           >
             <span className="relative z-10 flex items-center justify-center gap-2">
@@ -170,12 +180,12 @@ export function Login({ onSwitchToRegister }: { onSwitchToRegister?: () => void 
                 </>
               )}
             </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-700 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+            
           </Button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-white/10" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
@@ -185,7 +195,7 @@ export function Login({ onSwitchToRegister }: { onSwitchToRegister?: () => void 
           <Button
             type="button"
             variant="outline"
-            className="w-full h-12 bg-white/5 border-white/10 hover:bg-white/10 transition-all"
+            className="w-full h-12 bg-card/60 border-border hover:bg-accent/10 transition-all"
             onClick={handleGoogleLogin}
             disabled={loading || googleLoading}
           >
@@ -229,7 +239,7 @@ export function Login({ onSwitchToRegister }: { onSwitchToRegister?: () => void 
                   type="button"
                   onClick={onSwitchToRegister}
                   disabled={loading}
-                  className="text-purple-500 hover:text-purple-400 font-medium transition-colors inline-flex items-center gap-1 group"
+                  className="text-primary hover:text-primary/80 font-medium transition-colors inline-flex items-center gap-1 group"
                 >
                   Create one now
                   <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
@@ -240,7 +250,7 @@ export function Login({ onSwitchToRegister }: { onSwitchToRegister?: () => void 
         </div>
       </form>
 
-      <div className="mt-8 pt-6 border-t border-white/5">
+      <div className="mt-8 pt-6 border-t border-border/60">
         <p className="text-xs text-center text-muted-foreground">
           By signing in, you agree to our Terms of Service and Privacy Policy
         </p>

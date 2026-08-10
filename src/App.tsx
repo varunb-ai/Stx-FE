@@ -2,7 +2,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Runner from "./pages/Runner";
 import ArchitecturePage from "./pages/Architecture";
@@ -15,7 +14,7 @@ import { InterviewAssistant } from "./components/InterviewAssistant";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { UpgradeModal } from "./components/UpgradeModal";
 import { RateLimitWarning } from "./components/RateLimitWarning";
-import { DemoGateModal } from "./components/DemoGateModal";
+import { ShowcaseSection } from "./components/ShowcaseSection";
 import { PwaInstallProvider } from "./context/PwaInstallContext";
 
 
@@ -33,6 +32,14 @@ const LandingRedirect = () => {
     if (window.location.pathname === '/') {
       window.location.replace('/landing.html');
     }
+  }, []);
+  return null;
+};
+
+/** Sends the legacy `/landing` alias to the canonical static landing page. */
+const LandingHtmlRedirect = () => {
+  useEffect(() => {
+    window.location.replace('/landing.html');
   }, []);
   return null;
 };
@@ -56,7 +63,6 @@ const App = () => (
       <PwaInstallProvider>
         <Toaster />
         <UpgradeModal />
-        <DemoGateModal />
         <RateLimitWarning onUpgradeClick={() => {
           // Trigger upgrade modal
           window.dispatchEvent(new CustomEvent('ratelimit:exceeded', {
@@ -79,8 +85,13 @@ const App = () => (
             <Route path="/auth/verify-email" element={<VerifyEmail />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<LandingRedirect />} />
-            {/* Legacy alias for the landing page. */}
-            <Route path="/landing" element={<Index />} />
+            {/* Legacy alias. `public/landing.html` is the canonical landing
+                page — both the Firebase rewrite for `/` and LandingRedirect
+                above point at it — so this alias sends visitors there rather
+                than rendering a second, separately-maintained landing page
+                that nothing links to. `src/pages/Index.tsx` is kept in the
+                tree but is no longer routed. */}
+            <Route path="/landing" element={<LandingHtmlRedirect />} />
             <Route path="/app" element={
               <InterviewAssistant />
             } />
@@ -100,6 +111,12 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/docs/*" element={<DocsRedirect />} />
+            {/* Deliberately unguarded, and the only route that shows real
+                product output without a key. `/app` bounces visitors who have
+                not configured one, so without this there is nowhere for them to
+                see what the product does. Renders a baked fixture — no backend
+                call, nothing to rate-limit. */}
+            <Route path="/showcase" element={<ShowcaseSection />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

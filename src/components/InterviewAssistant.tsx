@@ -6,44 +6,27 @@ import { CopilotFeatureNav, type CopilotFeature } from "./CopilotFeatureNav";
 import { CopilotStuckNudge } from "./CopilotStuckNudge";
 import { TryItYourselfPrompt } from "./TryItYourselfPrompt";
 
-// Stratax brand mark — Architecture-driven flow with decision nodes
+/**
+ * Stratax brand mark — the real asset.
+ *
+ * This was previously a hand-drawn stroke "S" sitting on a purple→blue
+ * gradient tile, which is not the Stratax symbol: the actual mark is a
+ * layered metallic S built from strata slabs on its own dark tile. Because
+ * the asset already carries its own tile and lighting, it must NOT be wrapped
+ * in a gradient square — doing so was what produced the purple badge.
+ *
+ * Shipped at 192px and rendered small, so it stays crisp on hi-DPI screens.
+ */
 const StrataxMark = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 24 24"
+  <img
+    src="/icons/stratax-ai-192.png?v=16"
+    alt=""
+    width={192}
+    height={192}
     className={className}
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
-    focusable="false"
-  >
-    {/* Primary flow — S/X intertwined path (top-left to bottom-right) */}
-    <path
-      d="M6.8 7.5 C8.2 6 10 5.2 11.8 5.2 C14.2 5.2 16 6.5 16 8.2 C16 9.5 15 10.4 13.2 10.9 L11.4 11.5 C9.2 12.2 8 13.2 8 14.8 C8 16.5 9.8 17.8 12.2 17.8 C14 17.8 15.5 17.2 16.5 16"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    {/* Secondary flow — counter-path (bottom-left to top-right) */}
-    <path
-      d="M17.2 16.5 C15.8 18 14 18.8 12.2 18.8 C9.8 18.8 8 17.5 8 15.8 C8 14.5 9 13.6 10.8 13.1 L12.6 12.5 C14.8 11.8 16 10.8 16 9.2 C16 7.5 14.2 6.2 11.8 6.2 C10 6.2 8.5 6.8 7.5 8"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      opacity="0.92"
-    />
-
-    {/* Architecture nodes — decision points at key bends/intersections */}
-    {/* Top node: Entry decision point */}
-    <circle cx="7.5" cy="8" r="1.4" fill="currentColor" opacity="0.85" />
-
-    {/* Center node: Core intersection (system complexity) */}
-    <circle cx="12" cy="12" r="1.6" fill="currentColor" opacity="0.9" />
-
-    {/* Bottom node: Exit/output decision */}
-    <circle cx="16.5" cy="16" r="1.4" fill="currentColor" opacity="0.85" />
-  </svg>
+    draggable={false}
+  />
 );
 
 // Animated Loading Dots Component
@@ -73,7 +56,7 @@ import { apiCreateSession, apiSubmitQuestion, apiSubmitQuestionStream, apiGetHis
 import { apiRenderMermaid, questionCardsPayload, type CopilotMode } from "@/lib/api";
 import { downloadAnswerPdf } from "@/lib/utils";
 import { generateArchitecture, type ArchitecturePackage } from "@/lib/architectureApi";
-import { Plus, Check, FileText, XCircle, Mic, BarChart3 } from "lucide-react";
+import { Plus, Check, FileText, XCircle, Mic } from "lucide-react";
 import { apiGetMockInterviewHistory, apiDeleteMockInterviewSession, apiDeleteAllMockInterviewSessions, type MockInterviewHistorySession } from "@/lib/mockInterviewApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -173,12 +156,18 @@ export const InterviewAssistant = () => {
   const [practiceScreenShareLock, setPracticeScreenShareLock] = useState(false);
 
   /**
-   * The sidebar — brand, navigation, and AI Copilot chat history — stays put on
-   * every tab. It only gets out of the way once an interview is genuinely under
-   * way, where the session owns the screen. Screen-share lock is that signal:
-   * it is set for the whole of a running Live Practice session.
+   * Set by Practice Mode once a path is chosen, and by Mock Interview once the
+   * interview is running. Purely about chrome: unlike the screen-share lock it
+   * never blocks navigation, it just gets the sidebar out of the way.
    */
-  const isInterviewSessionLive = practiceScreenShareLock;
+  const [immersiveMode, setImmersiveMode] = useState(false);
+
+  /**
+   * The sidebar — brand, navigation, and AI Copilot chat history — stays put
+   * while the user is browsing. It gets out of the way once they commit to a
+   * session, which either child signals through `app:immersive-mode`.
+   */
+  const isInterviewSessionLive = practiceScreenShareLock || immersiveMode;
 
   /** Single place the three destinations change from, wherever they're rendered. */
   const handleMainTabChange = useCallback((next: string) => {
@@ -320,6 +309,16 @@ export const InterviewAssistant = () => {
     };
     window.addEventListener('practice:screen-share-lock', onLock);
     return () => window.removeEventListener('practice:screen-share-lock', onLock);
+  }, []);
+
+  // Chrome-only signal from Practice Mode and Mock Interview.
+  useEffect(() => {
+    const onImmersive = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { active?: boolean };
+      setImmersiveMode(!!detail?.active);
+    };
+    window.addEventListener('app:immersive-mode', onImmersive);
+    return () => window.removeEventListener('app:immersive-mode', onImmersive);
   }, []);
 
   useEffect(() => {
@@ -3058,9 +3057,7 @@ export const InterviewAssistant = () => {
               {/* Mobile Sidebar Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                    <StrataxMark className="w-5 h-5 text-white" />
-                  </div>
+                  <StrataxMark className="w-8 h-8 rounded-lg shrink-0" />
                   <div className="text-sm font-bold">Stratax AI</div>
                 </div>
                 <Button
@@ -3345,9 +3342,7 @@ export const InterviewAssistant = () => {
                 title="Show history"
                 className="group relative h-10 w-10 rounded-xl border border-border bg-background/70 backdrop-blur-xl hover:bg-background/90 transition-colors flex items-center justify-center overflow-hidden"
               >
-                <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center transition-opacity duration-150 group-hover:opacity-0">
-                  <StrataxMark className="w-4 h-4 text-white" />
-                </div>
+                <StrataxMark className="w-7 h-7 rounded-lg transition-opacity duration-150 group-hover:opacity-0" />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                   <PanelLeft className="h-4 w-4" />
                 </div>
@@ -3359,9 +3354,7 @@ export const InterviewAssistant = () => {
           <div className="px-3 py-2.5 border-b border-border/60">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center shrink-0">
-                  <StrataxMark className="w-4 h-4 text-white" />
-                </div>
+                <StrataxMark className="w-7 h-7 rounded-lg shrink-0" />
                 <h1 className="text-base font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent truncate">Stratax AI</h1>
               </div>
               <Button
@@ -3378,7 +3371,7 @@ export const InterviewAssistant = () => {
           </div>
 
           {/* Primary navigation — replaces the old top tab bar. */}
-          <nav className="px-2 py-2 border-b border-border/50 space-y-0.5">
+          <nav className="px-2 pt-2 pb-1 space-y-0.5">
             {MAIN_NAV_ITEMS.map((item) => {
               const isActive = activeMainTab === item.id;
               return (
@@ -3400,7 +3393,40 @@ export const InterviewAssistant = () => {
             })}
           </nav>
 
-          <div className="flex-1 overflow-hidden">
+          {/*
+           * Utilities — the actions that used to sit in the top bar, grouped
+           * with navigation rather than pinned to the bottom so every
+           * destination in the app reads as one list.
+           */}
+          <div className="px-2 pt-1 pb-2 border-b border-border/50 space-y-0.5">
+            {user && !authLoading && (
+              <button
+                type="button"
+                disabled={practiceScreenShareLock}
+                onClick={() => setBridgeSettingsOpen(true)}
+                className={`${SIDEBAR_ROW} font-medium ${!hasApiKey
+                  ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  }`}
+              >
+                <Settings className="h-4 w-4 shrink-0" />
+                <span className="truncate">{hasApiKey ? "Bridge Settings" : "Connect AI Bridge"}</span>
+              </button>
+            )}
+
+            <Link to="/run" onClick={guardWhileLive('Run Code')}>
+              <button
+                type="button"
+                disabled={practiceScreenShareLock}
+                className={`${SIDEBAR_ROW} font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground`}
+              >
+                <Code2 className="h-4 w-4 shrink-0" />
+                <span className="truncate">Run Code</span>
+              </button>
+            </Link>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-hidden">
 
                 {/* New Chat Button - Moved to top for better UX */}
                 <div className="px-2 py-2 border-b border-border/40">
@@ -3704,53 +3730,6 @@ export const InterviewAssistant = () => {
                 </div>
           </div>
 
-          {/*
-           * Utilities — the actions that used to sit in the top bar. They live
-           * below the history rather than above it: pinned to the bottom they
-           * cost no vertical space the session list could have used, which is
-           * what pushed the history off-screen when they sat up top.
-           */}
-          <div className="mt-auto px-2 py-2 border-t border-border/50 space-y-0.5">
-            {user && !authLoading && (
-              <Link to="/progress" onClick={guardWhileLive('Progress')}>
-                <button
-                  type="button"
-                  disabled={practiceScreenShareLock}
-                  className={`${SIDEBAR_ROW} font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground`}
-                >
-                  <BarChart3 className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Progress</span>
-                </button>
-              </Link>
-            )}
-
-            {user && !authLoading && (
-              <button
-                type="button"
-                disabled={practiceScreenShareLock}
-                onClick={() => setBridgeSettingsOpen(true)}
-                className={`${SIDEBAR_ROW} font-medium ${!hasApiKey
-                  ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                  }`}
-              >
-                <Settings className="h-4 w-4 shrink-0" />
-                <span className="truncate">{hasApiKey ? "Bridge Settings" : "Connect AI Bridge"}</span>
-              </button>
-            )}
-
-            <Link to="/run" onClick={guardWhileLive('Run Code')}>
-              <button
-                type="button"
-                disabled={practiceScreenShareLock}
-                className={`${SIDEBAR_ROW} font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground`}
-              >
-                <Code2 className="h-4 w-4 shrink-0" />
-                <span className="truncate">Run Code</span>
-              </button>
-            </Link>
-          </div>
-
           {/* Desktop Sidebar Footer */}
           {!authLoading && (
             user ? (
@@ -3788,7 +3767,7 @@ export const InterviewAssistant = () => {
           >
 
             {/* Content Section */}
-            <div ref={mainScrollRef} className={`ia-main-scroll flex-1 overflow-y-auto overflow-x-hidden scroll-professional px-3 py-2 md:px-6 md:py-6 ${activeMainTab === "practice" ? "hidden" : ""} ${showBottomSearchBar ? "pb-40 md:pb-44 ia-main-scroll-footer" : ""
+            <div ref={mainScrollRef} className={`ia-main-scroll flex-1 overflow-y-auto overflow-x-hidden scroll-professional px-3 py-2 md:px-6 md:py-6 ${activeMainTab !== "answer" ? "hidden" : ""} ${showBottomSearchBar ? "pb-40 md:pb-44 ia-main-scroll-footer" : ""
               }`} style={{ scrollbarGutter: 'stable', overscrollBehaviorX: 'none', WebkitOverflowScrolling: 'touch' }}>
               <div className="max-w-4xl mx-auto w-full overflow-x-hidden">
 
@@ -4085,7 +4064,7 @@ export const InterviewAssistant = () => {
                                 isGenerating={isGenerating}
                                 canGenerate={!viewingHistory}
                                 mode={questionMode}
-                                onModeClick={() => setQuestionMode(questionMode === "answer" ? "questions" : questionMode === "questions" ? "mirror" : "answer")}
+                                onModeSelect={(next) => setQuestionMode(next)}
                               />
                             </div>
                           </div>
@@ -4114,15 +4093,6 @@ export const InterviewAssistant = () => {
                   )}
                 </TabsContent>
 
-                <TabsContent value="mock-interview" className="mt-0">
-                  <div className="h-[calc(var(--app-height)-85px)] md:h-[calc(var(--app-height)-200px)] md:min-h-[600px] pb-4 md:pb-0">
-                    <MockInterviewMode
-                      selectedHistorySession={selectedMockSession}
-                      onHistoryUpdate={loadMockInterviewHistory}
-                    />
-                  </div>
-                </TabsContent>
-
                 {/* Right-side popover for history item actions */}
                 {openMenuIndex !== null && menuPos && (
                   <div
@@ -4144,6 +4114,19 @@ export const InterviewAssistant = () => {
                 )}
               </div>
             </div>
+
+            {/* Mock Interview fills its column outright rather than guessing at
+                a viewport offset, which is what left a band of dead space
+                beneath it once the top header was removed. */}
+            <TabsContent
+              value="mock-interview"
+              className="mt-0 flex-1 min-h-0 overflow-hidden"
+            >
+              <MockInterviewMode
+                selectedHistorySession={selectedMockSession}
+                onHistoryUpdate={loadMockInterviewHistory}
+              />
+            </TabsContent>
 
             {/*
              * Live Practice is its own full-height surface, so it sits beside the
@@ -4264,7 +4247,7 @@ export const InterviewAssistant = () => {
                         isGenerating={isGenerating}
                         canGenerate={!viewingHistory}
                         mode={questionMode}
-                        onModeClick={() => setQuestionMode(questionMode === "answer" ? "questions" : questionMode === "questions" ? "mirror" : "answer")}
+                        onModeSelect={(next) => setQuestionMode(next)}
                       />
                     </div>
                   </div>

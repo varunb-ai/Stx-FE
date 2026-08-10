@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, Upload, Monitor } from "lucide-react";
+import { Mic, MicOff, Upload, Monitor, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import type { CopilotMode } from "@/lib/api";
@@ -17,26 +25,41 @@ const MODE_COPY: Record<CopilotMode, {
   name: string;
   title: string;
   blurb: string;
+  /**
+   * What the input expects in this mode.
+   *
+   * The three modes take genuinely different input -- a question, a topic, or
+   * a question plus your own draft -- but the field said "Ask anything..."
+   * in all of them. Mode *names* are guessable; what to type is not, and the
+   * input is where someone is already looking after switching.
+   */
+  placeholder: string;
 }> = {
   answer: {
     badge: "Answer",
     name: "Answer Mode",
     title: "Answer Mode: generate a full answer",
     blurb: "Get a complete interview-ready answer with examples.",
+    placeholder: "Ask an interview question…",
   },
   mirror: {
     badge: "Mirror",
     name: "Mirror Mode",
     title: "Mirror Mode: enter the question, then paste your draft answer for feedback",
     blurb: "Enter the question, then paste your draft answer for critique and a stronger rewrite.",
+    placeholder: "Enter the question you were asked…",
   },
   questions: {
     badge: "Questions",
     name: "Practice Questions",
     title: "Practice Questions: enter a topic and get a set of questions to practise",
     blurb: "Enter a topic and get a set of interview questions, each with a model answer.",
+    placeholder: "Enter a topic to generate practice questions…",
   },
 };
+
+/** Order shown in the mode picker. */
+const MODE_ORDER: CopilotMode[] = ["answer", "mirror", "questions"];
 
 interface SearchBarProps {
   value: string;
@@ -54,11 +77,15 @@ interface SearchBarProps {
   canGenerate?: boolean;
   // Current mode to display as a badge inside the input
   mode?: CopilotMode;
-  // Callback when user clicks the mode badge to change it
+  // Legacy: cycles to the next mode. Kept for callers that still pass it, but
+  // `onModeSelect` is preferred -- see the picker below for why.
   onModeClick?: () => void;
+  // Pick a mode directly. When provided, the badge opens a picker instead of
+  // blind-cycling.
+  onModeSelect?: (next: CopilotMode) => void;
 }
 
-export const SearchBar = ({ value, onChange, placeholder = "Type your question...", resetToken, ensureSession, onGenerate, isGenerating = false, canGenerate = true, mode, onModeClick }: SearchBarProps) => {
+export const SearchBar = ({ value, onChange, placeholder = "Type your question...", resetToken, ensureSession, onGenerate, isGenerating = false, canGenerate = true, mode, onModeClick, onModeSelect }: SearchBarProps) => {
   const [isListening, setIsListening] = useState(false);
   const [isSupported] = useState(() => 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
   const recognitionRef = useRef<any>(null);
@@ -1102,16 +1129,61 @@ export const SearchBar = ({ value, onChange, placeholder = "Type your question..
         <div className="search-bar bg-background/98 dark:bg-background/90 backdrop-blur-xl border border-border/80 rounded-3xl shadow-md ring-1 ring-border/40 focus-within:ring-2 focus-within:ring-primary/20 focus-within:shadow-lg transition-shadow">
           {/* Main content container - using flex for proper alignment */}
           <div className="flex items-end gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2">
-            {/* Mode badge inside input */}
-            {mode && (
+            {/* Mode badge inside the input.
+                A picker, not a cycle. This used to advance
+                answer -> questions -> mirror on click, while its tooltip
+                described the mode you were already *in* -- so the one control
+                that changes mode never named where you were going. Worse on
+                touch: tooltips are hover-only, so a tap switched the mode and
+                explained nothing. A menu names every destination and works
+                with pointer and finger alike. */}
+            {mode && (onModeSelect ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={`Mode: ${MODE_COPY[mode].name}. Change mode`}
+                    className="flex items-center gap-0.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-[10px] sm:text-xs font-medium transition-colors cursor-pointer self-start mt-1.5 sm:mt-2 flex-shrink-0"
+                    title={MODE_COPY[mode].title}
+                  >
+                    {MODE_COPY[mode].badge}
+                    <ChevronDown className="ml-0.5 h-3 w-3 opacity-70" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[290px]">
+                  <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Copilot mode
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {MODE_ORDER.map((m) => {
+                    const copy = MODE_COPY[m];
+                    const isCurrent = m === mode;
+                    return (
+                      <DropdownMenuItem
+                        key={m}
+                        onSelect={() => { if (!isCurrent) onModeSelect(m); }}
+                        className="flex flex-col items-start gap-0.5 py-2 cursor-pointer"
+                      >
+                        <span className="flex w-full items-center gap-2 text-sm font-medium">
+                          {copy.name}
+                          {isCurrent && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
+                        </span>
+                        {/* The blurb travels with the choice, so a mode is
+                            explained before it is applied, not after. */}
+                        <span className="text-xs leading-snug text-muted-foreground">
+                          {copy.blurb}
+                        </span>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onModeClick?.();
-                      }}
+                      onClick={(e) => { e.preventDefault(); onModeClick?.(); }}
                       className="flex items-center gap-0.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-[10px] sm:text-xs font-medium transition-colors cursor-pointer self-start mt-1.5 sm:mt-2 flex-shrink-0"
                       title={MODE_COPY[mode].title}
                     >
@@ -1126,7 +1198,7 @@ export const SearchBar = ({ value, onChange, placeholder = "Type your question..
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            )}
+            ))}
 
             {/* Text area - grows to fill space */}
             <div className="flex-1 min-w-0">
@@ -1137,7 +1209,7 @@ export const SearchBar = ({ value, onChange, placeholder = "Type your question..
                 onKeyDown={handleKeyDown}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
-                placeholder={placeholder}
+                placeholder={mode ? MODE_COPY[mode].placeholder : placeholder}
                 maxLength={512}
                 className="w-full bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/60 leading-5 sm:leading-6 overflow-y-auto scrollbar-thin px-0 py-1 sm:py-2 text-[16px]"
                 rows={1}

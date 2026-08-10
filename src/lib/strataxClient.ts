@@ -4,34 +4,22 @@
  * Responsibilities:
  * - Attach JWT auth when logged in (Authorization: Bearer <jwt>)
  * - Attach user-provided LLM keys (X-API-Key / X-Gemini-Key) when authenticated
- * - Support demo gating errors (DEMO_LIMIT_REACHED / DEMO_UNAVAILABLE) via window events
  * - Capture and persist effective session id from response headers (X-Stratax-Session-Id)
+ *
+ * Note on demo gating: this client used to translate backend DEMO_LIMIT_REACHED /
+ * DEMO_UNAVAILABLE responses into window events for a global modal. That path is
+ * gone. The backend no longer serves anonymous traffic from server keys, so those
+ * errors cannot occur -- an LLM-backed request without the caller's own key is a
+ * plain 401 whose detail names /api/demo/showcase.
+ *
+ * The `demo:limit-reached` event still exists and is still live, but it is raised
+ * *client-side* (PracticeMode, practiceProctoring) for guest 429s during a
+ * session, which is a different thing and unrelated to server-key spend.
  */
 
 import { isDevelopmentMode } from "./devUtils";
 
 export const STRATAX_API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || "https://intvmate-interview-assistant.hf.space";
-
-export type DemoRemaining = {
-  questions?: number;
-  designs?: number;
-  practice_rounds?: number;
-  [key: string]: unknown;
-};
-
-export type DemoGateDetail = {
-  error: "DEMO_LIMIT_REACHED";
-  message?: string;
-  user_type?: "demo";
-  demo_remaining?: DemoRemaining;
-  [key: string]: unknown;
-};
-
-export type DemoUnavailableDetail = {
-  error: "DEMO_UNAVAILABLE";
-  message?: string;
-  [key: string]: unknown;
-};
 
 export type ApiErrorDetail =
   | { error?: string; message?: string; [key: string]: unknown }
@@ -283,38 +271,6 @@ function dispatchByokRequiredEvent(opts: { status: number; url: string; detail: 
   }
 }
 
-function dispatchDemoEvents(opts: {
-  status: number;
-  detail: any;
-  headers: Headers;
-}) {
-  if (typeof window === "undefined") return;
-
-  const { status, detail, headers } = opts;
-  const d = detail?.detail ?? detail;
-
-  if (status === 429 && d?.error === "DEMO_LIMIT_REACHED") {
-    const reset = headers.get("X-RateLimit-Reset") || headers.get("x-ratelimit-reset") || undefined;
-    const remaining = headers.get("X-RateLimit-Remaining") || headers.get("x-ratelimit-remaining") || undefined;
-
-    window.dispatchEvent(
-      new CustomEvent("demo:limit-reached", {
-        detail: {
-          ...d,
-          rate_limit_reset: reset ? Number(reset) : undefined,
-          rate_limit_remaining: remaining ? Number(remaining) : undefined,
-        } satisfies DemoGateDetail & { rate_limit_reset?: number; rate_limit_remaining?: number },
-      })
-    );
-    return;
-  }
-
-  if (status === 503 && d?.error === "DEMO_UNAVAILABLE") {
-    window.dispatchEvent(new CustomEvent("demo:unavailable", { detail: d as DemoUnavailableDetail }));
-    return;
-  }
-}
-
 export async function strataxFetch(
   pathOrUrl: string,
   init: RequestInit & { json?: boolean; throwOnError?: boolean; includeUserKeys?: boolean } = {}
@@ -349,15 +305,6 @@ export async function strataxFetch(
   if (!res.ok) {
     // If caller wants to handle non-OK status codes themselves, do not consume the body.
     if (init.throwOnError === false) {
-      // Still surface demo gate events (429/503) even when caller handles errors.
-      // IMPORTANT: Use a cloned response so we don't consume the caller's body.
-      try {
-        const body = await safeReadJson(res.clone());
-        dispatchDemoEvents({ status: res.status, detail: body, headers: res.headers });
-      } catch {
-        // ignore
-      }
-
       // Best-effort logout only when 401 is clearly JWT/session related.
       if (res.status === 401 && typeof window !== "undefined") {
         let body: any = null;
@@ -391,9 +338,6 @@ export async function strataxFetch(
     }
 
     const body = await safeReadJson(res);
-
-    // Demo gates
-    dispatchDemoEvents({ status: res.status, detail: body, headers: res.headers });
 
     // Expired auth (only if it's truly JWT/session related)
     if (res.status === 401 && typeof window !== "undefined" && shouldLogoutFor401(url, body)) {
