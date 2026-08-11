@@ -162,6 +162,10 @@ const DOMAIN_KEYWORDS: Record<string, string[]> = {
 // Core rounds shown to everyone
 const CORE_ROUNDS = [
   InterviewRound.HR_SCREENING,
+  // Domain-agnostic, so it must be here or filterRoundsByDomain drops it and the
+  // round the backend serves never appears. This list duplicates the backend's
+  // own core_rounds; both need the member.
+  InterviewRound.CAMPUS_PLACEMENT,
   InterviewRound.TECHNICAL_ROUND_1,
   InterviewRound.BEHAVIORAL,
 ];
@@ -310,7 +314,17 @@ export default function RoundSelection({
     nextSessionPrefill?.domain ||
     ''
   );
-  const [experienceYears, setExperienceYears] = useState(userProfile?.experience_years || 0);
+  // `number | null`: null means nothing entered, 0 means no professional
+  // experience. `|| 0` collapsed the two, and every `||` chain downstream then
+  // treated a student's honest 0 as "not provided".
+  // The domain list is a closed Select, so anything not on it was a dead end:
+  // "rounds stay locked until a domain is set" and no option fits. This lets the
+  // caller type their own, which the backend has always accepted -- `domain` is
+  // a free-form string server-side.
+  const [useOtherDomain, setUseOtherDomain] = useState(false);
+  const [experienceYears, setExperienceYears] = useState<number | null>(
+    userProfile?.experience_years ?? null
+  );
   const [questionCount, setQuestionCount] = useState<number>(
     typeof nextSessionPrefill?.question_count === 'number' && nextSessionPrefill.question_count >= 1
       ? nextSessionPrefill.question_count
@@ -363,7 +377,7 @@ export default function RoundSelection({
       console.log('📊 [Round Selection] User Profile:', userProfile);
 
       const response = await getAvailableRounds(
-        experienceYears || userProfile?.experience_years,
+        experienceYears ?? userProfile?.experience_years,
         domain || userProfile?.domain
       );
 
@@ -461,7 +475,7 @@ export default function RoundSelection({
       const requestData: any = {
         round_type: selectedRound.round_type,
         domain: domain || userProfile?.domain || '',
-        experience_years: parseInt(String(experienceYears || userProfile?.experience_years || 0)), // Ensure integer
+        experience_years: parseInt(String(experienceYears ?? userProfile?.experience_years ?? 0)), // Ensure integer
         company_specific: companySpecific || undefined,
         enable_tts: true,
         screen_shared: !!gate.screen_shared,
@@ -534,7 +548,7 @@ export default function RoundSelection({
     if (round.round_type === InterviewRound.HR_SCREENING) return null; // handled separately
 
     const effectiveDomain = domain || userProfile?.domain || '';
-    const effectiveExp = experienceYears || userProfile?.experience_years || 0;
+    const effectiveExp = experienceYears ?? userProfile?.experience_years ?? 0;
 
     // Contextual labels
     if (effectiveDomain && effectiveExp > 0) {
@@ -691,7 +705,21 @@ export default function RoundSelection({
                       <Code2 className="w-3 h-3" />
                       Domain / specialisation <span style={toneColor('critical')}>*</span>
                     </label>
-                    <Select value={domain} onValueChange={setDomain}>
+                    <Select
+                      value={useOtherDomain ? '__other__' : domain}
+                      onValueChange={(v) => {
+                        if (v === '__other__') {
+                          // Clear the domain so the round grid stays locked until
+                          // they actually type one -- an empty custom domain is
+                          // not a selection.
+                          setUseOtherDomain(true);
+                          setDomain('');
+                          return;
+                        }
+                        setUseOtherDomain(false);
+                        setDomain(v);
+                      }}
+                    >
                       <SelectTrigger
                         id="domain"
                         className={cx('px-select', !domain && 'px-select--invalid')}
@@ -699,6 +727,12 @@ export default function RoundSelection({
                         <SelectValue placeholder="Select your domain…" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
+                        {/* Entry-level first: a student had nothing to pick,
+                            and the domain is required to unlock any round. */}
+                        <SelectItem value="Student / Fresher (no experience yet)">Student / Fresher (no experience yet)</SelectItem>
+                        <SelectItem value="Campus Placement Preparation">Campus Placement Preparation</SelectItem>
+                        <SelectItem value="Computer Science Student">Computer Science Student</SelectItem>
+                        <SelectItem value="Internship Preparation">Internship Preparation</SelectItem>
                         <SelectItem value="Python Backend Development">Python Backend Development</SelectItem>
                         <SelectItem value="Java Backend Development">Java Backend Development</SelectItem>
                         <SelectItem value="JavaScript/Node.js Backend">JavaScript/Node.js Backend</SelectItem>
@@ -723,8 +757,21 @@ export default function RoundSelection({
                         <SelectItem value="System Design & Architecture">System Design & Architecture</SelectItem>
                         <SelectItem value="Database Administration">Database Administration</SelectItem>
                         <SelectItem value="Product Management">Product Management</SelectItem>
+                        <SelectItem value="__other__">Other — type my own…</SelectItem>
                       </SelectContent>
                     </Select>
+                    {useOtherDomain && (
+                      <input
+                        id="domain-other"
+                        type="text"
+                        className="px-field"
+                        autoFocus
+                        maxLength={120}
+                        placeholder="e.g. Embedded Systems, Business Analyst, MBA Finance…"
+                        value={domain}
+                        onChange={(e) => setDomain(e.target.value)}
+                      />
+                    )}
                     {!domain && (
                       <p className="px-note" style={toneColor('critical')}>
                         Required — rounds stay locked until a domain is set.
@@ -742,8 +789,13 @@ export default function RoundSelection({
                       type="number"
                       min="0"
                       max="30"
-                      value={experienceYears || ''}
-                      onChange={(e) => setExperienceYears(parseInt(e.target.value) || 0)}
+                      value={experienceYears === null ? '' : experienceYears}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        if (raw === '') { setExperienceYears(null); return; }
+                        const v = parseInt(raw, 10);
+                        setExperienceYears(Number.isNaN(v) ? null : v);
+                      }}
                       placeholder="0–30"
                       className="px-field px-num"
                     />
@@ -751,7 +803,7 @@ export default function RoundSelection({
                   </div>
                 </div>
 
-                {(domain !== (userProfile?.domain || '') || experienceYears !== (userProfile?.experience_years || 0)) && (
+                {(domain !== (userProfile?.domain || '') || experienceYears !== (userProfile?.experience_years ?? null)) && (
                   <PxButton variant="primary" block onClick={loadRounds} disabled={loading || !domain}>
                     <Sparkles className="w-4 h-4" />
                     Update recommendations

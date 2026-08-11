@@ -1659,32 +1659,51 @@ export const PracticeMode = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  useEffect(() => {
-    const el = facePreviewVideoRef.current;
-    if (!el) return;
+  /**
+   * Attach the stream to the <video>, idempotently.
+   *
+   * Only touches srcObject when the stream genuinely changed: re-assigning the
+   * same MediaStream tears the element's pipeline down and back up, which is
+   * what made the preview stutter at every phase transition.
+   */
+  const attachCameraPreview = useCallback(
+    (el: HTMLVideoElement | null) => {
+      facePreviewVideoRef.current = el;
+      if (!el) return;
 
-    // Only touch srcObject when the stream genuinely changed. Re-assigning the
-    // same MediaStream tears the element's pipeline down and back up, and this
-    // effect also ran on `sessionId` and `phase` -- so the preview visibly
-    // stuttered and re-buffered at every phase transition of the interview,
-    // which is most of what "the camera isn't smooth" was.
-    const next = cameraPreviewStream ?? null;
-    if ((el as any).srcObject !== next) {
-      try {
-        (el as any).srcObject = next;
-      } catch {
-        // ignore
+      const next = cameraPreviewStream ?? null;
+      if ((el as any).srcObject !== next) {
+        try {
+          (el as any).srcObject = next;
+        } catch {
+          // ignore
+        }
       }
-    }
 
-    if (cameraPreviewStream && el.paused) {
-      el.muted = true;
-      el.playsInline = true;
-      void el.play().catch(() => {
-        // ignore
-      });
-    }
-  }, [cameraPreviewStream]);
+      if (next && el.paused) {
+        el.muted = true;
+        el.playsInline = true;
+        void el.play().catch(() => {
+          // ignore
+        });
+      }
+    },
+    [cameraPreviewStream]
+  );
+
+  // A ref callback rather than only an effect, because the element mounts *after*
+  // the stream arrives. ensureCameraForProctoring sets cameraPreviewStream while
+  // phase is still 'round-selection', and renderFacePreview does not mount the
+  // <video> until phase moves past it -- so the effect ran once with a null ref
+  // and never again (its deps are the stream, which had not changed). srcObject
+  // was therefore never assigned: a black feed, while the LIVE badge read true
+  // because the track itself was healthy.
+  //
+  // The effect is kept for the other direction: the stream changing while the
+  // element is already mounted (camera re-acquired, or cleared on session end).
+  useEffect(() => {
+    attachCameraPreview(facePreviewVideoRef.current);
+  }, [attachCameraPreview]);
 
   const renderFacePreview = () => {
     const show = !!sessionId && !!cameraPreviewStream && phase !== 'welcome' && phase !== 'setup' && phase !== 'round-selection';
@@ -1763,7 +1782,7 @@ export const PracticeMode = () => {
             className={`relative aspect-square w-full bg-black ${facePreviewCollapsed ? 'hidden' : ''}`}
           >
             <video
-              ref={facePreviewVideoRef}
+              ref={attachCameraPreview}
               className="w-full h-full object-cover -scale-x-100"
               autoPlay
               muted
@@ -5088,7 +5107,13 @@ export const PracticeMode = () => {
 
         <div
           className={cx(
-            'px-frame px-frame--mid py-3 sm:py-4 flex flex-col gap-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
+            // --wide (88rem) rather than --mid (74rem). This is the densest
+            // screen in the product -- question, timer, transcript, recorder,
+            // and for coding questions an editor -- and at 74rem on a 1080p+
+            // display it left a large empty margin either side. The left one
+            // reads as intentional because the camera feed floats there; the
+            // right holds only the proctoring chip, so it looked broken.
+            'px-frame px-frame--wide py-3 sm:py-4 flex flex-col gap-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
             !isCodeQuestion && 'h-full',
           )}
         >
