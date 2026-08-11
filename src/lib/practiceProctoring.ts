@@ -76,6 +76,10 @@ export async function startPracticeProctoring(
   const ownsCameraStream = !options.cameraStream;
   let stream: MediaStream | null = options.cameraStream ?? null;
 
+  // Must stay <= 1/3 of PROCTORING_HEARTBEAT_STALE_SECONDS in
+  // app/services/practice/proctoring.py (currently 45s).
+  const PROCTORING_HEARTBEAT_INTERVAL_MS = 15000;
+
   let heartbeatTimerId: ReturnType<typeof setInterval> | null = null;
   let statusTimerId: ReturnType<typeof setInterval> | null = null;
   let faceDetectionTimerId: ReturnType<typeof setInterval> | null = null;
@@ -425,9 +429,17 @@ export async function startPracticeProctoring(
 
   void pollStatus();
   void sendHeartbeat();
+  // 15s, not 5s. At 5s this was 12 requests a minute per session purely for
+  // liveness -- ~510 over a half-hour interview -- each one a full round trip
+  // that currently costs about a second against the deployed backend.
+  //
+  // Paired with PROCTORING_HEARTBEAT_STALE_SECONDS on the server, which is 3x
+  // this value so two beats can be lost before the session is called stale. The
+  // server was at 15s, so raising this without raising that would have put the
+  // interval exactly on the staleness threshold and flapped on any jitter.
   heartbeatTimerId = setInterval(() => {
     void sendHeartbeat();
-  }, 5000);
+  }, PROCTORING_HEARTBEAT_INTERVAL_MS);
   statusTimerId = setInterval(() => {
     void pollStatus();
   }, 12000);
