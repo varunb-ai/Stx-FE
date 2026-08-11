@@ -322,6 +322,12 @@ export default function RoundSelection({
   // caller type their own, which the backend has always accepted -- `domain` is
   // a free-form string server-side.
   const [useOtherDomain, setUseOtherDomain] = useState(false);
+  // Typing is held here and only committed to `domain` on blur or Enter.
+  // `domain` is a dependency of the effect that calls loadRounds(), so binding
+  // the input straight to it fired a request on every keystroke -- typing "AI"
+  // issued two, each costing seconds against the deployed backend, which made
+  // the field feel like it was fighting you.
+  const [otherDomainDraft, setOtherDomainDraft] = useState('');
   const [experienceYears, setExperienceYears] = useState<number | null>(
     userProfile?.experience_years ?? null
   );
@@ -709,14 +715,17 @@ export default function RoundSelection({
                       value={useOtherDomain ? '__other__' : domain}
                       onValueChange={(v) => {
                         if (v === '__other__') {
-                          // Clear the domain so the round grid stays locked until
-                          // they actually type one -- an empty custom domain is
-                          // not a selection.
+                          // Clear the committed domain so the round grid stays
+                          // locked until they actually type one -- an empty custom
+                          // domain is not a selection. The draft keeps whatever was
+                          // typed before, so toggling away and back is not
+                          // destructive.
                           setUseOtherDomain(true);
                           setDomain('');
                           return;
                         }
                         setUseOtherDomain(false);
+                        setOtherDomainDraft('');
                         setDomain(v);
                       }}
                     >
@@ -768,8 +777,15 @@ export default function RoundSelection({
                         autoFocus
                         maxLength={120}
                         placeholder="e.g. Embedded Systems, Business Analyst, MBA Finance…"
-                        value={domain}
-                        onChange={(e) => setDomain(e.target.value)}
+                        value={otherDomainDraft}
+                        onChange={(e) => setOtherDomainDraft(e.target.value)}
+                        onBlur={() => setDomain(otherDomainDraft.trim())}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            setDomain(otherDomainDraft.trim());
+                          }
+                        }}
                       />
                     )}
                     {!domain && (
