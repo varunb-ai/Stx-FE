@@ -97,7 +97,10 @@ export async function startPracticeProctoring(
         new CustomEvent('demo:limit-reached', {
           detail: {
             error: 'DEMO_LIMIT_REACHED',
-            message: 'Guest usage limit reached. Please sign in to continue.',
+            // See the note in PracticeMode: this is a per-route 429, not a
+            // guest usage quota, and signing in lowers the allowance rather
+            // than raising it.
+            message: 'Request rate limit reached. This clears on its own — wait a moment and continue.',
             source: 'practice_proctoring',
           },
         })
@@ -182,7 +185,7 @@ export async function startPracticeProctoring(
     if (!active) return;
     dispatchRateLimit();
     stopInternal({ postCameraStopped: false, emitInactiveStatus: false, stopManagedStream: false });
-    onStatus?.('error', 'Guest usage limit reached (rate limited)');
+    onStatus?.('error', 'Rate limited — proctoring paused, retrying shortly');
   };
 
   const applyResult = (
@@ -367,7 +370,7 @@ export async function startPracticeProctoring(
         // ignore
       }
     }
-    onStatus?.('error', 'Guest usage limit reached (rate limited)');
+    onStatus?.('error', 'Rate limited — proctoring paused, retrying shortly');
     return {
       stop: () => {
         // already stopped

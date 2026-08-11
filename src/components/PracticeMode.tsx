@@ -872,15 +872,15 @@ export const PracticeMode = () => {
             <Eyebrow tone="caution">Access</Eyebrow>
             <div className="px-subtitle mt-1.5">
               {guestGateBanner.kind === 'limit'
-                ? 'Guest usage limit reached'
-                : 'Guest mode temporarily unavailable'}
+                ? 'Too many requests — slowing down'
+                : 'Service temporarily unavailable'}
             </div>
             <p className="px-body mt-1.5">
               {guestGateBanner.message?.trim()
                 ? guestGateBanner.message
                 : guestGateBanner.kind === 'limit'
-                  ? 'You’ve used all guest credits for now. Sign in to continue, or connect your own API keys for unlimited usage.'
-                  : 'Guest capacity is currently full right now. Please try again later, or sign in and use your own API keys.'}
+                  ? 'The server is limiting how many requests it accepts from you right now. This is a request-rate limit, not your AI usage — your own API key is unaffected. It clears on its own; wait a moment and continue.'
+                  : 'The server is temporarily refusing requests. Please try again in a moment.'}
             </p>
 
             {guestGateBanner.kind === 'limit' && remaining && typeof remaining === 'object' && (
@@ -2126,7 +2126,12 @@ export const PracticeMode = () => {
         new CustomEvent('demo:limit-reached', {
           detail: {
             error: 'DEMO_LIMIT_REACHED',
-            message: 'Guest usage limit reached. Please sign in to continue.',
+            // Not "guest usage" and not solved by signing in: this is a 429
+            // from the per-route request-rate limiter, and a signed-in FREE
+            // account gets a *smaller* per-route allowance than an
+            // unauthenticated one (50 vs 100). Naming the real cause matters --
+            // this message previously sent people to sign in, which made it worse.
+            message: 'Request rate limit reached. This clears on its own — wait a moment and continue.',
             source,
           },
         })
