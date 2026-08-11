@@ -5107,13 +5107,13 @@ export const PracticeMode = () => {
 
         <div
           className={cx(
-            // --wide (88rem) rather than --mid (74rem). This is the densest
-            // screen in the product -- question, timer, transcript, recorder,
-            // and for coding questions an editor -- and at 74rem on a 1080p+
-            // display it left a large empty margin either side. The left one
-            // reads as intentional because the camera feed floats there; the
-            // right holds only the proctoring chip, so it looked broken.
-            'px-frame px-frame--wide py-3 sm:py-4 flex flex-col gap-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
+            // Deliberately --mid (74rem), not --wide. Widening this to use the
+            // empty right margin backfired: the proctoring status panel is
+            // position-fixed at top-right, so at 88rem the header's timer and
+            // End button slid underneath it and were clipped. The margin is the
+            // clearance that panel needs. Any future widening has to move or
+            // reserve space for the fixed panel first.
+            'px-frame px-frame--mid py-3 sm:py-4 flex flex-col gap-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
             !isCodeQuestion && 'h-full',
           )}
         >

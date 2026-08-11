@@ -1497,36 +1497,127 @@ export class AudioRecorder {
     }
   }
 
+  /**
+   * How long to wait for MediaRecorder to deliver `onstop`. Exceeding it means
+   * finalising with whatever chunks arrived, because a submit that never
+   * happens is worse than one built from a slightly truncated recording.
+   */
+  private static readonly STOP_TIMEOUT_MS = 4000;
+
+  /**
+   * Stop recording and return the finished audio.
+   *
+   * The previous implementation could hang forever, which is what made
+   * "Stop & Submit" spin for minutes without ever issuing a request:
+   *
+   * - It was `new Promise(async (resolve, reject) => …)`. Inside an *async*
+   *   executor, a synchronous throw rejects the executor's own promise, which
+   *   nobody holds -- it does not reject the promise being constructed. So when
+   *   `mediaRecorder.stop()` threw InvalidStateError (it does, whenever the
+   *   recorder is already 'inactive'), the returned promise simply never
+   *   settled and every `await` on it waited indefinitely.
+   * - Nothing resolved except `onstop`, with no `onerror` handler and no
+   *   timeout, so there was no path out if that event never arrived.
+   * - It was not idempotent, yet two call sites stop the recorder -- the submit
+   *   handler and the abandon/cleanup path. Whichever ran second hung, and the
+   *   cleanup one hangs inside a `try/catch` that was written expecting a throw.
+   *
+   * Now: deterministic for an already-stopped recorder, bounded by a timeout,
+   * rejects on recorder error, and safe to call twice.
+   */
   async stop(): Promise<Blob> {
-    return new Promise(async (resolve, reject) => {
-      if (!this.mediaRecorder) {
-        reject(new Error('MediaRecorder not initialized'));
-        return;
-      }
+    const recorder = this.mediaRecorder;
+    if (!recorder) {
+      throw new Error('MediaRecorder not initialized');
+    }
 
-      this.mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(this.audioChunks, {
-          type: this.mediaRecorder!.mimeType,
-        });
+    // Already stopped (or stopped by the other call site): finalise what we
+    // have instead of throwing into a promise that cannot report it.
+    if (recorder.state === 'inactive') {
+      console.log('[AudioRecorder] stop() called while already inactive; finalising existing chunks');
+      return this.finalizeRecording(recorder.mimeType);
+    }
 
-        // Stop all tracks
-        this.stream?.getTracks().forEach((track) => track.stop());
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      let timer: ReturnType<typeof setTimeout> | null = null;
 
-        console.log('[AudioRecorder] Recording stopped, original blob size:', audioBlob.size, 'type:', audioBlob.type);
-
-        // Convert to WAV format
-        try {
-          const wavBlob = await this.convertToWav(audioBlob);
-          console.log('[AudioRecorder] Converted to WAV, size:', wavBlob.size);
-          resolve(wavBlob);
-        } catch (error) {
-          console.error('[AudioRecorder] WAV conversion failed, using original:', error);
-          resolve(audioBlob);
-        }
+      const cleanup = () => {
+        if (timer) clearTimeout(timer);
+        recorder.onstop = null;
+        recorder.onerror = null;
       };
 
-      this.mediaRecorder.stop();
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve();
+      };
+
+      recorder.onstop = finish;
+      recorder.onerror = (event: Event) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error(`MediaRecorder error: ${(event as any)?.error?.name || 'unknown'}`));
+      };
+
+      timer = setTimeout(() => {
+        console.warn('[AudioRecorder] onstop did not fire within timeout; finalising anyway');
+        finish();
+      }, AudioRecorder.STOP_TIMEOUT_MS);
+
+      try {
+        recorder.stop();
+      } catch (error) {
+        // Raced with the other stop() call site. Not a failure: the chunks are
+        // still there, so fall through and finalise them.
+        console.warn('[AudioRecorder] stop() threw, treating as already stopped:', error);
+        finish();
+      }
     });
+
+    return this.finalizeRecording(recorder.mimeType);
+  }
+
+  /** Build the blob, release the microphone, and convert to WAV if possible. */
+  private async finalizeRecording(mimeType: string): Promise<Blob> {
+    const audioBlob = new Blob(this.audioChunks, { type: mimeType || 'audio/webm' });
+
+    this.stream?.getTracks().forEach((track) => track.stop());
+    this.stream = null;
+
+    // The analyser context was created per start() and never closed, so a
+    // multi-question interview accumulated one AudioContext per answer. Browsers
+    // cap concurrent contexts, after which start() fails outright.
+    if (this.audioContext) {
+      try {
+        await this.audioContext.close();
+      } catch {
+        // ignore
+      }
+      this.audioContext = null;
+      this.analyser = null;
+      this.dataArray = null;
+    }
+
+    console.log('[AudioRecorder] Recording stopped, original blob size:', audioBlob.size, 'type:', audioBlob.type);
+
+    if (audioBlob.size === 0) {
+      // Report it rather than submitting silence and letting the backend fail
+      // with something less explicable.
+      throw new Error('No audio was captured. Check microphone permissions and try again.');
+    }
+
+    try {
+      const wavBlob = await this.convertToWav(audioBlob);
+      console.log('[AudioRecorder] Converted to WAV, size:', wavBlob.size);
+      return wavBlob;
+    } catch (error) {
+      console.error('[AudioRecorder] WAV conversion failed, using original:', error);
+      return audioBlob;
+    }
   }
 
   getAudioLevel(): number {
