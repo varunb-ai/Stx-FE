@@ -30,6 +30,7 @@ import {
   Settings,
   Loader2,
   GraduationCap,
+  Mic,
 } from 'lucide-react';
 import {
   InterviewRound,
@@ -451,14 +452,16 @@ export default function RoundSelection({
   const handleStartRound = async () => {
     if (!selectedRound) return;
 
-    if (!livePracticeConsentChecked) {
-      toast({
-        title: 'Consent required',
-        description: 'Review the Live Practice consent. This session uses camera, screen, and recording to simulate real interview conditions.',
-        variant: 'warning',
-      });
-      return;
-    }
+    // Consent selects proctored vs unproctored; it does not gate the session.
+    //
+    // This used to return early without it, and the Start button was disabled
+    // too, so there was no way to practise unproctored at all -- the checkbox was
+    // mandatory in everything but name. That contradicts the backend, where
+    // PracticeSession.proctored is Optional[bool] precisely because "proctoring is
+    // the candidate's choice, so a score earned without it is still a real score".
+    //
+    // Declining now starts a session that records the microphone (needed to score
+    // the answer) with no camera, no screen capture and no integrity checks.
 
     // Validate domain is selected (CRITICAL)
     if (!domain && !userProfile?.domain) {
@@ -472,11 +475,17 @@ export default function RoundSelection({
 
     setStarting(true);
     try {
-      // Gate: camera must be live if proctored mode is ON
-      if (ensureCameraForProctoring) {
-        await ensureCameraForProctoring();
+      // Only acquire camera and screen when the candidate actually opted in.
+      // Requesting them unconditionally was the other half of the mandatory-consent
+      // bug: even a user who declined got browser permission prompts for capture
+      // they had just refused.
+      let gate = { screen_shared: false, camera_enabled: false };
+      if (livePracticeConsentChecked) {
+        if (ensureCameraForProctoring) {
+          await ensureCameraForProctoring();
+        }
+        gate = await ensureLiveMediaReady();
       }
-      const gate = await ensureLiveMediaReady();
 
       const requestData: any = {
         round_type: selectedRound.round_type,
@@ -1085,7 +1094,7 @@ export default function RoundSelection({
               variant="primary"
               size="lg"
               onClick={handleStartRound}
-              disabled={starting || (!domain && !userProfile?.domain) || !livePracticeConsentChecked}
+              disabled={starting || (!domain && !userProfile?.domain)}
               className="sm:flex-[1.4]"
             >
               {starting ? (
@@ -1100,8 +1109,8 @@ export default function RoundSelection({
                 </>
               ) : !livePracticeConsentChecked ? (
                 <>
-                  <Shield className="w-4 h-4" />
-                  Review consent first
+                  <Mic className="w-4 h-4" />
+                  Start without proctoring
                 </>
               ) : (
                 <>
