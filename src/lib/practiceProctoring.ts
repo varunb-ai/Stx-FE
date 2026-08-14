@@ -530,6 +530,7 @@ export async function startPracticeProctoring(
     let detecting = false;
     let emptyFrames = 0;
     let phoneStreak = 0;
+    let objectStreak = 0;
     let consecutiveErrors = 0;
     detectionActive = true;
 
@@ -593,10 +594,24 @@ export async function startPracticeProctoring(
             phoneStreak = 0;
           }
 
+          // Streak-guarded and throttled, matching PHONE_DETECTED above.
+          // Without either, this fired once per detection tick for as long as
+          // anything sat in frame -- so a laptop or a bottle on the desk produced
+          // a continuous stream of events. Server-side these were LOW violations
+          // counting toward termination, which ended sessions in about a minute.
+          //
+          // They are informational now (see INFO_ONLY_EVENTS server-side), but the
+          // flood was wrong regardless: one event per tick per object is noise in
+          // the trail and load on the endpoint.
           if (objectSignals.objects.length > 0) {
-            void enqueueEvent('OBJECT_DETECTED', {
-              objects: objectSignals.objects.map((o) => o.label),
-            });
+            objectStreak += 1;
+            if (objectStreak >= 2 && shouldSend('OBJECT_DETECTED', 30000)) {
+              void enqueueEvent('OBJECT_DETECTED', {
+                objects: objectSignals.objects.map((o) => o.label),
+              });
+            }
+          } else {
+            objectStreak = 0;
           }
 
           // People, not faces. A second person turned away has no detectable

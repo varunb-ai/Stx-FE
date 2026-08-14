@@ -2120,6 +2120,38 @@ export const PracticeMode = () => {
     }
   };
 
+  /**
+   * Two different things arrive as HTTP 429 and they need different words.
+   *
+   * The server's per-route rate limiter means "you are going too fast, it clears
+   * by itself". A provider quota (PROVIDER_QUOTA_EXCEEDED) means the caller's own
+   * API key is out of allowance until the provider's window resets -- waiting a
+   * moment does nothing, and only they can act on it. Reporting the second as the
+   * first tells the user to sit tight when they should be adding a key or waiting
+   * for a daily reset.
+   */
+  const detailFromResponse = (body: unknown): { error?: string; message?: string } => {
+    const d = (body as any)?.detail ?? body;
+    return typeof d === 'object' && d !== null ? d : { message: typeof d === 'string' ? d : undefined };
+  };
+
+  const dispatchQuotaExhausted = (message?: string) => {
+    try {
+      window.dispatchEvent(
+        new CustomEvent('demo:limit-reached', {
+          detail: {
+            error: 'PROVIDER_QUOTA_EXCEEDED',
+            message:
+              message ||
+              "Your API key has used up its allowance with the provider. It refills on the provider's schedule — or add a different key in Bridge Settings.",
+          },
+        })
+      );
+    } catch {
+      // ignore
+    }
+  };
+
   const dispatchGuestLimitReached = (source: string) => {
     try {
       window.dispatchEvent(
@@ -3118,11 +3150,21 @@ export const PracticeMode = () => {
         ? (durationFromAudio as number)
         : (questionAudioDurationRef.current && questionAudioDurationRef.current > 0 ? questionAudioDurationRef.current : null);
 
-      // If we have a known audio duration, roughly match it; otherwise default to a brisk but readable pace.
-      // Slightly faster than before for a more "instant" feel.
-      return durationSeconds
-        ? Math.max(70, Math.min(500, Math.round((durationSeconds * 1000) / words.length)))
-        : 160;
+      // If we have a known audio duration, match it.
+      if (durationSeconds) {
+        return Math.max(70, Math.min(500, Math.round((durationSeconds * 1000) / words.length)));
+      }
+
+      // No duration yet. The old fallback was a flat 160ms/word -- roughly
+      // 375 wpm -- while edge-tts speaks at about 150 wpm. So whenever audio
+      // metadata had not arrived in time (common in production, where the MP3 is
+      // fetched through a backend answering in seconds) the text raced roughly
+      // 2.5x ahead of the voice and finished long before it.
+      //
+      // With TTS on, pace to speech instead: ~400ms/word is close to 150 wpm, so
+      // a late-arriving voice track stays approximately in step rather than
+      // diverging. With TTS off the text is the only channel and brisk is right.
+      return enableTTS ? 400 : 160;
     };
 
     // If TTS is enabled, give metadata a brief moment so pacing can better match audio.
@@ -3645,7 +3687,13 @@ export const PracticeMode = () => {
       });
 
       if (error instanceof StrataxApiError && error.status === 429) {
-        dispatchGuestLimitReached('practice_submit_answer');
+        // A spent provider allowance is not the server throttling the caller.
+        const d = detailFromResponse((error as any).detail ?? (error as any).body);
+        if (d.error === 'PROVIDER_QUOTA_EXCEEDED') {
+          dispatchQuotaExhausted(d.message);
+        } else {
+          dispatchGuestLimitReached('practice_submit_answer');
+        }
       }
 
       setIsRecording(false);
@@ -3735,7 +3783,13 @@ export const PracticeMode = () => {
       console.error('❌ [Practice Mode] Code submission error:', error);
 
       if (error instanceof StrataxApiError && error.status === 429) {
-        dispatchGuestLimitReached('practice_submit_code');
+        // A spent provider allowance is not the server throttling the caller.
+        const d = detailFromResponse((error as any).detail ?? (error as any).body);
+        if (d.error === 'PROVIDER_QUOTA_EXCEEDED') {
+          dispatchQuotaExhausted(d.message);
+        } else {
+          dispatchGuestLimitReached('practice_submit_code');
+        }
       }
 
       setIsSubmittingCode(false);
@@ -5231,7 +5285,15 @@ export const PracticeMode = () => {
                     <Eyebrow tone={questionTone} icon={MessageSquare}>
                       {currentQuestion?.category ? String(currentQuestion.category).replace(/_/g, ' ') : 'Interview question'}
                     </Eyebrow>
-                    <h2 className="mt-2.5 text-[1.0625rem] sm:text-[1.1875rem] font-semibold leading-[1.45] tracking-[-0.012em] px-ink text-pretty max-w-3xl">
+                    {/* max-w-4xl, not 3xl. At 48rem inside a 74rem panel the
+                        question stopped well short of the right edge and every
+                        wrap left a visible gap, which read as a layout fault
+                        rather than a measure. 4xl fills most of the available
+                        width while keeping the line near ~105 characters --
+                        deliberately still bounded, because a question read under
+                        time pressure gets harder to parse as the measure grows,
+                        and the TTS button needs the remaining space. */}
+                    <h2 className="mt-2.5 text-[1.0625rem] sm:text-[1.1875rem] font-semibold leading-[1.45] tracking-[-0.012em] px-ink text-pretty max-w-4xl">
                       {deliveredQuestionText || (fullQuestionText ? '…' : 'No question text available')}
                     </h2>
                   </div>
@@ -6230,6 +6292,81 @@ export const PracticeMode = () => {
         { label: 'Overtalk', value: `${overtalkCount}`, unit: '' },
       ];
 
+      // ── Score decomposition ─────────────────────────────────────────────
+      //
+      // The exported report had six delivery metrics and no decomposition at all:
+      // no dimension scores, no applied weights, no why-trace. The on-screen
+      // report shows them, so the artifact a candidate keeps was the one version
+      // missing the thing the product is built around -- "every score decomposes
+      // into the evidence that produced it".
+      //
+      // `why` is normalised the same way the on-screen view does it, because the
+      // backend has sent it as an array, a string, and under `reasons` /
+      // `explanation` / `reasoning` at different times.
+      const traceAny = evaluationTrace as any;
+      const dimensionScores: Record<string, number> =
+        (traceAny?.dimension_scores && typeof traceAny.dimension_scores === 'object')
+          ? traceAny.dimension_scores
+          : {};
+      const appliedWeights: Record<string, number> =
+        (traceAny?.weights && typeof traceAny.weights === 'object')
+          ? traceAny.weights
+          : (traceAny?.weights_applied && typeof traceAny.weights_applied === 'object')
+            ? traceAny.weights_applied
+            : {};
+      const measuredDims: string[] = Array.isArray(traceAny?.measured_dimensions)
+        ? traceAny.measured_dimensions.map(String)
+        : Object.keys(dimensionScores);
+      const unmeasuredDims: string[] = Array.isArray(traceAny?.unmeasured_dimensions)
+        ? traceAny.unmeasured_dimensions.map(String)
+        : [];
+
+      const normaliseWhy = (value: unknown): string[] => {
+        if (Array.isArray(value)) return value.map(String).filter(Boolean);
+        if (typeof value === 'string' && value.trim()) {
+          return value.split(/[\r\n]+|(?<=\.)\s+/).map((x) => x.trim()).filter(Boolean);
+        }
+        return [];
+      };
+      let whyLinesForPdf = normaliseWhy(traceAny?.why);
+      if (whyLinesForPdf.length === 0) {
+        whyLinesForPdf = normaliseWhy(
+          traceAny?.reasons ?? traceAny?.explanation ?? traceAny?.reasoning
+        );
+      }
+
+      const decompositionSection = (() => {
+        const dimEntries = Object.entries(dimensionScores).filter(
+          ([, v]) => typeof v === 'number' && Number.isFinite(v)
+        );
+        if (dimEntries.length === 0 && whyLinesForPdf.length === 0) return '';
+
+        const rows = dimEntries.map(([name, value]) => {
+          const w = appliedWeights[name];
+          const pct = Math.max(0, Math.min(100, Number(value)));
+          return `<tr>
+            <th>${esc(name)}</th>
+            <td class="num">${esc(Number(value).toFixed(1))}</td>
+            <td class="num">${w !== undefined ? esc(`×${w}`) : '&mdash;'}</td>
+            <td class="bar"><span style="width:${pct}%"></span></td>
+          </tr>`;
+        }).join('');
+
+        // Stated explicitly, because a dimension that was excluded is not a
+        // dimension that scored zero -- and a report that omits the distinction
+        // invites exactly that misreading.
+        const excluded = unmeasuredDims.length
+          ? `<p class="muted">Not measured for this session: ${esc(unmeasuredDims.join(', '))}. Excluded from the score rather than counted as zero, so the remaining weights are renormalised.</p>`
+          : '';
+
+        return `
+  <h2>How this score was reached</h2>
+  ${dimEntries.length ? `<table class="kv dims"><tbody>${rows}</tbody></table>` : ''}
+  ${measuredDims.length ? `<p class="muted">Measured: ${esc(measuredDims.join(', '))}.</p>` : ''}
+  ${excluded}
+  ${whyLinesForPdf.length ? `<h3>Why</h3>${list(whyLinesForPdf)}` : ''}`;
+      })();
+
       const questionSections = [...questionEvaluations]
         .sort((a, b) => a.questionNumber - b.questionNumber)
         .map((item) => {
@@ -6361,6 +6498,16 @@ export const PracticeMode = () => {
   table.kv th { text-align: left; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.08em;
     color: #6b7280; font-weight: 600; padding: 4px 8px 4px 0; white-space: nowrap; }
   table.kv td { padding: 4px 16px 4px 0; font-size: 9.5pt; }
+  /* Score decomposition. The bar is a plain block with a printed background
+     rather than a border trick, because print-color-adjust:exact is already set
+     on body -- without that, Chrome drops backgrounds and the bars would vanish
+     from the PDF while still showing on screen. */
+  table.dims { width: 100%; }
+  table.dims th { width: 22%; }
+  table.dims td.num { width: 12%; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.dims td.bar { width: 54%; padding-right: 0; }
+  table.dims td.bar span { display: block; height: 7px; border-radius: 3px;
+    background: #14161c; min-width: 1px; }
   .meta { width: 100%; margin-bottom: 4px; }
   .meta th { text-align: left; width: 24%; font-weight: 600; color: #6b7280; font-size: 8.5pt;
     padding: 3px 0; }
@@ -6419,6 +6566,7 @@ export const PracticeMode = () => {
     ${metricCards.map((m) => `<td><span class="mlabel">${esc(m.label)}</span><span class="mval">${esc(m.value)}${m.unit ? `<span class="munit">${esc(m.unit)}</span>` : ''}</span></td>`).join('')}
   </tr></tbody></table>
   ${evaluation?.learning_insight ? `<p class="muted"><strong>Peer benchmark.</strong> ${esc(evaluation.learning_insight)}</p>` : ''}
+  ${decompositionSection}
 
   <h2>Assessment</h2>
   <div class="cols">

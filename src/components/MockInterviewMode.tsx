@@ -2416,7 +2416,7 @@ body{font-family:'Inter',-apple-system,sans-serif;color:var(--text);background:v
                 </CardHeader>
                 <CardContent className="pt-4 sm:pt-6">
                   <ScrollArea className="h-[300px] sm:h-[500px] pr-4">
-                    <div className="prose prose-sm max-w-none">
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
                       <pre className="whitespace-pre-wrap text-sm bg-muted/30 rounded-lg p-3 sm:p-4 leading-relaxed">
                         {selected.answer === "[Skipped]" ? (
                           <span className="text-muted-foreground italic">Question was skipped</span>
@@ -2439,7 +2439,7 @@ body{font-family:'Inter',-apple-system,sans-serif;color:var(--text);background:v
                 </CardHeader>
                 <CardContent className="pt-4 sm:pt-6">
                   <ScrollArea className="h-[300px] sm:h-[500px] pr-4">
-                    <div className="prose prose-sm max-w-none">
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
                       {selected.feedback.model_answer ? (
                         <pre className="whitespace-pre-wrap text-sm bg-muted/30 rounded-lg p-3 sm:p-4 leading-relaxed">
                           {selected.feedback.model_answer}
@@ -2959,7 +2959,7 @@ body{font-family:'Inter',-apple-system,sans-serif;color:var(--text);background:v
                   </CardHeader>
                   <CardContent className="pt-4">
                     <ScrollArea className="h-[400px] pr-4">
-                      <div className="prose prose-sm max-w-none">
+                      <div className="prose prose-sm max-w-none dark:prose-invert">
                         {currentEval.user_answer ? (
                           <pre className="whitespace-pre-wrap text-sm bg-muted/50 rounded-lg p-4 leading-relaxed font-sans">
                             {currentEval.user_answer}
@@ -2984,7 +2984,7 @@ body{font-family:'Inter',-apple-system,sans-serif;color:var(--text);background:v
                   </CardHeader>
                   <CardContent className="pt-4">
                     <ScrollArea className="h-[400px] pr-4">
-                      <div className="prose prose-sm max-w-none">
+                      <div className="prose prose-sm max-w-none dark:prose-invert">
                         {currentEval.model_answer ? (
                           <pre className="whitespace-pre-wrap text-sm bg-muted/50 rounded-lg p-4 leading-relaxed font-sans">
                             {currentEval.model_answer}
@@ -3015,7 +3015,7 @@ body{font-family:'Inter',-apple-system,sans-serif;color:var(--text);background:v
                         <div className="flex flex-col">
                           <h3 className="text-base font-semibold mb-3">Your Answer</h3>
                           <ScrollArea className="h-[70vh] pr-4">
-                            <div className="prose prose-lg max-w-none">
+                            <div className="prose prose-lg max-w-none dark:prose-invert">
                               {currentEval.user_answer ? (
                                 <pre className="whitespace-pre-wrap text-sm bg-muted/50 rounded-lg p-6 leading-relaxed font-sans">
                                   {currentEval.user_answer}
@@ -3032,7 +3032,7 @@ body{font-family:'Inter',-apple-system,sans-serif;color:var(--text);background:v
                         <div className="flex flex-col">
                           <h3 className="text-base font-semibold mb-3">Model Answer</h3>
                           <ScrollArea className="h-[70vh] pr-4">
-                            <div className="prose prose-lg max-w-none">
+                            <div className="prose prose-lg max-w-none dark:prose-invert">
                               {currentEval.model_answer ? (
                                 <pre className="whitespace-pre-wrap text-sm bg-muted/50 rounded-lg p-6 leading-relaxed font-sans">
                                   {currentEval.model_answer}

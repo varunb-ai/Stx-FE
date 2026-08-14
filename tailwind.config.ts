@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
+import typography from "@tailwindcss/typography";
 
 export default {
   darkMode: ["class"],
@@ -148,5 +149,13 @@ export default {
       },
     },
   },
-  plugins: [tailwindcssAnimate],
+  // @tailwindcss/typography was a dependency but was never registered here, so
+  // every `prose` class in the codebase was inert: LLM markdown rendered with no
+  // heading sizes, no list markers and no spacing. That is the "plain / outdated"
+  // look in Copilot answers, mock interview output and the exported report.
+  //
+  // Registering it is only safe because `<html class="dark">` is hardcoded in
+  // index.html and darkMode is ["class"], so `dark:prose-invert` actually applies.
+  // Without that, prose would set dark-grey body text on a dark background.
+  plugins: [tailwindcssAnimate, typography],
 } satisfies Config;
